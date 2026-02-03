@@ -1,0 +1,674 @@
+/* ============================================
+   SPONSOR FORM STYLES
+   ============================================ */
+
+.sponsor-form-page {
+  padding: 24px 32px;
+  min-height: 100vh;
+  background: #F5F5F5;
+}
+
+/* Page Header */
+.sf-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.sf-header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.sf-header-left h1 {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1A1A1A;
+  margin: 0;
+}
+
+.sf-back-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 2px solid #E0E0E0;
+  background: white;
+  color: #1A1A1A;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sf-back-btn:hover {
+  border-color: #1A1A1A;
+  background: #1A1A1A;
+  color: white;
+}
+
+/* Two Column Layout with Preview */
+.sf-two-column-layout {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+.sf-form-column {
+  flex: 1;
+  min-width: 0;
+}
+
+.sf-preview-column {
+  width: 340px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 24px;
+}
+
+/* Hide preview card on smaller screens */
+@media (max-width: 1100px) {
+  .sf-preview-column {
+    display: none;
+  }
+}
+
+/* Main Card */
+.sf-card {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+
+/* Wizard Steps */
+.sf-wizard-steps {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 40px;
+  background: linear-gradient(135deg, #1A1A1A 0%, #2D2D2D 100%);
+  gap: 0;
+}
+
+.sf-step {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  position: relative;
+}
+
+.sf-step-number {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 700;
+  background: #3D3D3D;
+  color: #808080;
+  transition: all 0.3s ease;
+  border: 3px solid transparent;
+}
+
+.sf-step.active .sf-step-number {
+  background: white;
+  color: #1A1A1A;
+  border-color: #85FF00;
+  box-shadow: 0 0 0 4px rgba(133, 255, 0, 0.2);
+}
+
+.sf-step.completed .sf-step-number {
+  background: #85FF00;
+  color: #1A1A1A;
+}
+
+.sf-step-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #808080;
+  margin-left: 8px;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.sf-step.active .sf-step-title {
+  color: white;
+}
+
+.sf-step.completed .sf-step-title {
+  color: #85FF00;
+}
+
+.sf-step-connector {
+  width: 40px;
+  height: 3px;
+  background: #3D3D3D;
+  margin: 0 8px;
+  border-radius: 2px;
+  transition: all 0.3s ease;
+}
+
+.sf-step.completed + .sf-step .sf-step-connector,
+.sf-step.completed .sf-step-connector {
+  background: #85FF00;
+}
+
+/* Step Content */
+.sf-step-content {
+  padding: 40px;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.sf-section-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1A1A1A;
+  margin: 0 0 24px 0;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #F0F0F0;
+}
+
+.sf-subsection {
+  margin-bottom: 32px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #F0F0F0;
+}
+
+.sf-subsection:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.sf-subsection-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.sf-subsection-header h4 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1A1A1A;
+  margin: 0;
+}
+
+/* Assets Section */
+.sf-empty-assets {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  background: #FAFAFA;
+  border-radius: 12px;
+  border: 2px dashed #E0E0E0;
+  text-align: center;
+}
+
+.sf-empty-assets svg {
+  font-size: 32px;
+  color: #C0C0C0;
+  margin-bottom: 12px;
+}
+
+.sf-empty-assets p {
+  font-size: 14px;
+  color: #808080;
+  margin: 0;
+}
+
+.sf-assets-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sf-asset-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: #FAFAFA;
+  border-radius: 12px;
+  border: 1px solid #E0E0E0;
+}
+
+.sf-asset-row input,
+.sf-asset-row select {
+  flex: 1;
+}
+
+/* Icon Buttons */
+.sf-btn-icon {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  padding: 0;
+  border-radius: 10px;
+  border: 2px solid #E0E0E0;
+  background: white;
+  color: #1A1A1A;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sf-btn-icon:hover {
+  border-color: #1A1A1A;
+  background: #1A1A1A;
+  color: white;
+}
+
+.sf-btn-icon-delete {
+  border-color: #FFCCCC;
+  color: #FF4444;
+}
+
+.sf-btn-icon-delete:hover {
+  border-color: #FF4444;
+  background: #FF4444;
+  color: white;
+}
+
+/* Small Button */
+.sf-btn-sm {
+  height: 36px;
+  padding: 0 16px;
+  font-size: 13px;
+}
+
+/* Logo Section */
+.sf-logo-section {
+  margin-bottom: 32px;
+}
+
+.sf-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1A1A1A;
+  margin-bottom: 12px;
+}
+
+.sf-logo-upload {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  height: 160px;
+  border: 2px dashed #D0D0D0;
+  border-radius: 16px;
+  background: #FAFAFA;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sf-logo-upload:hover {
+  border-color: #85FF00;
+  background: #F5FFF0;
+}
+
+.sf-logo-upload svg {
+  font-size: 32px;
+  color: #808080;
+}
+
+.sf-logo-upload span {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1A1A1A;
+}
+
+.sf-logo-upload small {
+  font-size: 13px;
+  color: #808080;
+}
+
+.sf-logo-upload input {
+  display: none;
+}
+
+.sf-logo-preview {
+  position: relative;
+  width: 160px;
+  height: 160px;
+}
+
+.sf-logo-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 16px;
+  border: 2px solid #E0E0E0;
+}
+
+.sf-logo-remove {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #FF4444;
+  color: white;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(255, 68, 68, 0.3);
+}
+
+.sf-logo-remove:hover {
+  background: #E03030;
+  transform: scale(1.1);
+}
+
+.sf-error {
+  display: block;
+  color: #FF4444;
+  font-size: 13px;
+  margin-top: 8px;
+}
+
+/* Social Labels */
+.sf-social-label {
+  display: flex !important;
+  align-items: center;
+  gap: 10px;
+}
+
+.sf-social-label svg {
+  font-size: 18px;
+}
+
+/* Password Wrapper */
+.sf-password-wrapper {
+  position: relative;
+}
+
+.sf-password-wrapper input {
+  padding-right: 50px;
+}
+
+.sf-password-toggle {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #808080;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s ease;
+}
+
+.sf-password-toggle:hover {
+  color: #1A1A1A;
+}
+
+.sf-password-toggle:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Form Actions */
+.sf-form-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 40px;
+  background: #FAFAFA;
+  border-top: 1px solid #F0F0F0;
+}
+
+.sf-actions-left,
+.sf-actions-right {
+  display: flex;
+  gap: 12px;
+}
+
+/* Buttons */
+.sf-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 48px;
+  padding: 0 24px;
+  font-size: 15px;
+  font-weight: 600;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  white-space: nowrap;
+}
+
+.sf-btn-primary {
+  background: #1A1A1A;
+  color: white;
+}
+
+.sf-btn-primary:hover {
+  background: #000000;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.sf-btn-success {
+  background: #85FF00;
+  color: #1A1A1A;
+}
+
+.sf-btn-success:hover {
+  background: #70E000;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(133, 255, 0, 0.3);
+}
+
+.sf-btn-success:disabled {
+  background: #C0C0C0;
+  color: #808080;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.sf-btn-outline {
+  background: white;
+  color: #1A1A1A;
+  border: 2px solid #E0E0E0;
+}
+
+.sf-btn-outline:hover {
+  border-color: #1A1A1A;
+  background: #F5F5F5;
+}
+
+/* Priority Selector */
+.sf-priority-selector {
+  display: flex;
+  gap: 12px;
+}
+
+.sf-priority-btn {
+  flex: 1;
+  height: 48px;
+  border: 2px solid #E5E7EB;
+  border-radius: 12px;
+  background: white;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sf-priority-btn:hover {
+  border-color: var(--priority-color, #E5E7EB);
+}
+
+.sf-priority-btn.active {
+  border-width: 2px;
+}
+
+/* Responsive */
+
+/* Hide step titles when space is limited (sidebar + preview card) */
+@media (max-width: 1200px) {
+  .sf-wizard-steps {
+    padding: 24px 24px;
+  }
+
+  .sf-step-title {
+    display: none;
+  }
+
+  .sf-step-connector {
+    width: 32px;
+    margin: 0 6px;
+  }
+
+  .sf-step-number {
+    width: 42px;
+    height: 42px;
+    font-size: 15px;
+  }
+}
+
+@media (max-width: 900px) {
+  .sf-wizard-steps {
+    padding: 24px 20px;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .sf-step-connector {
+    display: none;
+  }
+
+  .sf-step-title {
+    display: none;
+  }
+
+  .sf-step-number {
+    width: 40px;
+    height: 40px;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 768px) {
+  .sponsor-form-page {
+    padding: 16px;
+  }
+
+  .sf-header-left h1 {
+    font-size: 22px;
+  }
+
+  .sf-step-content {
+    padding: 24px;
+  }
+
+  .sf-form-actions {
+    padding: 20px 24px;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .sf-actions-left,
+  .sf-actions-right {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .sf-btn {
+    flex: 1;
+  }
+}
+
+/* Checkbox Cards */
+.sf-checkbox-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 16px 20px;
+  background: #FAFAFA;
+  border: 2px solid #E5E7EB;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sf-checkbox-card:hover {
+  border-color: #D0D0D0;
+  background: #F5F5F5;
+}
+
+.sf-checkbox-card:has(input:checked) {
+  border-color: #85FF00;
+  background: #F5FFF0;
+}
+
+.sf-checkbox-card input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.sf-checkbox-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.sf-checkbox-icon {
+  font-size: 18px;
+  color: #808080;
+}
+
+.sf-checkbox-card:has(input:checked) .sf-checkbox-icon {
+  color: #1A1A1A;
+}
+
+.sf-checkbox-content span {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1A1A1A;
+}
+
+.sf-checkbox-check {
+  font-size: 16px;
+  color: #85FF00;
+}

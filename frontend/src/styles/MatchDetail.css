@@ -1,0 +1,370 @@
+.match-detail {
+  min-height: 100vh;
+  background: #f8f9fa;
+  padding-bottom: 40px;
+}
+
+/* Header */
+.match-detail-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 30px;
+}
+
+.btn-back {
+  background: rgba(255,255,255,0.2);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 20px;
+  transition: all 0.2s;
+}
+
+.btn-back:hover {
+  background: rgba(255,255,255,0.3);
+}
+
+/* Match Hero */
+.match-hero {
+  text-align: center;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.match-competition-badge {
+  display: inline-block;
+  padding: 8px 20px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 30px;
+}
+
+.match-teams-large {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 40px;
+  margin-bottom: 20px;
+}
+
+.team-large {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+}
+
+.team-icon {
+  font-size: 64px;
+}
+
+.team-large .team-name {
+  font-size: 32px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.vs-large {
+  font-size: 28px;
+  font-weight: 800;
+  opacity: 0.6;
+}
+
+.match-score {
+  font-size: 48px;
+  font-weight: 900;
+  margin-bottom: 20px;
+  letter-spacing: 4px;
+}
+
+.match-datetime,
+.match-location {
+  font-size: 18px;
+  margin: 10px 0;
+  opacity: 0.95;
+}
+
+/* Section */
+.section {
+  max-width: 1200px;
+  margin: 30px auto;
+  padding: 0 30px;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+}
+
+.section-header h2 {
+  font-size: 28px;
+  color: #1a1a1a;
+  margin: 0;
+}
+
+/* Activations Grid */
+.activations-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 20px;
+}
+
+.activation-card {
+  background: white;
+  border-radius: 14px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  transition: all 0.3s;
+  border-left: 5px solid #007bff;
+}
+
+.activation-card:hover {
+  box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+  transform: translateY(-2px);
+}
+
+.activation-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.activation-type {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.type-icon {
+  font-size: 28px;
+}
+
+.type-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1a1a1a;
+  text-transform: capitalize;
+}
+
+.activation-status {
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-pianificata {
+  background: #e3f2fd;
+  color: #1976d2;
+}
+
+.status-confermata {
+  background: #e8f5e9;
+  color: #388e3c;
+}
+
+.status-completata {
+  background: #f3e5f5;
+  color: #7b1fa2;
+}
+
+.status-annullata {
+  background: #ffebee;
+  color: #d32f2f;
+}
+
+.activation-sponsor,
+.activation-description,
+.activation-asset,
+.activation-responsible {
+  margin-bottom: 12px;
+  font-size: 14px;
+  color: #666;
+  line-height: 1.6;
+}
+
+.activation-sponsor strong {
+  color: #1a1a1a;
+  font-weight: 600;
+}
+
+.activation-executed {
+  background: #e8f5e9;
+  padding: 10px 15px;
+  border-radius: 8px;
+  margin-top: 15px;
+  font-size: 13px;
+  color: #388e3c;
+  font-weight: 600;
+}
+
+.activation-actions {
+  margin-top: 15px;
+  display: flex;
+  gap: 10px;
+}
+
+.btn-confirm,
+.btn-execute {
+  flex: 1;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-confirm {
+  background: #28a745;
+  color: white;
+}
+
+.btn-confirm:hover {
+  background: #218838;
+  transform: translateY(-1px);
+}
+
+.btn-execute {
+  background: #6f42c1;
+  color: white;
+}
+
+.btn-execute:hover {
+  background: #5a32a3;
+  transform: translateY(-1px);
+}
+
+/* Invites Table */
+.invites-list {
+  background: white;
+  border-radius: 14px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.invites-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.invites-table thead {
+  background: #f8f9fa;
+}
+
+.invites-table th {
+  padding: 12px 16px;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 700;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.invites-table td {
+  padding: 16px;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 14px;
+  color: #333;
+}
+
+.invites-table tbody tr:hover {
+  background: #f8f9fa;
+}
+
+.text-small {
+  font-size: 12px;
+  color: #999;
+  margin-top: 4px;
+}
+
+.status-inviato {
+  background: #e3f2fd;
+  color: #1976d2;
+}
+
+.status-confermato {
+  background: #e8f5e9;
+  color: #388e3c;
+}
+
+.status-rifiutato {
+  background: #ffebee;
+  color: #d32f2f;
+}
+
+.status-check_in {
+  background: #f3e5f5;
+  color: #7b1fa2;
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: #999;
+}
+
+.empty-state p {
+  font-size: 16px;
+  margin: 10px 0;
+}
+
+/* Loading & Error */
+.loading,
+.error {
+  text-align: center;
+  padding: 80px 20px;
+  font-size: 18px;
+  color: #666;
+}
+
+.error {
+  color: #dc3545;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .match-teams-large {
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .team-large .team-name {
+    font-size: 24px;
+  }
+
+  .match-score {
+    font-size: 36px;
+  }
+
+  .activations-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .invites-table {
+    font-size: 12px;
+  }
+
+  .invites-table th,
+  .invites-table td {
+    padding: 8px;
+  }
+}

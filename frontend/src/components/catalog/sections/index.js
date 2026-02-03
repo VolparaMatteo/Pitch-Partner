@@ -1,0 +1,10 @@
+export { default as HeaderSection } from './HeaderSection';
+export { default as AssetGridSection } from './AssetGridSection';
+export { default as AssetCarouselSection } from './AssetCarouselSection';
+export { default as TextSection } from './TextSection';
+export { default as CtaSection } from './CtaSection';
+export { default as GallerySection } from './GallerySection';
+export { default as StatsSection } from './StatsSection';
+export { default as DividerSection } from './DividerSection';
+export { default as VideoSection } from './VideoSection';
+export { default as FooterSection } from './FooterSection';

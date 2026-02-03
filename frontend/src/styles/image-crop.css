@@ -1,0 +1,165 @@
+/* Image Crop Modal - Instagram Style */
+
+.crop-modal-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Progress Bar */
+.crop-progress {
+  padding: 16px 20px;
+  background: #F9F9F9;
+  border-radius: 12px;
+}
+
+.crop-progress-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1A1A1A;
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+.crop-progress-bar {
+  width: 100%;
+  height: 8px;
+  background: #E0E0E0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.crop-progress-fill {
+  height: 100%;
+  background: linear-gradient(135deg, #7FFF00 0%, #6FEF00 100%);
+  transition: width 0.3s ease;
+  border-radius: 4px;
+}
+
+/* Crop Area */
+.crop-area {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #000;
+  border-radius: 12px;
+  padding: 20px;
+  min-height: 400px;
+}
+
+.crop-area img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* ReactCrop custom styles */
+.ReactCrop {
+  max-width: 100%;
+}
+
+.ReactCrop__crop-selection {
+  border: 2px solid #7FFF00;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
+}
+
+.ReactCrop__drag-handle {
+  width: 12px;
+  height: 12px;
+  background: #7FFF00;
+  border: 2px solid white;
+  border-radius: 50%;
+}
+
+.ReactCrop__drag-handle::after {
+  display: none;
+}
+
+/* Info Text */
+.crop-info {
+  background: #E0F2FF;
+  padding: 16px;
+  border-radius: 12px;
+  border-left: 4px solid #0066CC;
+}
+
+.crop-info p {
+  margin: 0;
+  font-size: 14px;
+  color: #004499;
+  line-height: 1.6;
+}
+
+.crop-info p + p {
+  margin-top: 8px;
+}
+
+/* Actions */
+.crop-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  padding-top: 20px;
+  border-top: 1px solid #E0E0E0;
+}
+
+.crop-actions button {
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+}
+
+.crop-actions .btn-primary {
+  background: linear-gradient(135deg, #7FFF00 0%, #6FEF00 100%);
+  color: #1A1A1A;
+}
+
+.crop-actions .btn-primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(127, 255, 0, 0.3);
+}
+
+.crop-actions .btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.crop-actions .btn-secondary {
+  background: #F5F5F5;
+  color: #666;
+}
+
+.crop-actions .btn-secondary:hover {
+  background: #E0E0E0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .crop-area {
+    padding: 12px;
+    min-height: 300px;
+  }
+
+  .crop-area img {
+    max-height: 350px !important;
+  }
+
+  .crop-actions {
+    flex-wrap: wrap;
+  }
+
+  .crop-actions button {
+    flex: 1 1 calc(50% - 6px);
+    min-width: 120px;
+  }
+
+  .ReactCrop__drag-handle {
+    width: 16px;
+    height: 16px;
+  }
+}

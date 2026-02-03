@@ -1,0 +1,319 @@
+/* ==================== PITCHY - CLEAN CHAT UI ==================== */
+
+.pitchy-wrapper {
+  position: fixed;
+  top: 72px;
+  left: 240px;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  background: #f8f9fa;
+  z-index: 10;
+}
+
+/* Scrollable Area */
+.pitchy-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0;
+}
+
+/* Empty State */
+.pitchy-empty {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+  text-align: center;
+}
+
+.pitchy-empty h2 {
+  font-size: 24px;
+  font-weight: 600;
+  color: #111;
+  margin: 16px 0 8px;
+}
+
+.pitchy-empty p {
+  font-size: 15px;
+  color: #666;
+  margin: 0 0 32px;
+  max-width: 400px;
+}
+
+/* Suggestion Chips */
+.pitchy-chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  max-width: 560px;
+}
+
+.pitchy-chip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 18px;
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 24px;
+  font-size: 13px;
+  color: #333;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.pitchy-chip:hover {
+  border-color: #85FF00;
+  background: #f8fff0;
+  transform: translateY(-1px);
+}
+
+.pitchy-chip svg {
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+/* Chat Messages */
+.pitchy-chat {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 24px 24px 100px;
+}
+
+.pitchy-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+  animation: fadeUp 0.2s ease-out;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.pitchy-row.user {
+  flex-direction: row-reverse;
+}
+
+.pitchy-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+
+.pitchy-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.pitchy-bubble {
+  max-width: 75%;
+  padding: 14px 18px;
+  border-radius: 18px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.pitchy-row.bot .pitchy-bubble {
+  background: white;
+  border: 1px solid #e5e5e5;
+  border-radius: 18px 18px 18px 4px;
+}
+
+.pitchy-row.user .pitchy-bubble {
+  background: #111;
+  color: white;
+  border-radius: 18px 18px 4px 18px;
+}
+
+/* Markdown */
+.pitchy-bubble p { margin: 0 0 12px; }
+.pitchy-bubble p:last-child { margin: 0; }
+.pitchy-bubble ul, .pitchy-bubble ol { margin: 8px 0; padding-left: 20px; }
+.pitchy-bubble li { margin-bottom: 4px; }
+.pitchy-bubble strong { font-weight: 600; }
+.pitchy-row.user .pitchy-bubble strong { color: #85FF00; }
+.pitchy-bubble code {
+  background: #f0f0f0;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 13px;
+}
+.pitchy-row.user .pitchy-bubble code {
+  background: rgba(255,255,255,0.15);
+}
+
+/* Typing */
+.pitchy-typing-bubble {
+  display: flex;
+  gap: 4px;
+  padding: 16px 20px !important;
+}
+
+.pitchy-typing-bubble span {
+  width: 8px;
+  height: 8px;
+  background: #85FF00;
+  border-radius: 50%;
+  animation: bounce 1.2s infinite;
+}
+
+.pitchy-typing-bubble span:nth-child(2) { animation-delay: 0.15s; }
+.pitchy-typing-bubble span:nth-child(3) { animation-delay: 0.3s; }
+
+@keyframes bounce {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+  30% { transform: translateY(-6px); opacity: 1; }
+}
+
+/* Bottom Input */
+.pitchy-bottom {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 16px 24px 24px;
+  background: linear-gradient(transparent, #f8f9fa 20%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.pitchy-clear {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: transparent;
+  border: 1px solid #ddd;
+  border-radius: 20px;
+  font-size: 12px;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.pitchy-clear:hover {
+  background: white;
+  border-color: #bbb;
+  color: #333;
+}
+
+.pitchy-form {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  max-width: 700px;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 28px;
+  padding: 6px 6px 6px 20px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  transition: all 0.15s;
+}
+
+.pitchy-form:focus-within {
+  border-color: #85FF00;
+  box-shadow: 0 2px 16px rgba(133,255,0,0.12);
+}
+
+.pitchy-form input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 14px;
+  background: transparent;
+  padding: 10px 0;
+}
+
+.pitchy-form input::placeholder {
+  color: #999;
+}
+
+.pitchy-form button {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: none;
+  background: #85FF00;
+  color: #111;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+
+.pitchy-form button:hover:not(:disabled) {
+  background: #76e600;
+  transform: scale(1.05);
+}
+
+.pitchy-form button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .pitchy-wrapper {
+    left: 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .pitchy-wrapper {
+    top: 60px;
+  }
+
+  .pitchy-empty {
+    padding: 32px 20px;
+  }
+
+  .pitchy-empty h2 {
+    font-size: 20px;
+  }
+
+  .pitchy-chips {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .pitchy-chip {
+    justify-content: flex-start;
+  }
+
+  .pitchy-chat {
+    padding: 20px 16px 120px;
+  }
+
+  .pitchy-bubble {
+    max-width: 85%;
+  }
+
+  .pitchy-bottom {
+    padding: 12px 16px 20px;
+  }
+
+  .pitchy-form {
+    padding: 4px 4px 4px 16px;
+  }
+
+  .pitchy-form button {
+    width: 40px;
+    height: 40px;
+  }
+}

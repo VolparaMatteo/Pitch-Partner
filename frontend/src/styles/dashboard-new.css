@@ -1,0 +1,709 @@
+/* ============================================
+   DASHBOARD FIGMA - EXACT MATCH
+   ============================================ */
+
+:root {
+  --figma-green: #7FFF00;
+  --figma-dark: #3D3D3D;
+  --figma-bg: #F5F5F5;
+  --figma-white: #FFFFFF;
+  --figma-black: #000000;
+  --figma-gray: #999999;
+  --figma-light-gray: #E5E5E5;
+  --figma-pink: #FFD4D4;
+  --figma-green-light: #C0FF80;
+  --figma-red: #FF4444;
+}
+
+.dashboard-new-container {
+  padding: 40px 60px;
+  background: var(--figma-bg);
+  min-height: 100vh;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+}
+
+/* ============================================
+   WELCOME HEADER
+   ============================================ */
+
+.welcome-header {
+  margin-bottom: 40px;
+}
+
+.welcome-title {
+  font-size: 38px;
+  font-weight: 400;
+  color: var(--figma-black);
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.club-name-inline {
+  font-size: 38px;
+  font-weight: 700;
+  color: var(--figma-black);
+}
+
+/* ============================================
+   HEADER STATS - 2 CARDS
+   ============================================ */
+
+.stats-header {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.stat-card-green,
+.stat-card-dark,
+.stat-card-pink {
+  background: linear-gradient(135deg, #000000 0%, #1a3300 100%);
+  border-radius: 20px;
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  justify-content: space-between;
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.2),
+    inset 0 0 0 1px rgba(127, 255, 0, 0.1);
+  transition: all 0.3s ease;
+  border: 1px solid rgba(127, 255, 0, 0.3);
+}
+
+.stat-card-green::after,
+.stat-card-dark::after,
+.stat-card-pink::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(45deg,
+      transparent 0%,
+      rgba(127, 255, 0, 0.05) 45%,
+      rgba(127, 255, 0, 0.1) 50%,
+      rgba(127, 255, 0, 0.05) 55%,
+      transparent 100%);
+  transform: rotate(30deg);
+  opacity: 0;
+  transition: opacity 0.5s;
+  pointer-events: none;
+}
+
+.stat-card-green:hover,
+.stat-card-dark:hover,
+.stat-card-pink:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    0 12px 24px rgba(0, 0, 0, 0.3),
+    inset 0 0 0 1px rgba(127, 255, 0, 0.3);
+  border-color: rgba(127, 255, 0, 0.6);
+}
+
+.stat-card-green:hover::after,
+.stat-card-dark:hover::after,
+.stat-card-pink:hover::after {
+  opacity: 1;
+  animation: shine 1.5s infinite;
+}
+
+.stat-card-content {
+  flex: 1;
+  z-index: 2;
+}
+
+.stat-card-green .stat-label,
+.stat-card-dark .stat-label,
+.stat-card-pink .stat-label {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #FFFFFF;
+  opacity: 0.9;
+}
+
+.stat-card-green .stat-description,
+.stat-card-dark .stat-description,
+.stat-card-pink .stat-description {
+  font-size: 12px;
+  line-height: 1.4;
+  margin-bottom: 12px;
+  color: rgba(255, 255, 255, 0.6);
+  max-width: 300px;
+}
+
+.stat-card-green .stat-value,
+.stat-card-dark .stat-value-green,
+.stat-card-pink .stat-value-dark {
+  font-size: 36px;
+  font-weight: 700;
+  color: #FFFFFF;
+  margin: 12px 0;
+  line-height: 1;
+}
+
+.stat-btn {
+  background: var(--figma-dark);
+  color: var(--figma-white);
+  border: none;
+  border-radius: 12px;
+  padding: 12px 24px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.stat-btn:hover {
+  background: #2D2D2D;
+  transform: translateY(-1px);
+}
+
+.stat-btn-light {
+  background: var(--figma-white);
+  color: var(--figma-black);
+  border: none;
+  border-radius: 12px;
+  padding: 12px 24px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.stat-btn-light:hover {
+  background: #F0F0F0;
+  transform: translateY(-1px);
+}
+
+@keyframes shine {
+  0% {
+    transform: translateX(-100%) rotate(30deg);
+  }
+
+  100% {
+    transform: translateX(100%) rotate(30deg);
+  }
+}
+
+.message-icon {
+  font-size: 80px;
+  opacity: 0.2;
+  line-height: 1;
+}
+
+/* Decorations */
+.stat-decoration {
+  position: absolute;
+  right: 30px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 80px;
+  opacity: 0.3;
+}
+
+.arrow-decoration {
+  font-size: 60px;
+  line-height: 1;
+}
+
+.triangle-decoration {
+  font-size: 40px;
+  line-height: 1;
+  margin-top: -10px;
+}
+
+.stat-decoration-dark {
+  position: absolute;
+  right: 30px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.lock-icon {
+  font-size: 70px;
+  opacity: 0.2;
+}
+
+.lines-decoration {
+  margin-top: 10px;
+}
+
+.lines-decoration .line {
+  width: 80px;
+  height: 4px;
+  background: var(--figma-green);
+  margin: 6px 0;
+  border-radius: 2px;
+  opacity: 0.3;
+}
+
+/* ============================================
+   3-COLUMN GRID
+   ============================================ */
+
+.dashboard-grid-three {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.widget-white {
+  background: var(--figma-white);
+  border-radius: 32px;
+  padding: 28px;
+  border: 1px solid rgba(127, 255, 0, 0.3);
+  transition: border-color 0.3s ease;
+}
+
+.widget-white:hover {
+  border-color: rgba(127, 255, 0, 0.6);
+}
+
+.widget-header h3 {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--figma-black);
+  margin: 0 0 6px 0;
+}
+
+.widget-subtitle {
+  font-size: 13px;
+  color: var(--figma-gray);
+  margin: 0 0 20px 0;
+  line-height: 1.4;
+}
+
+.widget-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Network Items */
+.network-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-radius: 16px;
+  transition: all 0.2s;
+}
+
+.network-item.green {
+  background: var(--figma-green-light);
+}
+
+.network-item.pink {
+  background: var(--figma-pink);
+}
+
+.network-item.gray {
+  background: var(--figma-light-gray);
+}
+
+.network-text {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--figma-black);
+}
+
+.network-badge {
+  background: var(--figma-dark);
+  color: var(--figma-white);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* Press Stats */
+.press-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.press-box {
+  padding: 24px 20px;
+  border-radius: 16px;
+  text-align: center;
+}
+
+.press-box.gray {
+  background: var(--figma-light-gray);
+}
+
+.press-box.green {
+  background: var(--figma-green-light);
+}
+
+.press-value {
+  font-size: 36px;
+  font-weight: 700;
+  color: var(--figma-black);
+  margin-bottom: 8px;
+  line-height: 1;
+}
+
+.press-label {
+  font-size: 13px;
+  color: var(--figma-black);
+  line-height: 1.3;
+}
+
+/* Event Cards */
+.event-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: var(--figma-light-gray);
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.event-card:hover {
+  background: #D8D8D8;
+}
+
+.event-card-icon {
+  width: 48px;
+  height: 48px;
+  background: var(--figma-dark);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.event-card-content {
+  flex: 1;
+}
+
+.event-card-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--figma-black);
+  margin-bottom: 4px;
+}
+
+.event-card-date {
+  font-size: 13px;
+  color: var(--figma-gray);
+}
+
+/* Action Button */
+.widget-action-btn {
+  background: var(--figma-dark);
+  color: var(--figma-white);
+  border: none;
+  border-radius: 12px;
+  padding: 14px 24px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 8px;
+}
+
+.widget-action-btn:hover {
+  background: #2D2D2D;
+  transform: translateY(-1px);
+}
+
+.widget-action-btn-light {
+  background: var(--figma-white);
+  color: var(--figma-black);
+  border: none;
+  border-radius: 12px;
+  padding: 14px 24px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 8px;
+}
+
+.widget-action-btn-light:hover {
+  background: #F0F0F0;
+  transform: translateY(-1px);
+}
+
+/* ============================================
+   BOTTOM SECTION - 2 COLUMNS
+   ============================================ */
+
+.dashboard-bottom-two {
+  display: grid;
+  grid-template-columns: 0.8fr 1.2fr;
+  gap: 24px;
+}
+
+/* Dark Contracts Widget */
+.widget-dark-contracts {
+  background: var(--figma-dark);
+  border-radius: 32px;
+  padding: 28px;
+  color: var(--figma-white);
+}
+
+.widget-dark-contracts .widget-header h3 {
+  color: var(--figma-white);
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0 0 20px 0;
+}
+
+.contracts-stats-box {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.completion-box {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.completion-label {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 8px;
+}
+
+.completion-value {
+  font-size: 42px;
+  font-weight: 700;
+  color: var(--figma-green);
+  line-height: 1;
+}
+
+.contracts-grid-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.contract-stat-box {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  padding: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.contract-stat-label {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 8px;
+}
+
+.contract-stat-value {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--figma-green);
+  line-height: 1;
+}
+
+.contract-bozze-box {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  padding: 16px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.contract-bozze-label {
+  font-size: 14px;
+  color: var(--figma-white);
+  font-weight: 500;
+}
+
+.contract-bozze-badge {
+  background: var(--figma-red);
+  color: var(--figma-white);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+/* White Milestone Widget */
+.widget-white-milestone {
+  background: var(--figma-white);
+  border-radius: 32px;
+  padding: 28px;
+  border: 1px solid #E8E8E8;
+}
+
+.widget-white-milestone .widget-header h3 {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--figma-black);
+  margin: 0 0 20px 0;
+}
+
+.milestone-list-figma {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.milestone-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 18px 20px;
+  background: var(--figma-bg);
+  border-radius: 16px;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.milestone-row:hover {
+  background: #E8E8E8;
+}
+
+.milestone-info {
+  flex: 1;
+}
+
+.milestone-title-bold {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--figma-black);
+  margin-bottom: 6px;
+}
+
+.milestone-sponsor {
+  font-size: 13px;
+  color: var(--figma-gray);
+}
+
+.milestone-dates {
+  text-align: right;
+}
+
+.milestone-date-red {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--figma-red);
+  margin-bottom: 4px;
+}
+
+.milestone-scadenza {
+  font-size: 12px;
+  color: var(--figma-gray);
+}
+
+/* ============================================
+   EMPTY STATE
+   ============================================ */
+
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--figma-gray);
+  font-size: 14px;
+}
+
+/* ============================================
+   LOADING
+   ============================================ */
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  font-size: 16px;
+  color: var(--figma-gray);
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 1400px) {
+  .stats-header {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .dashboard-grid-three {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 992px) {
+  .dashboard-new-container {
+    padding: 24px;
+  }
+
+  .stats-header {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-grid-three {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-bottom-two {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Premium Button Style */
+.btn-premium {
+  background: linear-gradient(135deg, #000000 0%, #1a3300 100%);
+  color: white;
+  border: 1px solid rgba(127, 255, 0, 0.3);
+  border-radius: 12px;
+  padding: 12px 24px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-premium:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(127, 255, 0, 0.3);
+  border-color: rgba(127, 255, 0, 0.6);
+}
+
+/* Form Input Focus Styles */
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: #7FFF00 !important;
+  box-shadow: 0 0 0 3px rgba(127, 255, 0, 0.1);
+}

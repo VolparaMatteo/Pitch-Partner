@@ -1,0 +1,324 @@
+.box-invites {
+  padding: 30px;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+.invites-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 30px;
+}
+
+.invites-header h1 {
+  font-size: 32px;
+  color: #1a1a1a;
+  margin: 10px 0 0;
+}
+
+.btn-back {
+  background: #f0f0f0;
+  color: #666;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 10px;
+  transition: all 0.2s;
+}
+
+.btn-back:hover {
+  background: #e0e0e0;
+}
+
+/* Stats Cards */
+.invites-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.stat-card {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  text-align: center;
+}
+
+.stat-card .stat-value {
+  font-size: 42px;
+  font-weight: 800;
+  color: #007bff;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+.stat-card .stat-label {
+  font-size: 14px;
+  color: #666;
+  font-weight: 600;
+}
+
+/* Invites List */
+.invites-list {
+  background: white;
+  border-radius: 14px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.invites-table-wrapper {
+  overflow-x: auto;
+}
+
+.invites-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 1000px;
+}
+
+.invites-table thead {
+  background: #f8f9fa;
+}
+
+.invites-table th {
+  padding: 14px 12px;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 700;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.invites-table td {
+  padding: 16px 12px;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 14px;
+  color: #333;
+  vertical-align: top;
+}
+
+.invites-table tbody tr:hover {
+  background: #f8f9fa;
+}
+
+.guest-info,
+.contact-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.text-small {
+  font-size: 12px;
+  color: #999;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 11px;
+  font-weight: 700;
+  color: white;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Action Buttons */
+.action-buttons {
+  display: flex;
+  gap: 6px;
+}
+
+.btn-qr,
+.btn-delete-small {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-qr {
+  background: #007bff;
+  color: white;
+}
+
+.btn-qr:hover {
+  background: #0056b3;
+}
+
+.btn-delete-small {
+  background: #dc3545;
+  color: white;
+}
+
+.btn-delete-small:hover {
+  background: #c82333;
+}
+
+/* QR Code Modal */
+.modal-qr {
+  max-width: 500px;
+}
+
+.qr-content {
+  padding: 24px;
+  text-align: center;
+}
+
+.guest-details {
+  margin-bottom: 24px;
+}
+
+.guest-details h3 {
+  font-size: 22px;
+  color: #1a1a1a;
+  margin: 0 0 8px;
+}
+
+.guest-details p {
+  font-size: 14px;
+  color: #666;
+  margin: 4px 0;
+}
+
+.match-info {
+  font-weight: 600;
+  color: #007bff;
+}
+
+.qr-code-display {
+  margin: 24px 0;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 12px;
+}
+
+.qr-image {
+  max-width: 280px;
+  width: 100%;
+  height: auto;
+  border: 4px solid white;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.invite-code,
+.badge-name {
+  margin: 20px 0;
+  padding: 15px;
+  background: #e3f2fd;
+  border-radius: 8px;
+}
+
+.invite-code label,
+.badge-name label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.invite-code code {
+  font-size: 14px;
+  font-family: 'Courier New', monospace;
+  color: #1976d2;
+  word-break: break-all;
+}
+
+.badge-name strong {
+  font-size: 18px;
+  color: #1a1a1a;
+}
+
+.btn-download {
+  width: 100%;
+  padding: 14px;
+  background: #28a745;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 20px;
+}
+
+.btn-download:hover {
+  background: #218838;
+  transform: translateY(-2px);
+}
+
+/* Check-in Modal */
+.checkin-content {
+  padding: 24px;
+}
+
+.checkin-instructions {
+  text-align: center;
+  font-size: 15px;
+  color: #666;
+  margin-bottom: 24px;
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: #999;
+}
+
+.empty-state p {
+  font-size: 16px;
+  margin: 10px 0;
+}
+
+/* Loading */
+.loading {
+  text-align: center;
+  padding: 60px 20px;
+  font-size: 18px;
+  color: #666;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .box-invites {
+    padding: 20px;
+  }
+
+  .invites-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+
+  .invites-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .invites-table-wrapper {
+    overflow-x: scroll;
+  }
+
+  .action-buttons {
+    flex-direction: column;
+  }
+}
