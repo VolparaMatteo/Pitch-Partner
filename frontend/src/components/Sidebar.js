@@ -245,6 +245,13 @@ function Sidebar() {
                         { id: 'resources', label: 'Knowledge Base', path: '/resources', icon: HiOutlineBookOpen },
                         { id: 'training', label: 'Formazione', path: '/best-practice-events', icon: HiOutlineAcademicCap },
                     ]
+                },
+                {
+                    id: 'settings',
+                    label: 'Impostazioni',
+                    items: [
+                        { id: 'users', label: 'Utenti', path: '/club/users', icon: HiOutlineUserGroup },
+                    ]
                 }
             ];
         } else if (user?.role === 'sponsor') {

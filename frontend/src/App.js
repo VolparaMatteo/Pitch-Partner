@@ -114,6 +114,8 @@ import PublicCatalog from './pages/PublicCatalog';
 import SponsorJoin from './pages/SponsorJoin';
 // Club Activation
 import ClubActivation from './pages/ClubActivation';
+// Club Users
+import ClubUsers from './pages/ClubUsers';
 // New Sponsor Pages
 import SponsorActivations from './pages/SponsorActivations';
 import SponsorEvents from './pages/SponsorEvents';
@@ -150,6 +152,7 @@ function App() {
                                         <Route path="/club/dashboard" element={<ClubDashboard />} />
                                         <Route path="/club/analytics" element={<ClubAnalytics />} />
                                         <Route path="/club/profile" element={<ClubProfile />} />
+                                        <Route path="/club/users" element={<ClubUsers />} />
                                         <Route path="/club/sponsors" element={<SponsorListPage />} />
                                         <Route path="/club/sponsors/new" element={<SponsorForm />} />
                                         <Route path="/club/sponsors/:id" element={<SponsorDetail />} />

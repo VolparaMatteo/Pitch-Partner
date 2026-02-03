@@ -20,6 +20,9 @@ function ClubActivation() {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
 
+  const [email, setEmail] = useState('');
+  const [nome, setNome] = useState('');
+  const [cognome, setCognome] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [formErrors, setFormErrors] = useState({});
@@ -86,8 +89,27 @@ function ClubActivation() {
     return Object.values(passwordStrength).every(v => v === true);
   };
 
+  const validateEmail = (email) => {
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    return emailRegex.test(email);
+  };
+
   const validateForm = () => {
     const errors = {};
+
+    if (!email.trim()) {
+      errors.email = 'Email obbligatoria';
+    } else if (!validateEmail(email.trim())) {
+      errors.email = 'Formato email non valido';
+    }
+
+    if (!nome.trim()) {
+      errors.nome = 'Nome obbligatorio';
+    }
+
+    if (!cognome.trim()) {
+      errors.cognome = 'Cognome obbligatorio';
+    }
 
     if (!password) {
       errors.password = 'La password è obbligatoria';
@@ -113,6 +135,9 @@ function ClubActivation() {
     try {
       setActivating(true);
       await axios.post(`${API_URL}/public/club/activate/${token}`, {
+        email: email.trim(),
+        nome: nome.trim(),
+        cognome: cognome.trim(),
         password,
         confirm_password: confirmPassword
       });
@@ -281,7 +306,7 @@ function ClubActivation() {
           <div className="testimonial-container">
             <div className="testimonial-slide active">
               <div className="testimonial-quote">
-                "Benvenuto in Pitch Partner! Imposta la tua password per iniziare a gestire le sponsorizzazioni del tuo club."
+                "Benvenuto in Pitch Partner! Crea il tuo account amministratore per iniziare a gestire le sponsorizzazioni del tuo club."
               </div>
               <div className="testimonial-author">
                 <div className="testimonial-name">Il Team</div>
@@ -299,7 +324,10 @@ function ClubActivation() {
             <img src={logoFull} alt="Pitch Partner" className="login-form-logo" />
           </div>
 
-          <div className="portal-badge" style={{ background: '#ECFDF5', color: '#059669' }}>Attivazione Account</div>
+          <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', marginBottom: '8px' }}>
+            <div className="portal-badge" style={{ background: '#ECFDF5', color: '#059669' }}>Attivazione Account</div>
+            <div className="portal-badge" style={{ background: '#FEF3C7', color: '#92400E' }}>Ruolo: Amministratore</div>
+          </div>
 
           {/* Club Info */}
           {club && (
@@ -353,13 +381,78 @@ function ClubActivation() {
           )}
 
           <div className="login-header">
-            <h1>Imposta la tua password</h1>
-            <p>Crea una password sicura per accedere al tuo account</p>
+            <h1>Crea il tuo account</h1>
+            <p>Completa la registrazione del primo utente amministratore</p>
           </div>
 
           <form onSubmit={handleSubmit} className="login-form-new">
             <div className="form-group-new">
-              <label className="form-label-new">Password</label>
+              <label className="form-label-new">Email *</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (formErrors.email) setFormErrors({ ...formErrors, email: '' });
+                }}
+                className={`form-input-new ${formErrors.email ? 'error' : ''}`}
+                placeholder="La tua email di accesso"
+                disabled={activating}
+              />
+              {formErrors.email && (
+                <span style={{ fontSize: '12px', color: '#DC2626', marginTop: '4px', display: 'block' }}>
+                  {formErrors.email}
+                </span>
+              )}
+              <span style={{ fontSize: '11px', color: '#9CA3AF', marginTop: '4px', display: 'block' }}>
+                Può essere diversa dall'email del club
+              </span>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              <div className="form-group-new">
+                <label className="form-label-new">Nome *</label>
+                <input
+                  type="text"
+                  value={nome}
+                  onChange={(e) => {
+                    setNome(e.target.value);
+                    if (formErrors.nome) setFormErrors({ ...formErrors, nome: '' });
+                  }}
+                  className={`form-input-new ${formErrors.nome ? 'error' : ''}`}
+                  placeholder="Il tuo nome"
+                  disabled={activating}
+                />
+                {formErrors.nome && (
+                  <span style={{ fontSize: '12px', color: '#DC2626', marginTop: '4px', display: 'block' }}>
+                    {formErrors.nome}
+                  </span>
+                )}
+              </div>
+
+              <div className="form-group-new">
+                <label className="form-label-new">Cognome *</label>
+                <input
+                  type="text"
+                  value={cognome}
+                  onChange={(e) => {
+                    setCognome(e.target.value);
+                    if (formErrors.cognome) setFormErrors({ ...formErrors, cognome: '' });
+                  }}
+                  className={`form-input-new ${formErrors.cognome ? 'error' : ''}`}
+                  placeholder="Il tuo cognome"
+                  disabled={activating}
+                />
+                {formErrors.cognome && (
+                  <span style={{ fontSize: '12px', color: '#DC2626', marginTop: '4px', display: 'block' }}>
+                    {formErrors.cognome}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div className="form-group-new">
+              <label className="form-label-new">Password *</label>
               <input
                 type="password"
                 value={password}
@@ -474,7 +567,7 @@ function ClubActivation() {
             border: '1px solid #3B82F6'
           }}>
             <p style={{ fontSize: '13px', color: '#1E40AF', margin: 0, lineHeight: 1.5 }}>
-              <strong>Sicurezza:</strong> La tua password deve contenere almeno 8 caratteri, includendo maiuscole, minuscole, numeri e caratteri speciali.
+              <strong>Primo accesso:</strong> Stai creando l'account amministratore del club. Potrai aggiungere altri utenti dalla sezione "Utenti" dopo l'accesso.
             </p>
           </div>
         </div>

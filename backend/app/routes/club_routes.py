@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity, get_jwt
 from werkzeug.utils import secure_filename
 from app import db
-from app.models import Club, Sponsor, SponsorInvitation, HeadOfTerms, Pagamento, Fattura
+from app.models import Club, ClubUser, Sponsor, SponsorInvitation, HeadOfTerms, Pagamento, Fattura
 from datetime import datetime, timedelta
 from sqlalchemy import func
 import os
@@ -20,7 +20,15 @@ def verify_club():
     claims = get_jwt()
     if claims.get('role') != 'club':
         return None
-    return int(get_jwt_identity())
+    return claims.get('club_id')
+
+
+def verify_club_user():
+    """Helper function to verify club role and return user_id and club_id"""
+    claims = get_jwt()
+    if claims.get('role') != 'club':
+        return None, None
+    return claims.get('user_id'), claims.get('club_id')
 
 
 club_bp = Blueprint('club', __name__)
@@ -35,21 +43,28 @@ def login():
     if not email or not password:
         return jsonify({'error': 'Email e password richiesti'}), 400
 
-    club = Club.query.filter_by(email=email).first()
+    # Cerca l'utente per email
+    user = ClubUser.query.filter_by(email=email).first()
 
-    # Verifica se il club esiste
-    if not club:
+    if not user:
         return jsonify({'error': 'Credenziali non valide'}), 401
 
-    # Verifica se l'account è stato attivato (ha impostato la password)
+    # Verifica password utente
+    if not user.check_password(password):
+        return jsonify({'error': 'Credenziali non valide'}), 401
+
+    # Verifica utente attivo
+    if not user.is_active:
+        return jsonify({'error': 'Utente disabilitato. Contatta l\'amministratore del club.'}), 403
+
+    # Ottieni il club
+    club = user.club
+
+    # Verifica se il club è stato attivato
     if not club.is_activated:
-        return jsonify({'error': 'Account non attivato. Controlla la tua email per il link di attivazione.'}), 403
+        return jsonify({'error': 'Account club non attivato. Controlla la tua email per il link di attivazione.'}), 403
 
-    # Verifica password
-    if not club.check_password(password):
-        return jsonify({'error': 'Credenziali non valide'}), 401
-
-    # Verifica account attivo (non sospeso)
+    # Verifica club attivo (non sospeso)
     if not club.account_attivo:
         return jsonify({'error': 'Account sospeso. Contatta l\'amministrazione di Pitch Partner.'}), 403
 
@@ -57,9 +72,17 @@ def login():
     if not club.is_licenza_valida():
         return jsonify({'error': 'Licenza scaduta. Contatta l\'amministrazione di Pitch Partner per rinnovare.'}), 403
 
+    # Aggiorna last_login
+    user.last_login = datetime.utcnow()
+    db.session.commit()
+
     access_token = create_access_token(
-        identity=str(club.id),
-        additional_claims={'role': 'club'}
+        identity=str(user.id),
+        additional_claims={
+            'role': 'club',
+            'user_id': user.id,
+            'club_id': club.id
+        }
     )
 
     return jsonify({
@@ -69,8 +92,38 @@ def login():
             'nome': club.nome,
             'email': club.email,
             'logo_url': club.logo_url
-        }
+        },
+        'user': user.to_dict()
     }), 200
+
+
+@club_bp.route('/users', methods=['GET'])
+@jwt_required()
+def get_club_users():
+    """Ottieni tutti gli utenti del club"""
+    club_id = verify_club()
+    if not club_id:
+        return jsonify({'error': 'Accesso non autorizzato'}), 403
+
+    users = ClubUser.query.filter_by(club_id=club_id).order_by(ClubUser.created_at.asc()).all()
+
+    return jsonify({
+        'users': [user.to_dict() for user in users],
+        'total': len(users)
+    }), 200
+
+
+@club_bp.route('/users/me', methods=['GET'])
+@jwt_required()
+def get_current_user():
+    """Ottieni l'utente corrente"""
+    user_id, club_id = verify_club_user()
+    if not user_id:
+        return jsonify({'error': 'Accesso non autorizzato'}), 403
+
+    user = ClubUser.query.get_or_404(user_id)
+
+    return jsonify(user.to_dict()), 200
 
 
 @club_bp.route('/profile', methods=['GET'])

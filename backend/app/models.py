@@ -124,13 +124,72 @@ class Club(db.Model):
             return False
         return datetime.utcnow() < self.activation_token_expires
 
-    def activate(self, password):
-        """Attiva l'account impostando la password e invalidando il token"""
-        self.set_password(password)
+    def activate(self):
+        """Attiva il club invalidando il token"""
         self.activation_token = None
         self.activation_token_expires = None
         self.is_activated = True
         self.activated_at = datetime.utcnow()
+
+
+# ==================== CLUB USER SYSTEM ====================
+class ClubUser(db.Model):
+    """Utenti del club - sistema multi-utente"""
+    __tablename__ = 'club_users'
+
+    id = db.Column(db.Integer, primary_key=True)
+    club_id = db.Column(db.Integer, db.ForeignKey('clubs.id'), nullable=False)
+
+    # Credenziali
+    email = db.Column(db.String(120), nullable=False)
+    password_hash = db.Column(db.String(255), nullable=False)
+
+    # Profilo
+    nome = db.Column(db.String(100), nullable=False)
+    cognome = db.Column(db.String(100), nullable=False)
+    avatar_url = db.Column(db.String(500))
+
+    # Ruolo e permessi
+    ruolo = db.Column(db.String(50), default='amministratore')  # amministratore, manager, operatore, ecc.
+    is_active = db.Column(db.Boolean, default=True)
+
+    # Metadata
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    last_login = db.Column(db.DateTime)
+
+    # Relazione
+    club = db.relationship('Club', backref=db.backref('users', lazy=True, cascade='all, delete-orphan'))
+
+    # Unique constraint: email unica per club
+    __table_args__ = (
+        db.UniqueConstraint('club_id', 'email', name='uq_club_user_email'),
+    )
+
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password, method='pbkdf2:sha256')
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
+
+    @property
+    def full_name(self):
+        return f"{self.nome} {self.cognome}"
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'club_id': self.club_id,
+            'email': self.email,
+            'nome': self.nome,
+            'cognome': self.cognome,
+            'full_name': self.full_name,
+            'avatar_url': self.avatar_url,
+            'ruolo': self.ruolo,
+            'is_active': self.is_active,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'last_login': self.last_login.isoformat() if self.last_login else None
+        }
 
 
 # ==================== SPONSOR ACCOUNT SYSTEM ====================
