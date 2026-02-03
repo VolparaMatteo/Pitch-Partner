@@ -240,7 +240,7 @@ def get_club(club_id):
 
     club = Club.query.get_or_404(club_id)
 
-    return jsonify({
+    response = {
         'id': club.id,
         'nome': club.nome,
         'tipologia': club.tipologia,
@@ -269,8 +269,18 @@ def get_club(club_id):
         'data_scadenza_licenza': club.data_scadenza_licenza.isoformat() if club.data_scadenza_licenza else None,
         'account_attivo': club.account_attivo,
         'licenza_valida': club.is_licenza_valida(),
-        'created_at': club.created_at.isoformat()
-    }), 200
+        'created_at': club.created_at.isoformat(),
+        'is_activated': club.is_activated,
+        'activated_at': club.activated_at.isoformat() if club.activated_at else None
+    }
+
+    # Include activation token info only for non-activated clubs
+    if not club.is_activated:
+        response['activation_token'] = club.activation_token
+        response['activation_token_expires'] = club.activation_token_expires.isoformat() if club.activation_token_expires else None
+        response['activation_token_valid'] = club.is_activation_token_valid()
+
+    return jsonify(response), 200
 
 
 @admin_bp.route('/clubs', methods=['POST'])
@@ -281,9 +291,9 @@ def create_club():
 
     data = request.get_json()
 
-    # Validazione campi obbligatori
-    if not data.get('nome') or not data.get('email') or not data.get('password') or not data.get('tipologia'):
-        return jsonify({'error': 'Nome, email, password e tipologia sono obbligatori'}), 400
+    # Validazione campi obbligatori (password non più richiesta)
+    if not data.get('nome') or not data.get('email') or not data.get('tipologia'):
+        return jsonify({'error': 'Nome, email e tipologia sono obbligatori'}), 400
 
     # Verifica email unica
     if Club.query.filter_by(email=data['email']).first():
@@ -315,9 +325,12 @@ def create_club():
         costo_abbonamento=data.get('costo_abbonamento'),
         tipologia_abbonamento=data.get('tipologia_abbonamento'),
         data_scadenza_licenza=datetime.fromisoformat(data['data_scadenza_licenza']) if data.get('data_scadenza_licenza') else None,
-        account_attivo=data.get('account_attivo', True)
+        account_attivo=data.get('account_attivo', True),
+        is_activated=False
     )
-    club.set_password(data['password'])
+
+    # Genera token di attivazione invece di impostare la password
+    activation_token = club.generate_activation_token(days=7)
 
     db.session.add(club)
     db.session.commit()
@@ -327,7 +340,9 @@ def create_club():
         'club': {
             'id': club.id,
             'nome': club.nome,
-            'email': club.email
+            'email': club.email,
+            'activation_token': activation_token,
+            'activation_token_expires': club.activation_token_expires.isoformat() if club.activation_token_expires else None
         }
     }), 201
 
@@ -418,6 +433,83 @@ def delete_club(club_id):
     db.session.commit()
 
     return jsonify({'message': 'Club eliminato con successo'}), 200
+
+
+@admin_bp.route('/clubs/<int:club_id>/regenerate-token', methods=['POST'])
+@jwt_required()
+def regenerate_activation_token(club_id):
+    """Rigenera il token di attivazione per un club non ancora attivato"""
+    if not verify_admin():
+        return jsonify({'error': 'Accesso non autorizzato'}), 403
+
+    club = Club.query.get_or_404(club_id)
+
+    if club.is_activated:
+        return jsonify({'error': 'Il club è già stato attivato'}), 400
+
+    activation_token = club.generate_activation_token(days=7)
+    db.session.commit()
+
+    return jsonify({
+        'message': 'Token rigenerato con successo',
+        'activation_token': activation_token,
+        'activation_token_expires': club.activation_token_expires.isoformat()
+    }), 200
+
+
+@admin_bp.route('/clubs/<int:club_id>/toggle-status', methods=['POST'])
+@jwt_required()
+def toggle_club_status(club_id):
+    """Sospende o riattiva l'account di un club"""
+    if not verify_admin():
+        return jsonify({'error': 'Accesso non autorizzato'}), 403
+
+    club = Club.query.get_or_404(club_id)
+    data = request.get_json()
+
+    action = data.get('action')  # 'suspend' o 'activate'
+    motivo = data.get('motivo', '').strip()
+
+    # Get admin info for activity log
+    admin_id = get_jwt_identity()
+    admin = Admin.query.get(admin_id)
+    admin_name = admin.full_name if admin else 'Admin'
+
+    if action == 'suspend':
+        club.account_attivo = False
+        message = 'Account sospeso con successo'
+        activity_tipo = 'sospensione'
+        activity_esito = 'negativo'
+        activity_desc = f"Account sospeso"
+        if motivo:
+            activity_desc += f". Motivo: {motivo}"
+    elif action == 'activate':
+        club.account_attivo = True
+        message = 'Account riattivato con successo'
+        activity_tipo = 'riattivazione'
+        activity_esito = 'positivo'
+        activity_desc = f"Account riattivato"
+        if motivo:
+            activity_desc += f". Motivo: {motivo}"
+    else:
+        return jsonify({'error': 'Azione non valida. Usa "suspend" o "activate"'}), 400
+
+    # Create activity log
+    activity = ClubActivity(
+        club_id=club_id,
+        tipo=activity_tipo,
+        descrizione=activity_desc,
+        esito=activity_esito,
+        created_by=admin_name,
+        data_schedulata=datetime.utcnow()
+    )
+    db.session.add(activity)
+    db.session.commit()
+
+    return jsonify({
+        'message': message,
+        'account_attivo': club.account_attivo
+    }), 200
 
 
 # Gestione Pagamenti - Tutti i club

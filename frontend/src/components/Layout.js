@@ -16,9 +16,11 @@ function LayoutContent({ children }) {
     // Automation builder pages: /club/automations/new, /club/automations/:id, /club/automations/:id/edit
     // Public proposal pages: /p/:link
     // Public catalog pages: /catalog/:token
+    // Club activation pages: /activate/:token
     const isFullscreenPage = location.pathname.startsWith('/club/automations/') ||
                              location.pathname.startsWith('/p/') ||
-                             location.pathname.startsWith('/catalog/');
+                             location.pathname.startsWith('/catalog/') ||
+                             location.pathname.startsWith('/activate/');
 
     // Pages without footer (chat-style pages)
     const isNoFooterPage = location.pathname === '/messages';

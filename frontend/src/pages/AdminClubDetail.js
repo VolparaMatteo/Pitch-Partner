@@ -11,7 +11,7 @@ import {
   FaStickyNote, FaEllipsisH, FaCrown, FaFileInvoice,
   FaTimes, FaPause, FaPlay, FaRocket,
   FaBuilding, FaUserTie,
-  FaInbox, FaDownload
+  FaInbox, FaDownload, FaCopy, FaRedo, FaLink
 } from 'react-icons/fa';
 import '../styles/sponsor-detail.css';
 import '../styles/template-style.css';
@@ -25,6 +25,8 @@ const ACTIVITY_TYPES = {
   nota: { icon: <FaStickyNote />, label: 'Nota', color: '#6B7280' },
   supporto: { icon: <FaUserTie />, label: 'Supporto', color: '#10B981' },
   fattura: { icon: <FaFileInvoice />, label: 'Fattura', color: '#059669' },
+  sospensione: { icon: <FaPause />, label: 'Sospensione', color: '#DC2626' },
+  riattivazione: { icon: <FaPlay />, label: 'Riattivazione', color: '#059669' },
   altro: { icon: <FaEllipsisH />, label: 'Altro', color: '#9CA3AF' }
 };
 
@@ -60,6 +62,9 @@ function AdminClubDetail() {
 
   const [showActivityModal, setShowActivityModal] = useState(false);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  const [showStatusModal, setShowStatusModal] = useState(false);
+  const [statusAction, setStatusAction] = useState(null); // 'suspend' or 'activate'
+  const [statusMotivo, setStatusMotivo] = useState('');
 
   const [activityForm, setActivityForm] = useState({
     tipo: 'chiamata',
@@ -75,6 +80,8 @@ function AdminClubDetail() {
     due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
     notes: ''
   });
+
+  const [regeneratingToken, setRegeneratingToken] = useState(false);
 
   useEffect(() => {
     if (!user || user.role !== 'admin') {
@@ -182,6 +189,59 @@ function AdminClubDetail() {
     } catch (error) {
       setToast({ message: 'Errore', type: 'error' });
     }
+  };
+
+  const openStatusModal = (action) => {
+    setStatusAction(action);
+    setStatusMotivo('');
+    setShowStatusModal(true);
+  };
+
+  const closeStatusModal = () => {
+    setShowStatusModal(false);
+    setStatusAction(null);
+    setStatusMotivo('');
+  };
+
+  const handleToggleAccountStatus = async () => {
+    try {
+      await axios.post(`${API_URL}/admin/clubs/${clubId}/toggle-status`, {
+        action: statusAction,
+        motivo: statusMotivo
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setToast({
+        message: statusAction === 'suspend' ? 'Account sospeso!' : 'Account riattivato!',
+        type: 'success'
+      });
+      closeStatusModal();
+      fetchAllData();
+    } catch (error) {
+      setToast({ message: error.response?.data?.error || 'Errore', type: 'error' });
+      closeStatusModal();
+    }
+  };
+
+  const handleRegenerateToken = async () => {
+    try {
+      setRegeneratingToken(true);
+      await axios.post(`${API_URL}/admin/clubs/${clubId}/regenerate-token`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setToast({ message: 'Token rigenerato con successo!', type: 'success' });
+      fetchAllData();
+    } catch (error) {
+      setToast({ message: error.response?.data?.error || 'Errore nella rigenerazione del token', type: 'error' });
+    } finally {
+      setRegeneratingToken(false);
+    }
+  };
+
+  const handleCopyActivationLink = () => {
+    const activationUrl = `${window.location.origin}/activate/${club.activation_token}`;
+    navigator.clipboard.writeText(activationUrl);
+    setToast({ message: 'Link copiato negli appunti!', type: 'success' });
   };
 
   const formatDate = (dateStr) => {
@@ -314,6 +374,106 @@ function AdminClubDetail() {
               </div>
             </div>
 
+            {/* Sezione Attivazione Account */}
+            <div className="sd-profile-section">
+              <h3 className="sd-section-title">Attivazione Account</h3>
+              {club.is_activated ? (
+                <div style={{ background: '#ECFDF5', borderRadius: '12px', padding: '16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                    <FaCheck style={{ color: '#059669' }} />
+                    <span style={{ fontWeight: 600, color: '#059669' }}>Account Attivato</span>
+                  </div>
+                  {club.activated_at && (
+                    <div style={{ fontSize: '13px', color: '#065F46' }}>
+                      Attivato il {formatDate(club.activated_at)}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div style={{ background: '#FEF3C7', borderRadius: '12px', padding: '16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                    <FaLink style={{ color: '#D97706' }} />
+                    <span style={{ fontWeight: 600, color: '#92400E' }}>In attesa di attivazione</span>
+                  </div>
+
+                  {club.activation_token && (
+                    <>
+                      <div style={{ marginBottom: '12px' }}>
+                        <div style={{ fontSize: '12px', color: '#92400E', marginBottom: '4px' }}>Link di attivazione:</div>
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          background: 'white',
+                          borderRadius: '8px',
+                          padding: '8px 12px',
+                          border: '1px solid #F59E0B'
+                        }}>
+                          <span style={{
+                            flex: 1,
+                            fontSize: '12px',
+                            color: '#1A1A1A',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap'
+                          }}>
+                            {window.location.origin}/activate/{club.activation_token}
+                          </span>
+                          <button
+                            onClick={handleCopyActivationLink}
+                            style={{
+                              padding: '6px',
+                              borderRadius: '6px',
+                              border: 'none',
+                              background: '#1A1A1A',
+                              color: 'white',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center'
+                            }}
+                            title="Copia link"
+                          >
+                            <FaCopy size={12} />
+                          </button>
+                        </div>
+                      </div>
+
+                      <div style={{ fontSize: '12px', color: '#92400E', marginBottom: '12px' }}>
+                        Scade: {formatDate(club.activation_token_expires)}
+                        {!club.activation_token_valid && (
+                          <span style={{ color: '#DC2626', fontWeight: 600, marginLeft: '8px' }}>(Scaduto)</span>
+                        )}
+                      </div>
+
+                      <button
+                        onClick={handleRegenerateToken}
+                        disabled={regeneratingToken}
+                        style={{
+                          width: '100%',
+                          padding: '10px',
+                          borderRadius: '8px',
+                          border: '1px solid #D97706',
+                          background: 'white',
+                          color: '#D97706',
+                          fontSize: '13px',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '8px'
+                        }}
+                      >
+                        <FaRedo style={{ animation: regeneratingToken ? 'spin 1s linear infinite' : 'none' }} />
+                        {regeneratingToken ? 'Rigenerando...' : 'Rigenera Token'}
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+
             <div className="sd-profile-section">
               <h3 className="sd-section-title">Azioni Rapide</h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -324,11 +484,11 @@ function AdminClubDetail() {
                   <FaHistory /> Registra Attivita
                 </button>
                 {club.account_attivo ? (
-                  <button className="tp-btn tp-btn-outline" onClick={() => handleUpdateSubscription({ status: 'suspended' })} style={{ width: '100%', justifyContent: 'center', borderColor: '#F59E0B', color: '#F59E0B' }}>
+                  <button className="tp-btn tp-btn-outline" onClick={() => openStatusModal('suspend')} style={{ width: '100%', justifyContent: 'center', borderColor: '#F59E0B', color: '#F59E0B' }}>
                     <FaPause /> Sospendi Account
                   </button>
                 ) : (
-                  <button className="tp-btn tp-btn-primary" onClick={() => handleUpdateSubscription({ status: 'active' })} style={{ width: '100%', justifyContent: 'center', background: '#059669' }}>
+                  <button className="tp-btn tp-btn-primary" onClick={() => openStatusModal('activate')} style={{ width: '100%', justifyContent: 'center', background: '#059669' }}>
                     <FaPlay /> Riattiva Account
                   </button>
                 )}
@@ -879,6 +1039,109 @@ function AdminClubDetail() {
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
               <button className="tp-btn tp-btn-outline" onClick={() => setShowInvoiceModal(false)}>Annulla</button>
               <button className="tp-btn tp-btn-primary" onClick={handleCreateInvoice}>Crea Fattura</button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Status Change Confirmation Modal */}
+      {showStatusModal && (
+        <Modal
+          isOpen={showStatusModal}
+          onClose={closeStatusModal}
+          title={statusAction === 'suspend' ? 'Sospendi Account' : 'Riattiva Account'}
+        >
+          <div style={{ padding: '20px' }}>
+            <div style={{
+              width: '64px',
+              height: '64px',
+              borderRadius: '50%',
+              background: statusAction === 'suspend' ? '#FEE2E2' : '#ECFDF5',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 20px',
+              fontSize: '28px'
+            }}>
+              {statusAction === 'suspend' ? <FaPause style={{ color: '#DC2626' }} /> : <FaPlay style={{ color: '#059669' }} />}
+            </div>
+
+            <h3 style={{
+              fontSize: '18px',
+              fontWeight: 700,
+              color: '#1A1A1A',
+              textAlign: 'center',
+              marginBottom: '12px'
+            }}>
+              {statusAction === 'suspend'
+                ? `Vuoi sospendere l'account di ${club?.nome}?`
+                : `Vuoi riattivare l'account di ${club?.nome}?`
+              }
+            </h3>
+
+            <p style={{
+              fontSize: '14px',
+              color: '#6B7280',
+              textAlign: 'center',
+              lineHeight: 1.6,
+              marginBottom: '20px'
+            }}>
+              {statusAction === 'suspend'
+                ? 'Il club non potrà più accedere alla piattaforma fino alla riattivazione.'
+                : 'Il club potrà nuovamente accedere alla piattaforma.'
+              }
+            </p>
+
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{
+                display: 'block',
+                marginBottom: '8px',
+                fontWeight: 500,
+                fontSize: '14px',
+                color: '#374151'
+              }}>
+                Motivazione {statusAction === 'suspend' && <span style={{ color: '#DC2626' }}>*</span>}
+              </label>
+              <textarea
+                value={statusMotivo}
+                onChange={(e) => setStatusMotivo(e.target.value)}
+                placeholder={statusAction === 'suspend'
+                  ? 'Es: Mancato pagamento, violazione termini di servizio...'
+                  : 'Es: Pagamento ricevuto, problema risolto...'
+                }
+                style={{
+                  width: '100%',
+                  minHeight: '100px',
+                  padding: '12px',
+                  borderRadius: '8px',
+                  border: '1px solid #E5E7EB',
+                  fontSize: '14px',
+                  resize: 'vertical'
+                }}
+              />
+              <p style={{ fontSize: '12px', color: '#9CA3AF', marginTop: '4px' }}>
+                La motivazione verrà registrata nello storico attività
+              </p>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+              <button
+                className="tp-btn tp-btn-outline"
+                onClick={closeStatusModal}
+              >
+                Annulla
+              </button>
+              <button
+                className="tp-btn tp-btn-primary"
+                onClick={handleToggleAccountStatus}
+                disabled={statusAction === 'suspend' && !statusMotivo.trim()}
+                style={{
+                  background: statusAction === 'suspend' ? '#DC2626' : '#059669',
+                  opacity: (statusAction === 'suspend' && !statusMotivo.trim()) ? 0.5 : 1
+                }}
+              >
+                {statusAction === 'suspend' ? 'Sospendi Account' : 'Riattiva Account'}
+              </button>
             </div>
           </div>
         </Modal>

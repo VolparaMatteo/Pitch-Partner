@@ -112,6 +112,8 @@ import CatalogBuilder from './pages/CatalogBuilder';
 import PublicCatalog from './pages/PublicCatalog';
 // Sponsor Invitation
 import SponsorJoin from './pages/SponsorJoin';
+// Club Activation
+import ClubActivation from './pages/ClubActivation';
 // New Sponsor Pages
 import SponsorActivations from './pages/SponsorActivations';
 import SponsorEvents from './pages/SponsorEvents';
@@ -270,6 +272,7 @@ function App() {
                                         <Route path="/p/:link" element={<PublicProposal />} />
                                         <Route path="/catalog/:token" element={<PublicCatalog />} />
                                         <Route path="/join/sponsor/:token" element={<SponsorJoin />} />
+                                        <Route path="/activate/:token" element={<ClubActivation />} />
                                         <Route path="/documentazione" element={<Documentazione />} />
                                         <Route path="/docs" element={<Docs />} />
                                         <Route path="/faq" element={<FAQ />} />

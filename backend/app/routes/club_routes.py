@@ -37,16 +37,25 @@ def login():
 
     club = Club.query.filter_by(email=email).first()
 
-    if not club or not club.check_password(password):
+    # Verifica se il club esiste
+    if not club:
         return jsonify({'error': 'Credenziali non valide'}), 401
 
-    # Verifica account attivo
+    # Verifica se l'account è stato attivato (ha impostato la password)
+    if not club.is_activated:
+        return jsonify({'error': 'Account non attivato. Controlla la tua email per il link di attivazione.'}), 403
+
+    # Verifica password
+    if not club.check_password(password):
+        return jsonify({'error': 'Credenziali non valide'}), 401
+
+    # Verifica account attivo (non sospeso)
     if not club.account_attivo:
-        return jsonify({'error': 'Account disattivato. Contattare l\'amministratore'}), 403
+        return jsonify({'error': 'Account sospeso. Contatta l\'amministrazione di Pitch Partner.'}), 403
 
     # Verifica licenza valida
     if not club.is_licenza_valida():
-        return jsonify({'error': 'Licenza scaduta. Contattare l\'amministratore'}), 403
+        return jsonify({'error': 'Licenza scaduta. Contatta l\'amministrazione di Pitch Partner per rinnovare.'}), 403
 
     access_token = create_access_token(
         identity=str(club.id),

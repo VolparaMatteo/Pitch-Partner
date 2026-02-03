@@ -8,7 +8,7 @@ import Modal from '../components/Modal';
 import {
   FaArrowLeft, FaArrowRight, FaCheck, FaChevronDown,
   FaImage, FaTimes, FaBuilding, FaEnvelope, FaPhone,
-  FaGlobe, FaMapMarkerAlt, FaUserTie, FaCrown, FaLock
+  FaGlobe, FaMapMarkerAlt, FaUserTie, FaCrown
 } from 'react-icons/fa';
 import '../styles/form.css';
 import '../styles/sponsor-form.css';
@@ -96,9 +96,7 @@ function AdminClubForm() {
     nome_abbonamento: '',
     costo_abbonamento: '',
     data_scadenza_licenza: '',
-    account_attivo: true,
-    // Accesso
-    password: ''
+    account_attivo: true
   });
 
   useEffect(() => {
@@ -150,8 +148,7 @@ function AdminClubForm() {
         nome_abbonamento: club.nome_abbonamento || '',
         costo_abbonamento: club.costo_abbonamento || '',
         data_scadenza_licenza: club.data_scadenza_licenza ? club.data_scadenza_licenza.split('T')[0] : '',
-        account_attivo: club.account_attivo !== false,
-        password: ''
+        account_attivo: club.account_attivo !== false
       });
     } catch (error) {
       console.error('Errore caricamento club:', error);
@@ -216,9 +213,6 @@ function AdminClubForm() {
     if (step === 2) {
       if (!formData.email.trim()) newErrors.email = 'Inserisci l\'email';
     }
-    if (step === 3) {
-      if (!isEdit && !formData.password.trim()) newErrors.password = 'Inserisci la password';
-    }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -263,11 +257,6 @@ function AdminClubForm() {
     try {
       setSaving(true);
       const payload = { ...formData };
-
-      // Remove password if empty in edit mode
-      if (isEdit && !payload.password) {
-        delete payload.password;
-      }
 
       if (isEdit) {
         await axios.put(`${API_URL}/admin/clubs/${clubId}`, payload, {
@@ -705,27 +694,21 @@ function AdminClubForm() {
                     </label>
                   </div>
 
-                  <div style={{ marginTop: '28px', paddingTop: '20px', borderTop: '1px solid #E5E7EB' }}>
-                    <h2 className="sf-section-title">Credenziali Accesso</h2>
-
-                    <div className="form-group">
-                      <label>{isEdit ? 'Nuova Password (opzionale)' : 'Password'} {!isEdit && <span className="required">*</span>}</label>
-                      <input
-                        type="password"
-                        name="password"
-                        value={formData.password}
-                        onChange={handleChange}
-                        placeholder={isEdit ? 'Lascia vuoto per non modificare' : 'Inserisci password'}
-                        className={errors.password ? 'error' : ''}
-                      />
-                      {errors.password && <span className="error-message">{errors.password}</span>}
-                      {isEdit && (
-                        <p style={{ fontSize: '12px', color: '#9CA3AF', marginTop: '4px' }}>
-                          Inserisci una nuova password solo se vuoi modificarla
-                        </p>
-                      )}
+                  {!isEdit && (
+                    <div style={{ marginTop: '28px', padding: '16px', background: '#FEF3C7', borderRadius: '12px', border: '1px solid #F59E0B' }}>
+                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                        <span style={{ fontSize: '20px' }}>🔐</span>
+                        <div>
+                          <p style={{ fontSize: '14px', fontWeight: 600, color: '#92400E', margin: 0 }}>
+                            Attivazione Account
+                          </p>
+                          <p style={{ fontSize: '13px', color: '#B45309', margin: '4px 0 0' }}>
+                            Dopo la creazione, verrà generato un link di attivazione. Il club potrà impostare la propria password accedendo al link.
+                          </p>
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               )}
 

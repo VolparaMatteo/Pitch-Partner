@@ -36,9 +36,23 @@ function ClubLogin() {
           message: 'Email o password errati. Verifica i tuoi dati e riprova.'
         };
       case 403:
+        if (message?.includes('non attivato')) {
+          return {
+            title: 'Account Non Attivato',
+            message: 'Il tuo account non è ancora stato attivato. Controlla la tua casella email per il link di attivazione inviato dall\'amministratore.',
+            isNotActivated: true,
+            contactEmail: 'hello@pitchpartner.it'
+          };
+        }
         return {
-          title: 'Accesso Negato',
-          message: 'Il tuo account potrebbe essere stato disabilitato. Contatta il supporto per assistenza.'
+          title: message?.includes('sospeso') ? 'Account Sospeso' : message?.includes('scaduta') ? 'Licenza Scaduta' : 'Accesso Negato',
+          message: message?.includes('sospeso')
+            ? 'Il tuo account è stato sospeso. Per informazioni o per riattivare l\'account, contatta l\'amministrazione di Pitch Partner.'
+            : message?.includes('scaduta')
+            ? 'La tua licenza è scaduta. Per rinnovare l\'abbonamento, contatta l\'amministrazione di Pitch Partner.'
+            : 'Accesso non consentito. Contatta l\'amministrazione di Pitch Partner per assistenza.',
+          isSuspended: true,
+          contactEmail: 'hello@pitchpartner.it'
         };
       case 404:
         return {
@@ -229,28 +243,151 @@ function ClubLogin() {
         <div className="error-modal-overlay" onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
-          closeErrorModal();
+          if (!error.isSuspended && !error.isNotActivated) closeErrorModal();
         }}>
           <div className="error-modal" onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
-          }}>
-            <div className="error-modal-icon">⚠️</div>
-            <h3 className="error-modal-title">{error.title}</h3>
-            <p className="error-modal-message">{error.message}</p>
-            <div className="error-modal-actions">
-              <button
-                type="button"
-                className="error-modal-btn error-modal-btn-primary"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  closeErrorModal();
-                }}
-              >
-                Ho Capito
-              </button>
-            </div>
+          }} style={(error.isSuspended || error.isNotActivated) ? { maxWidth: '440px' } : {}}>
+            {error.isNotActivated ? (
+              <>
+                <div className="error-modal-icon" style={{
+                  background: '#FEF3C7',
+                  width: '80px',
+                  height: '80px',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 20px',
+                  fontSize: '36px'
+                }}>
+                  📧
+                </div>
+                <h3 className="error-modal-title" style={{ fontSize: '24px', marginBottom: '12px' }}>{error.title}</h3>
+                <p className="error-modal-message" style={{ fontSize: '15px', lineHeight: '1.6', marginBottom: '24px' }}>
+                  {error.message}
+                </p>
+                <div style={{
+                  background: '#FEF3C7',
+                  borderRadius: '12px',
+                  padding: '16px',
+                  marginBottom: '24px',
+                  border: '1px solid #F59E0B'
+                }}>
+                  <p style={{ fontSize: '13px', color: '#92400E', margin: '0' }}>
+                    Se non hai ricevuto l'email o il link è scaduto, contatta l'amministratore per richiedere un nuovo link di attivazione.
+                  </p>
+                </div>
+                <div style={{
+                  background: '#F3F4F6',
+                  borderRadius: '12px',
+                  padding: '16px',
+                  marginBottom: '24px'
+                }}>
+                  <p style={{ fontSize: '13px', color: '#6B7280', margin: '0 0 8px 0' }}>
+                    Per assistenza contatta:
+                  </p>
+                  <a
+                    href={`mailto:${error.contactEmail}`}
+                    style={{
+                      fontSize: '16px',
+                      fontWeight: '600',
+                      color: '#4338CA',
+                      textDecoration: 'none'
+                    }}
+                  >
+                    {error.contactEmail}
+                  </a>
+                </div>
+                <div className="error-modal-actions">
+                  <button
+                    type="button"
+                    className="error-modal-btn error-modal-btn-primary"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      closeErrorModal();
+                    }}
+                  >
+                    Ho Capito
+                  </button>
+                </div>
+              </>
+            ) : error.isSuspended ? (
+              <>
+                <div className="error-modal-icon" style={{
+                  background: '#FEF2F2',
+                  width: '80px',
+                  height: '80px',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 20px',
+                  fontSize: '36px'
+                }}>
+                  🚫
+                </div>
+                <h3 className="error-modal-title" style={{ fontSize: '24px', marginBottom: '12px' }}>{error.title}</h3>
+                <p className="error-modal-message" style={{ fontSize: '15px', lineHeight: '1.6', marginBottom: '24px' }}>
+                  {error.message}
+                </p>
+                <div style={{
+                  background: '#F3F4F6',
+                  borderRadius: '12px',
+                  padding: '16px',
+                  marginBottom: '24px'
+                }}>
+                  <p style={{ fontSize: '13px', color: '#6B7280', margin: '0 0 8px 0' }}>
+                    Per assistenza contatta:
+                  </p>
+                  <a
+                    href={`mailto:${error.contactEmail}`}
+                    style={{
+                      fontSize: '16px',
+                      fontWeight: '600',
+                      color: '#4338CA',
+                      textDecoration: 'none'
+                    }}
+                  >
+                    {error.contactEmail}
+                  </a>
+                </div>
+                <div className="error-modal-actions">
+                  <button
+                    type="button"
+                    className="error-modal-btn error-modal-btn-primary"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      closeErrorModal();
+                    }}
+                  >
+                    Ho Capito
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="error-modal-icon">⚠️</div>
+                <h3 className="error-modal-title">{error.title}</h3>
+                <p className="error-modal-message">{error.message}</p>
+                <div className="error-modal-actions">
+                  <button
+                    type="button"
+                    className="error-modal-btn error-modal-btn-primary"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      closeErrorModal();
+                    }}
+                  >
+                    Ho Capito
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

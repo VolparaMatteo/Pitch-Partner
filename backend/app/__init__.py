@@ -111,6 +111,8 @@ def create_app():
     from app.routes.lead_document_routes import lead_document_bp
     # Catalog Routes
     from app.routes.catalog_routes import catalog_bp
+    # Club Activation Routes (public)
+    from app.routes.club_activation_routes import club_activation_bp
 
     app.register_blueprint(admin_bp, url_prefix='/api/admin')
     app.register_blueprint(club_bp, url_prefix='/api/club')
@@ -173,6 +175,8 @@ def create_app():
     app.register_blueprint(lead_document_bp, url_prefix='/api')
     # Catalog Blueprint
     app.register_blueprint(catalog_bp, url_prefix='/api/club')
+    # Club Activation Blueprint (public routes)
+    app.register_blueprint(club_activation_bp, url_prefix='/api')
 
     # Start Automation Scheduler (in development mode)
     if os.getenv('FLASK_ENV') != 'production' or os.getenv('START_SCHEDULER', 'false').lower() == 'true':

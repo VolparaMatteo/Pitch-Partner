@@ -1,6 +1,7 @@
 from app import db
-from datetime import datetime
+from datetime import datetime, timedelta
 from werkzeug.security import generate_password_hash, check_password_hash
+import uuid
 
 
 class Admin(db.Model):
@@ -68,7 +69,11 @@ class Club(db.Model):
     pubblico_medio = db.Column(db.Integer)
 
     # Autenticazione
-    password_hash = db.Column(db.String(255), nullable=False)
+    password_hash = db.Column(db.String(255), nullable=True)
+    activation_token = db.Column(db.String(100), unique=True, nullable=True)
+    activation_token_expires = db.Column(db.DateTime, nullable=True)
+    is_activated = db.Column(db.Boolean, default=False)
+    activated_at = db.Column(db.DateTime, nullable=True)
 
     # Abbonamento
     nome_abbonamento = db.Column(db.String(100))
@@ -106,6 +111,26 @@ class Club(db.Model):
         if not self.data_scadenza_licenza:
             return True
         return datetime.utcnow() < self.data_scadenza_licenza
+
+    def generate_activation_token(self, days=7):
+        """Genera un token di attivazione univoco con scadenza"""
+        self.activation_token = str(uuid.uuid4())
+        self.activation_token_expires = datetime.utcnow() + timedelta(days=days)
+        return self.activation_token
+
+    def is_activation_token_valid(self):
+        """Verifica se il token di attivazione è ancora valido"""
+        if not self.activation_token or not self.activation_token_expires:
+            return False
+        return datetime.utcnow() < self.activation_token_expires
+
+    def activate(self, password):
+        """Attiva l'account impostando la password e invalidando il token"""
+        self.set_password(password)
+        self.activation_token = None
+        self.activation_token_expires = None
+        self.is_activated = True
+        self.activated_at = datetime.utcnow()
 
 
 # ==================== SPONSOR ACCOUNT SYSTEM ====================
