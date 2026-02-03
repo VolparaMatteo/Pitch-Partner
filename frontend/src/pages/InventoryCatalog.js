@@ -279,7 +279,6 @@ function InventoryCatalog() {
   const filteredAssets = assets.filter(asset => {
     const matchesSearch = !searchTerm ||
       asset.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      asset.codice?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       asset.posizione?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === 'all' ||
       asset.category?.codice === selectedCategory ||
@@ -994,7 +993,7 @@ function InventoryCatalog() {
               <input
                 type="text"
                 className="tp-search-input"
-                placeholder="Cerca asset, codice, posizione..."
+                placeholder="Cerca asset, posizione..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -1606,7 +1605,6 @@ function InventoryCatalog() {
                     </div>
                     <h3 className="tp-sponsor-name">{asset.nome}</h3>
                     <div className="tp-sponsor-tags">
-                      <span className="tp-sponsor-tag">{asset.codice}</span>
                       <span className="tp-sponsor-tag">{formatCurrency(asset.prezzo_listino)}</span>
                     </div>
                   </div>
@@ -1720,7 +1718,7 @@ function InventoryCatalog() {
                           </div>
                           <div className="tp-table-user-info">
                             <span className="tp-table-name">{asset.nome}</span>
-                            <span className="tp-table-sector">{asset.codice}</span>
+                            <span className="tp-table-sector">{asset.tipo || 'Fisico'}</span>
                           </div>
                         </div>
                       </td>
@@ -2431,7 +2429,7 @@ function InventoryCatalog() {
                     {assetToDelete.nome}
                   </div>
                   <div style={{ fontSize: '14px', color: '#6B7280', marginTop: '4px' }}>
-                    {assetToDelete.codice} • {assetToDelete.category?.nome || 'Asset'}
+                    {assetToDelete.category?.nome || 'Asset'}
                   </div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
@@ -2637,7 +2635,7 @@ function InventoryCatalog() {
                     {assetToArchive.nome}
                   </div>
                   <div style={{ fontSize: '14px', color: '#6B7280', marginTop: '4px' }}>
-                    {assetToArchive.codice} • {assetToArchive.category?.nome || 'Asset'}
+                    {assetToArchive.category?.nome || 'Asset'}
                   </div>
                 </div>
               </div>

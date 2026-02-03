@@ -201,7 +201,7 @@ function AssetDetail() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px', fontSize: '14px' }}>
             <Link to="/club/inventory" style={{ color: '#9CA3AF', textDecoration: 'none' }}>Inventario</Link>
             <span style={{ color: '#4B5563' }}>/</span>
-            <span style={{ color: 'white' }}>{asset.codice || `#${asset.id}`}</span>
+            <span style={{ color: 'white' }}>{asset.nome || `#${asset.id}`}</span>
           </div>
 
           {/* Title Row */}
@@ -232,9 +232,6 @@ function AssetDetail() {
                     <FaMapMarkerAlt /> {asset.posizione}
                   </span>
                 )}
-                <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontFamily: 'monospace' }}>
-                  {asset.codice}
-                </span>
               </div>
             </div>
 
@@ -686,10 +683,6 @@ function AssetDetail() {
               </h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: '#6B7280', fontSize: '14px' }}>Codice</span>
-                  <span style={{ color: '#1F2937', fontSize: '14px', fontWeight: 500, fontFamily: 'monospace' }}>{asset.codice || '-'}</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span style={{ color: '#6B7280', fontSize: '14px' }}>Tipo</span>
                   <span style={{ color: '#1F2937', fontSize: '14px', fontWeight: 500, textTransform: 'capitalize' }}>{asset.tipo || 'Fisico'}</span>
                 </div>
@@ -1035,7 +1028,7 @@ function AssetDetail() {
                 {asset?.nome}
               </div>
               <div style={{ color: '#9CA3AF', fontSize: '13px' }}>
-                {asset?.codice} • {asset?.quantita_disponibile}/{asset?.quantita_totale} disponibili
+                {asset?.quantita_disponibile}/{asset?.quantita_totale} disponibili
               </div>
             </div>
           </div>

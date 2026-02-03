@@ -3423,7 +3423,6 @@ class InventoryAsset(db.Model):
     category_id = db.Column(db.Integer, db.ForeignKey('inventory_categories.id'), nullable=False)
 
     # Identificazione
-    codice = db.Column(db.String(50), nullable=False)  # LED-001, JERSEY-FRONT, etc.
     nome = db.Column(db.String(200), nullable=False)
     descrizione = db.Column(db.Text)
     descrizione_breve = db.Column(db.String(300))
@@ -3507,7 +3506,6 @@ class InventoryAsset(db.Model):
             'club_id': self.club_id,
             'category_id': self.category_id,
             'category': self.category.to_dict() if self.category else None,
-            'codice': self.codice,
             'nome': self.nome,
             'descrizione': self.descrizione,
             'descrizione_breve': self.descrizione_breve,

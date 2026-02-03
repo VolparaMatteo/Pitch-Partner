@@ -196,7 +196,6 @@ def get_assets():
         query = query.filter(
             or_(
                 InventoryAsset.nome.ilike(f'%{search}%'),
-                InventoryAsset.codice.ilike(f'%{search}%'),
                 InventoryAsset.descrizione.ilike(f'%{search}%')
             )
         )
@@ -256,17 +255,9 @@ def create_asset():
     if not category or category.club_id != club_id:
         return jsonify({'error': 'Categoria non valida'}), 400
 
-    # Verifica codice univoco
-    existing = InventoryAsset.query.filter_by(
-        club_id=club_id, codice=data.get('codice')
-    ).first()
-    if existing:
-        return jsonify({'error': 'Codice asset già esistente'}), 400
-
     asset = InventoryAsset(
         club_id=club_id,
         category_id=data.get('category_id'),
-        codice=data.get('codice'),
         nome=data.get('nome'),
         descrizione=data.get('descrizione'),
         descrizione_breve=data.get('descrizione_breve'),

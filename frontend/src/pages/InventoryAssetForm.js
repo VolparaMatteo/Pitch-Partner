@@ -50,7 +50,6 @@ function InventoryAssetForm() {
 
   const [formData, setFormData] = useState({
     category_id: '',
-    codice: '',
     nome: '',
     descrizione: '',
     descrizione_breve: '',
@@ -121,9 +120,9 @@ function InventoryAssetForm() {
       wizardStep: 1
     },
     {
-      target: '[data-tour="asset-code"]',
-      title: 'Codice Asset',
-      content: 'Assegna un codice univoco all\'asset. Usa una convenzione chiara come LED-001, JER-FRONT, HOS-VIP. Il codice ti aiuterà a identificare rapidamente l\'asset.',
+      target: '[data-tour="asset-name"]',
+      title: 'Nome Asset',
+      content: 'Inserisci un nome descrittivo per l\'asset. Usa nomi chiari come "LED Board Tribuna Centrale" o "Maglia Gara - Fronte".',
       placement: 'bottom',
       icon: <FaTags size={18} color="white" />,
       iconBg: 'linear-gradient(135deg, #10B981, #34D399)',
@@ -405,7 +404,6 @@ function InventoryAssetForm() {
 
     if (step === 1) {
       if (!formData.category_id) newErrors.category_id = 'Seleziona una categoria';
-      if (!formData.codice.trim()) newErrors.codice = 'Inserisci un codice asset';
       if (!formData.nome.trim()) newErrors.nome = 'Inserisci il nome dell\'asset';
     }
 
@@ -649,7 +647,7 @@ function InventoryAssetForm() {
           <div>
             <h1>{isEditing ? 'Modifica Asset' : 'Nuovo Asset Inventario'}</h1>
             <p style={{ color: '#6B7280', fontSize: '14px', margin: '4px 0 0 0' }}>
-              {isEditing ? `Modifica ${formData.codice || 'asset'}` : 'Aggiungi un nuovo asset al tuo catalogo'}
+              {isEditing ? `Modifica ${formData.nome || 'asset'}` : 'Aggiungi un nuovo asset al tuo catalogo'}
             </p>
           </div>
         </div>
@@ -860,31 +858,17 @@ function InventoryAssetForm() {
                 {errors.category_id && <span className="error-message">{errors.category_id}</span>}
               </div>
 
-              <div className="form-row">
-                <div className="form-group" data-tour="asset-code">
-                  <label>Codice Asset <span className="required">*</span></label>
-                  <input
-                    type="text"
-                    name="codice"
-                    value={formData.codice}
-                    onChange={handleChange}
-                    placeholder="Es: LED-001, JER-FRONT"
-                    className={errors.codice ? 'error' : ''}
-                  />
-                  {errors.codice && <span className="error-message">{errors.codice}</span>}
-                </div>
-                <div className="form-group">
-                  <label>Quantità Totale</label>
-                  <input
-                    type="number"
-                    name="quantita_totale"
-                    value={formData.quantita_totale}
-                    onChange={handleChange}
-                    min="1"
-                    placeholder="1"
-                  />
-                  <span className="form-hint">1 per asset unici, più per asset multipli</span>
-                </div>
+              <div className="form-group">
+                <label>Quantità Totale</label>
+                <input
+                  type="number"
+                  name="quantita_totale"
+                  value={formData.quantita_totale}
+                  onChange={handleChange}
+                  min="1"
+                  placeholder="1"
+                />
+                <span className="form-hint">1 per asset unici, più per asset multipli</span>
               </div>
 
               <div className="form-group">
@@ -1498,7 +1482,6 @@ function InventoryAssetForm() {
                     <div>
                       <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)', marginBottom: '4px' }}>Asset</div>
                       <div style={{ fontWeight: 600 }}>{formData.nome}</div>
-                      <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', marginTop: '2px' }}>{formData.codice}</div>
                     </div>
                     <div>
                       <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)', marginBottom: '4px' }}>Prezzo Listino</div>
@@ -1614,9 +1597,6 @@ function InventoryAssetForm() {
                   <h3 style={{ fontSize: '18px', fontWeight: 700, margin: 0 }}>
                     {formData.nome || 'Nome Asset'}
                   </h3>
-                  <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.6)', margin: '4px 0 0' }}>
-                    {formData.codice || 'Codice'}
-                  </p>
                 </div>
               </div>
             </div>
@@ -2053,7 +2033,7 @@ function InventoryAssetForm() {
                     {formData.nome || 'Nuovo Asset'}
                   </div>
                   <div style={{ fontSize: '14px', color: '#6B7280', marginTop: '4px' }}>
-                    {selectedCategory?.nome || 'Categoria'} • {formData.codice}
+                    {selectedCategory?.nome || 'Categoria'}
                   </div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
