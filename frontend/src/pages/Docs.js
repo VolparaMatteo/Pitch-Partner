@@ -5,8 +5,8 @@ import {
   FaCube, FaTag, FaFilter, FaEye, FaEdit, FaArchive, FaTrash,
   FaPlus, FaList, FaTh, FaCalendar, FaHistory, FaLayerGroup,
   FaChartPie, FaCog, FaLightbulb, FaExclamationCircle, FaCheckCircle,
-  FaArrowLeft, FaHome, FaClipboardList, FaUsers, FaFileContract,
-  FaBullseye, FaRocket, FaStar, FaQuestion
+  FaExclamationTriangle, FaArrowLeft, FaHome, FaClipboardList, FaUsers,
+  FaFileContract, FaBullseye, FaRocket, FaStar, FaQuestion
 } from 'react-icons/fa';
 import '../styles/template-style.css';
 
@@ -844,113 +844,265 @@ const articleContent = {
   },
   'inventory-packages': {
     title: 'Package Sponsorizzazione',
-    description: 'Crea e gestisci pacchetti di asset per offerte bundle complete',
+    description: 'Guida completa alla creazione e gestione di pacchetti di asset per offerte bundle',
     content: (
       <>
         <p>
-          I <strong>Package Sponsorizzazione</strong> ti permettono di combinare più asset in offerte
-          bundle complete per i tuoi sponsor. Questa funzionalità semplifica la vendita e permette
-          di offrire sconti aggregati attraenti.
+          I <strong>Package Sponsorizzazione</strong> sono bundle di asset che puoi offrire agli sponsor come
+          pacchetti completi. Combinando più asset (LED bordocampo, hospitality, visibilità digitale, ecc.)
+          in un unico package, puoi proporre offerte competitive con sconti bundle attrattivi.
         </p>
 
-        <h3>Perché Usare i Package</h3>
-        <ul>
-          <li><strong>Semplificazione vendita:</strong> Offri pacchetti completi invece di singoli asset</li>
-          <li><strong>Sconti bundle:</strong> Proponi prezzi vantaggiosi per combinazioni di asset</li>
-          <li><strong>Livelli di partnership:</strong> Differenzia le offerte per Main, Official, Premium e Standard Partner</li>
-          <li><strong>Gestione centralizzata:</strong> Monitora vendite e disponibilità in un unico posto</li>
-        </ul>
+        <div className="docs-callout docs-callout-info">
+          <FaLightbulb />
+          <div>
+            <strong>Esempio Pratico</strong>
+            <p>Crea un "Gold Package" che include: LED bordocampo per 10 partite + logo sulla maglia +
+            4 posti hospitality + visibilità sui social. Invece di vendere ogni asset singolarmente,
+            offri il bundle con uno sconto del 15%.</p>
+          </div>
+        </div>
 
-        <h3>Livelli di Package</h3>
+        <h3>Vantaggi dei Package</h3>
+        <table className="docs-table">
+          <thead>
+            <tr>
+              <th>Vantaggio</th>
+              <th>Descrizione</th>
+              <th>Beneficio</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Vendita semplificata</strong></td>
+              <td>Offri pacchetti completi invece di singoli asset</td>
+              <td>Riduce i tempi di negoziazione</td>
+            </tr>
+            <tr>
+              <td><strong>Sconti bundle</strong></td>
+              <td>Proponi prezzi vantaggiosi per combinazioni di asset</td>
+              <td>Aumenta il valore percepito</td>
+            </tr>
+            <tr>
+              <td><strong>Livelli di partnership</strong></td>
+              <td>Differenzia le offerte per tipo di sponsor</td>
+              <td>Segmenta il mercato efficacemente</td>
+            </tr>
+            <tr>
+              <td><strong>Gestione centralizzata</strong></td>
+              <td>Monitora vendite e disponibilità in un unico posto</td>
+              <td>Controllo totale dell'inventario</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>Livelli di Partnership</h3>
+        <p>
+          I livelli ti permettono di categorizzare i package in base al valore e alla visibilità offerta.
+          Puoi usare i livelli predefiniti o crearne di personalizzati.
+        </p>
         <table className="docs-table">
           <thead>
             <tr>
               <th>Livello</th>
               <th>Descrizione</th>
-              <th>Target</th>
+              <th>Target Ideale</th>
             </tr>
           </thead>
           <tbody>
             <tr>
               <td><strong>Main Sponsor</strong></td>
-              <td>Massima visibilità con posizioni premium</td>
-              <td>Sponsor principale del club</td>
+              <td>Massima visibilità con posizioni premium esclusive</td>
+              <td>Sponsor principale del club (1-2 max)</td>
             </tr>
             <tr>
               <td><strong>Official Partner</strong></td>
-              <td>Partner ufficiale con alta esposizione</td>
-              <td>Sponsor di categoria</td>
+              <td>Partner ufficiale con alta esposizione su più canali</td>
+              <td>Sponsor di categoria (es. Auto, Beverage)</td>
             </tr>
             <tr>
               <td><strong>Premium Partner</strong></td>
               <td>Visibilità premium su asset selezionati</td>
-              <td>Sponsor corporate</td>
+              <td>Sponsor corporate e aziende medio-grandi</td>
             </tr>
             <tr>
               <td><strong>Standard Partner</strong></td>
-              <td>Pacchetto base di ingresso</td>
-              <td>PMI e nuovi sponsor</td>
+              <td>Pacchetto base di ingresso nel mondo sponsorship</td>
+              <td>PMI, nuovi sponsor, realtà locali</td>
             </tr>
           </tbody>
         </table>
 
-        <h3>Creare un Nuovo Package</h3>
+        <h4>Personalizzare i Livelli</h4>
+        <p>
+          Puoi creare livelli personalizzati per adattarli alla tua strategia commerciale:
+        </p>
         <ol>
-          <li>Clicca su <strong>"Nuovo Package"</strong></li>
-          <li>Inserisci nome e codice identificativo</li>
-          <li>Seleziona il livello di partnership</li>
-          <li>Aggiungi una descrizione</li>
-          <li>Imposta il prezzo di listino e l'eventuale prezzo scontato</li>
-          <li>Seleziona gli asset da includere dalla lista disponibile</li>
-          <li>Salva il package</li>
+          <li>Nella pagina Package, clicca sul filtro <strong>"Tutti i livelli"</strong></li>
+          <li>Seleziona <strong>"Configura Livelli"</strong> in fondo al menu</li>
+          <li>Clicca <strong>"Nuovo Livello"</strong> per aggiungerne uno</li>
+          <li>Inserisci nome, descrizione e scegli un colore identificativo</li>
+          <li>Salva per rendere il livello disponibile nei package</li>
         </ol>
 
-        <div className="docs-callout docs-callout-info">
-          <FaLightbulb />
+        <div className="docs-callout docs-callout-warning">
+          <FaExclamationTriangle />
           <div>
-            <strong>Suggerimento</strong>
-            <p>Il sistema calcola automaticamente lo sconto percentuale confrontando il valore dei singoli asset con il prezzo del package.</p>
+            <strong>Attenzione</strong>
+            <p>Non puoi eliminare un livello se ci sono package che lo utilizzano.
+            Prima riassegna i package ad un altro livello.</p>
           </div>
         </div>
 
-        <h3>Assegnare un Package</h3>
+        <h3>Creare un Nuovo Package</h3>
         <p>
-          Per assegnare un package a uno sponsor, clicca sul pulsante <strong>"Assegna"</strong>
-          nella card del package. Puoi scegliere tra:
+          Il processo di creazione è guidato da un wizard in <strong>3 step</strong>:
         </p>
+
+        <h4>Step 1: Informazioni Base</h4>
         <ul>
-          <li><strong>Nuovo Sponsor:</strong> Seleziona uno sponsor esistente dal database</li>
-          <li><strong>Contratto Esistente:</strong> Collega il package a un contratto già attivo</li>
+          <li><strong>Livello Package:</strong> Seleziona il livello di partnership (Main, Official, Premium, Standard o personalizzato)</li>
+          <li><strong>Nome Package:</strong> Inserisci un nome descrittivo (es. "Gold Package Stagione 2024/25")</li>
+          <li><strong>Descrizione:</strong> Aggiungi dettagli su cosa include e perché è vantaggioso</li>
         </ul>
 
-        <h3>Gestione Disponibilità</h3>
-        <p>
-          Ogni package può avere un numero massimo di vendite. Il sistema mostra:
-        </p>
+        <h4>Step 2: Selezione Asset</h4>
         <ul>
-          <li><strong>Vendite attuali:</strong> Quanti package sono già stati venduti</li>
-          <li><strong>Max vendite:</strong> Limite massimo di vendite (o ∞ se illimitato)</li>
-          <li><strong>Sold Out:</strong> Badge che appare quando il package è esaurito</li>
+          <li>Visualizza tutti gli asset disponibili nel tuo catalogo</li>
+          <li>Usa la barra di ricerca per trovare asset specifici</li>
+          <li>Clicca su un asset per aggiungerlo al package</li>
+          <li>Imposta la quantità per ogni asset (es. 10 partite LED)</li>
+          <li>Il sistema mostra il <strong>valore totale</strong> degli asset selezionati</li>
+        </ul>
+
+        <h4>Step 3: Pricing</h4>
+        <ul>
+          <li><strong>Prezzo Package:</strong> Inserisci il prezzo finale del bundle</li>
+          <li>Il sistema calcola automaticamente lo <strong>sconto percentuale</strong></li>
+          <li>Visualizza il <strong>risparmio</strong> che lo sponsor ottiene rispetto all'acquisto singolo</li>
         </ul>
 
         <div className="docs-callout docs-callout-success">
           <FaCheckCircle />
           <div>
-            <strong>Best Practice</strong>
-            <p>Per i livelli Main Sponsor e Official Partner, limita le vendite a 1-2 per mantenere l'esclusività dell'offerta.</p>
+            <strong>Best Practice per il Pricing</strong>
+            <p>Offri uno sconto tra il 10% e il 20% per rendere il bundle attraente.
+            Sconti superiori al 25% potrebbero svalutare gli asset singoli.</p>
           </div>
         </div>
 
-        <h3>Statistiche Package</h3>
+        <h3>Dashboard e Statistiche</h3>
         <p>
-          Nella parte superiore della pagina trovi le metriche chiave:
+          Nella parte superiore della pagina trovi 4 metriche chiave aggiornate in tempo reale:
+        </p>
+        <table className="docs-table">
+          <thead>
+            <tr>
+              <th>Metrica</th>
+              <th>Cosa Misura</th>
+              <th>Come Usarla</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Package Totali</strong></td>
+              <td>Numero di bundle creati</td>
+              <td>Monitora l'ampiezza del tuo catalogo offerte</td>
+            </tr>
+            <tr>
+              <td><strong>Package Venduti</strong></td>
+              <td>Totale assegnazioni completate</td>
+              <td>Misura il successo commerciale</td>
+            </tr>
+            <tr>
+              <td><strong>Valore Venduto</strong></td>
+              <td>Fatturato generato dai package</td>
+              <td>Valuta il revenue dai bundle</td>
+            </tr>
+            <tr>
+              <td><strong>Sconto Medio</strong></td>
+              <td>Percentuale media di sconto offerta</td>
+              <td>Controlla la marginalità delle offerte</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>Visualizzazione e Filtri</h3>
+        <p>
+          La pagina offre due modalità di visualizzazione:
         </p>
         <ul>
-          <li><strong>Package Totali:</strong> Numero di package creati</li>
-          <li><strong>Package Venduti:</strong> Totale assegnazioni completate</li>
-          <li><strong>Valore Venduto:</strong> Fatturato generato dai package</li>
-          <li><strong>Sconto Medio:</strong> Percentuale media di sconto offerta</li>
+          <li><strong>Vista Griglia:</strong> Card visive con colore del livello, badge stato, prezzo e azioni rapide</li>
+          <li><strong>Vista Lista:</strong> Tabella compatta con tutte le informazioni in colonne ordinabili</li>
         </ul>
+        <p>
+          Usa i filtri per trovare rapidamente i package:
+        </p>
+        <ul>
+          <li><strong>Ricerca:</strong> Cerca per nome del package</li>
+          <li><strong>Filtro Livello:</strong> Mostra solo package di un determinato livello</li>
+        </ul>
+
+        <h3>Gestione Disponibilità e Vendite</h3>
+        <p>
+          Ogni package può avere un limite massimo di vendite per garantire esclusività:
+        </p>
+        <ul>
+          <li><strong>Vendite attuali:</strong> Quanti package sono già stati assegnati</li>
+          <li><strong>Max vendite:</strong> Limite massimo (simbolo ∞ se illimitato)</li>
+          <li><strong>Badge "Sold Out":</strong> Appare automaticamente quando il limite è raggiunto</li>
+        </ul>
+
+        <div className="docs-callout docs-callout-info">
+          <FaLightbulb />
+          <div>
+            <strong>Strategia Esclusività</strong>
+            <p>Per i livelli Main Sponsor e Official Partner, imposta max vendite a 1-2
+            per mantenere l'esclusività e giustificare prezzi premium.</p>
+          </div>
+        </div>
+
+        <h3>Assegnare un Package a uno Sponsor</h3>
+        <p>
+          Dalla vista lista, puoi assegnare direttamente un package:
+        </p>
+        <ol>
+          <li>Individua il package da assegnare</li>
+          <li>Clicca sul pulsante <strong>"Assegna"</strong></li>
+          <li>Scegli la modalità di assegnazione:
+            <ul>
+              <li><strong>Nuovo Sponsor:</strong> Seleziona uno sponsor dal database esistente</li>
+              <li><strong>Contratto Esistente:</strong> Collega il package a un contratto già attivo</li>
+            </ul>
+          </li>
+          <li>Conferma l'assegnazione</li>
+        </ol>
+
+        <h3>Domande Frequenti (FAQ)</h3>
+
+        <h4>Posso modificare un package già venduto?</h4>
+        <p>
+          Sì, puoi modificare nome, descrizione e prezzo. Tuttavia, le modifiche non si applicano
+          retroattivamente alle assegnazioni già effettuate.
+        </p>
+
+        <h4>Come duplico un package esistente?</h4>
+        <p>
+          Al momento non c'è una funzione di duplicazione diretta. Crea un nuovo package e
+          seleziona gli stessi asset del package che vuoi copiare.
+        </p>
+
+        <h4>Posso disattivare un package senza eliminarlo?</h4>
+        <p>
+          Sì, puoi impostare lo stato su "Non attivo". Il package rimarrà
+          nel sistema ma non sarà visibile nel marketplace e apparirà come non disponibile.
+        </p>
+
+        <h4>Come gestisco i package stagionali?</h4>
+        <p>
+          Puoi impostare le date "Disponibile da" e "Disponibile fino" per limitare
+          la validità temporale di un package a una specifica stagione.
+        </p>
       </>
     )
   },

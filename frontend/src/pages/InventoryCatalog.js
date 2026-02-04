@@ -694,33 +694,37 @@ function InventoryCatalog() {
           </p>
         </div>
         <div className="tp-page-actions" data-tour="action-buttons">
-          <button
-            className="tp-btn tp-btn-outline"
-            onClick={() => navigate('/club/inventory/compare')}
-            title="Confronta Asset"
-          >
-            <FaChartPie /> Confronta
-          </button>
-          <button
-            className="tp-btn tp-btn-outline"
-            onClick={() => navigate('/club/inventory/calendar')}
-            title="Calendario Disponibilità"
-          >
-            <FaCalendar /> Calendario
-          </button>
-          <button
-            className="tp-btn tp-btn-outline"
-            onClick={() => navigate('/club/inventory/allocations')}
-            title="Storico Allocazioni"
-          >
-            <FaHistory /> Allocazioni
-          </button>
-          <button
-            className="tp-btn tp-btn-outline"
-            onClick={() => navigate('/club/inventory/packages')}
-          >
-            <FaLayerGroup /> Packages
-          </button>
+          {!showArchivedAssets && (
+            <>
+              <button
+                className="tp-btn tp-btn-outline"
+                onClick={() => navigate('/club/inventory/compare')}
+                title="Confronta Asset"
+              >
+                <FaChartPie /> Confronta
+              </button>
+              <button
+                className="tp-btn tp-btn-outline"
+                onClick={() => navigate('/club/inventory/calendar')}
+                title="Calendario Disponibilità"
+              >
+                <FaCalendar /> Calendario
+              </button>
+              <button
+                className="tp-btn tp-btn-outline"
+                onClick={() => navigate('/club/inventory/allocations')}
+                title="Storico Allocazioni"
+              >
+                <FaHistory /> Allocazioni
+              </button>
+              <button
+                className="tp-btn tp-btn-outline"
+                onClick={() => navigate('/club/inventory/packages')}
+              >
+                <FaLayerGroup /> Packages
+              </button>
+            </>
+          )}
           <button
             className={`tp-btn ${showArchivedAssets ? 'tp-btn-warning' : 'tp-btn-outline'}`}
             onClick={() => setShowArchivedAssets(!showArchivedAssets)}
@@ -1569,114 +1573,296 @@ function InventoryCatalog() {
             /* GRID VIEW */
             <div className="tp-grid" data-tour="asset-list">
               {paginatedAssets.map(asset => (
-                <div key={asset.id} className="tp-sponsor-card">
-                  {/* Header */}
-                  <div className="tp-sponsor-header">
-                    <div className="tp-sponsor-logo">
-                      {asset.immagine_principale ? (
-                        <img
-                          src={getImageUrl(asset.immagine_principale)}
-                          alt={asset.nome}
-                        />
-                      ) : (
+                <div
+                  key={asset.id}
+                  style={{
+                    background: '#ffffff',
+                    borderRadius: '16px',
+                    border: '1px solid #e5e7eb',
+                    overflow: 'hidden',
+                    transition: 'all 0.2s ease',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    flexDirection: 'column'
+                  }}
+                  onClick={() => navigate(`/club/inventory/assets/${asset.id}`)}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = '#22c55e';
+                    e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.12)';
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = '#e5e7eb';
+                    e.currentTarget.style.boxShadow = 'none';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                  }}
+                >
+                  {/* Immagine Asset */}
+                  <div style={{
+                    width: '100%',
+                    height: '160px',
+                    background: '#f3f4f6',
+                    position: 'relative',
+                    overflow: 'hidden'
+                  }}>
+                    {asset.immagine_principale ? (
+                      <img
+                        src={getImageUrl(asset.immagine_principale)}
+                        alt={asset.nome}
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover'
+                        }}
+                      />
+                    ) : (
+                      <div style={{
+                        width: '100%',
+                        height: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        background: 'linear-gradient(135deg, #f9fafb 0%, #e5e7eb 100%)'
+                      }}>
                         <img
                           src={DefaultAsset}
                           alt="Default"
-                          style={{ opacity: 0.6, padding: '8px' }}
+                          style={{ width: '64px', height: '64px', opacity: 0.4 }}
                         />
-                      )}
-                    </div>
-                    {showArchivedAssets ? (
-                      <span className="tp-badge" style={{ background: '#FEF3C7', color: '#D97706', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                        <FaArchive size={10} /> Archiviato
-                      </span>
-                    ) : (
-                      <span className={`tp-badge ${asset.disponibile ? 'tp-badge-success' : 'tp-badge-danger'}`}>
-                        {asset.disponibile ? 'Disponibile' : 'Non disponibile'}
-                      </span>
+                      </div>
                     )}
-                  </div>
-
-                  {/* Content */}
-                  <div className="tp-sponsor-content">
-                    <div className="tp-sponsor-sector" style={{ color: asset.category?.colore, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      {getCategoryIcon(asset.category?.codice)}
-                      {asset.category?.nome || 'Asset'}
-                    </div>
-                    <h3 className="tp-sponsor-name">{asset.nome}</h3>
-                    <div className="tp-sponsor-tags">
-                      <span className="tp-sponsor-tag">{formatCurrency(asset.prezzo_listino)}</span>
-                    </div>
-                  </div>
-
-                  {/* Footer */}
-                  <div className="tp-sponsor-footer">
-                    <div className="tp-sponsor-contact">
-                      <span className="tp-sponsor-contact-item">
-                        {asset.posizione || 'Nessuna posizione'}
-                      </span>
-                      <span className="tp-sponsor-contact-item">
-                        {asset.tipo === 'fisico' ? 'Fisico' :
-                         asset.tipo === 'digitale' ? 'Digitale' :
-                         asset.tipo === 'esperienza' ? 'Esperienza' :
-                         asset.tipo === 'diritto' ? 'Diritto' : asset.tipo || 'N/D'}
-                      </span>
-                    </div>
-                    <div className="tp-sponsor-actions" data-tour="asset-actions">
+                    {/* Badge Stato - posizionato sopra l'immagine */}
+                    <div style={{ position: 'absolute', top: '12px', right: '12px' }}>
                       {showArchivedAssets ? (
-                        /* Archived asset actions */
-                        <>
-                          <button
-                            className="tp-btn-icon tp-btn-icon-restore"
-                            onClick={(e) => handleRestoreAsset(asset, e)}
-                            title="Ripristina"
-                          >
-                            <FaUndo />
-                          </button>
-                          <button
-                            className="tp-btn-icon tp-btn-icon-delete"
-                            onClick={(e) => handleDeleteAsset(asset, e)}
-                            title="Elimina definitivamente"
-                          >
-                            <FaTrash />
-                          </button>
-                        </>
+                        <span style={{
+                          background: '#FEF3C7',
+                          color: '#D97706',
+                          padding: '6px 12px',
+                          borderRadius: '20px',
+                          fontSize: '12px',
+                          fontWeight: 600,
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                        }}>
+                          <FaArchive size={10} /> Archiviato
+                        </span>
                       ) : (
-                        /* Normal asset actions */
-                        <>
-                          <button
-                            className="tp-btn-icon tp-btn-icon-view"
-                            onClick={() => navigate(`/club/inventory/assets/${asset.id}`)}
-                            title="Visualizza"
-                          >
-                            <FaEye />
-                          </button>
-                          <button
-                            className="tp-btn-icon tp-btn-icon-edit"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              navigate(`/club/inventory/assets/${asset.id}/edit`);
-                            }}
-                            title="Modifica"
-                          >
-                            <FaEdit />
-                          </button>
-                          <button
-                            className="tp-btn-icon tp-btn-icon-archive"
-                            onClick={(e) => handleArchiveAsset(asset, e)}
-                            title="Archivia"
-                          >
-                            <FaArchive />
-                          </button>
-                          <button
-                            className="tp-btn-icon tp-btn-icon-delete"
-                            onClick={(e) => handleDeleteAsset(asset, e)}
-                            title="Elimina"
-                          >
-                            <FaTrash />
-                          </button>
-                        </>
+                        <span style={{
+                          background: asset.disponibile ? '#DCFCE7' : '#FEE2E2',
+                          color: asset.disponibile ? '#166534' : '#991B1B',
+                          padding: '6px 12px',
+                          borderRadius: '20px',
+                          fontSize: '12px',
+                          fontWeight: 600,
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                        }}>
+                          {asset.disponibile ? 'Disponibile' : 'Non disponibile'}
+                        </span>
                       )}
+                    </div>
+                    {/* Badge Categoria - posizionato in basso a sinistra */}
+                    <div style={{ position: 'absolute', bottom: '12px', left: '12px' }}>
+                      <span style={{
+                        background: asset.category?.colore || '#6b7280',
+                        color: '#ffffff',
+                        padding: '6px 12px',
+                        borderRadius: '20px',
+                        fontSize: '11px',
+                        fontWeight: 600,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '5px',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+                      }}>
+                        {getCategoryIcon(asset.category?.codice)}
+                        {asset.category?.nome || 'Asset'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Contenuto Card */}
+                  <div style={{ padding: '20px', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                    {/* Nome Asset */}
+                    <h3 style={{
+                      fontSize: '17px',
+                      fontWeight: 700,
+                      color: '#111827',
+                      margin: '0 0 12px 0',
+                      lineHeight: 1.3,
+                      display: '-webkit-box',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden'
+                    }}>
+                      {asset.nome}
+                    </h3>
+
+                    {/* Info Grid */}
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: '1fr 1fr',
+                      gap: '12px',
+                      marginBottom: '16px'
+                    }}>
+                      <div>
+                        <div style={{ fontSize: '11px', color: '#9ca3af', fontWeight: 500, marginBottom: '2px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                          Tipo
+                        </div>
+                        <div style={{ fontSize: '14px', color: '#374151', fontWeight: 500 }}>
+                          {asset.tipo === 'fisico' ? 'Fisico' :
+                           asset.tipo === 'digitale' ? 'Digitale' :
+                           asset.tipo === 'esperienza' ? 'Esperienza' :
+                           asset.tipo === 'diritto' ? 'Diritto' : asset.tipo || 'N/D'}
+                        </div>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '11px', color: '#9ca3af', fontWeight: 500, marginBottom: '2px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                          Posizione
+                        </div>
+                        <div style={{ fontSize: '14px', color: '#374151', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {asset.posizione || '—'}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Spacer */}
+                    <div style={{ flex: 1 }} />
+
+                    {/* Footer con Prezzo e Azioni */}
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      paddingTop: '16px',
+                      borderTop: '1px solid #f3f4f6'
+                    }}>
+                      {/* Prezzo */}
+                      <div>
+                        <div style={{ fontSize: '11px', color: '#9ca3af', fontWeight: 500, marginBottom: '2px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                          Prezzo
+                        </div>
+                        <div style={{ fontSize: '20px', fontWeight: 700, color: '#111827' }}>
+                          {formatCurrency(asset.prezzo_listino)}
+                        </div>
+                      </div>
+
+                      {/* Azioni */}
+                      <div style={{ display: 'flex', gap: '8px' }} data-tour="asset-actions">
+                        {showArchivedAssets ? (
+                          <>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); handleRestoreAsset(asset, e); }}
+                              title="Ripristina"
+                              style={{
+                                width: '36px',
+                                height: '36px',
+                                borderRadius: '10px',
+                                border: '1px solid #e5e7eb',
+                                background: '#ffffff',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: '#F59E0B',
+                                transition: 'all 0.15s ease'
+                              }}
+                              onMouseEnter={(e) => { e.currentTarget.style.background = '#FEF3C7'; e.currentTarget.style.borderColor = '#F59E0B'; }}
+                              onMouseLeave={(e) => { e.currentTarget.style.background = '#ffffff'; e.currentTarget.style.borderColor = '#e5e7eb'; }}
+                            >
+                              <FaUndo size={14} />
+                            </button>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); handleDeleteAsset(asset, e); }}
+                              title="Elimina definitivamente"
+                              style={{
+                                width: '36px',
+                                height: '36px',
+                                borderRadius: '10px',
+                                border: '1px solid #e5e7eb',
+                                background: '#ffffff',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: '#EF4444',
+                                transition: 'all 0.15s ease'
+                              }}
+                              onMouseEnter={(e) => { e.currentTarget.style.background = '#FEE2E2'; e.currentTarget.style.borderColor = '#EF4444'; }}
+                              onMouseLeave={(e) => { e.currentTarget.style.background = '#ffffff'; e.currentTarget.style.borderColor = '#e5e7eb'; }}
+                            >
+                              <FaTrash size={14} />
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); navigate(`/club/inventory/assets/${asset.id}/edit`); }}
+                              title="Modifica"
+                              style={{
+                                width: '36px',
+                                height: '36px',
+                                borderRadius: '10px',
+                                border: '1px solid #e5e7eb',
+                                background: '#ffffff',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: '#6b7280',
+                                transition: 'all 0.15s ease'
+                              }}
+                              onMouseEnter={(e) => { e.currentTarget.style.background = '#f3f4f6'; e.currentTarget.style.color = '#111827'; }}
+                              onMouseLeave={(e) => { e.currentTarget.style.background = '#ffffff'; e.currentTarget.style.color = '#6b7280'; }}
+                            >
+                              <FaEdit size={14} />
+                            </button>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); handleArchiveAsset(asset, e); }}
+                              title="Archivia"
+                              style={{
+                                width: '36px',
+                                height: '36px',
+                                borderRadius: '10px',
+                                border: '1px solid #e5e7eb',
+                                background: '#ffffff',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: '#6b7280',
+                                transition: 'all 0.15s ease'
+                              }}
+                              onMouseEnter={(e) => { e.currentTarget.style.background = '#FEF3C7'; e.currentTarget.style.color = '#D97706'; }}
+                              onMouseLeave={(e) => { e.currentTarget.style.background = '#ffffff'; e.currentTarget.style.color = '#6b7280'; }}
+                            >
+                              <FaArchive size={14} />
+                            </button>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); handleDeleteAsset(asset, e); }}
+                              title="Elimina"
+                              style={{
+                                width: '36px',
+                                height: '36px',
+                                borderRadius: '10px',
+                                border: '1px solid #e5e7eb',
+                                background: '#ffffff',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: '#6b7280',
+                                transition: 'all 0.15s ease'
+                              }}
+                              onMouseEnter={(e) => { e.currentTarget.style.background = '#FEE2E2'; e.currentTarget.style.color = '#EF4444'; }}
+                              onMouseLeave={(e) => { e.currentTarget.style.background = '#ffffff'; e.currentTarget.style.color = '#6b7280'; }}
+                            >
+                              <FaTrash size={14} />
+                            </button>
+                          </>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>

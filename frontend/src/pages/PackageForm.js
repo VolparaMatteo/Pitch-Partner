@@ -5,14 +5,17 @@ import { getAuth } from '../utils/auth';
 import { getImageUrl } from '../utils/imageUtils';
 import Toast from '../components/Toast';
 import Modal from '../components/Modal';
+import SupportWidget from '../components/SupportWidget';
+import GuidedTour from '../components/GuidedTour';
 import {
   FaArrowLeft, FaArrowRight, FaCheck, FaPlus, FaTrash, FaTimes,
   FaCloudUploadAlt, FaStar, FaBoxOpen, FaEuroSign, FaImage, FaCog,
-  FaEye, FaCube, FaGripVertical, FaSearch
+  FaEye, FaCube, FaGripVertical, FaSearch, FaLayerGroup, FaMinus,
+  FaPercentage
 } from 'react-icons/fa';
 import {
   HiOutlineCube, HiOutlinePhoto, HiOutlineCurrencyEuro,
-  HiOutlineCog6Tooth, HiOutlineShieldCheck, HiOutlineChevronDown,
+  HiOutlineCog6Tooth, HiOutlineChevronDown,
   HiOutlinePlus, HiOutlineSquares2X2
 } from 'react-icons/hi2';
 import '../styles/form.css';
@@ -50,12 +53,11 @@ function PackageForm() {
     '#8B5CF6', '#EC4899', '#F59E0B', '#EF4444', '#6366F1'
   ];
 
-  const totalSteps = 4;
+  const totalSteps = 3;
   const steps = [
     { number: 1, title: 'Informazioni', icon: HiOutlineCube },
     { number: 2, title: 'Asset', icon: HiOutlineSquares2X2 },
-    { number: 3, title: 'Pricing', icon: HiOutlineCurrencyEuro },
-    { number: 4, title: 'Opzioni', icon: HiOutlineCog6Tooth }
+    { number: 3, title: 'Pricing', icon: HiOutlineCurrencyEuro }
   ];
 
   const [formData, setFormData] = useState({
@@ -91,6 +93,80 @@ function PackageForm() {
   const [levelDropdownOpen, setLevelDropdownOpen] = useState(false);
   const levelDropdownRef = useRef(null);
 
+  // Tour state
+  const [isTourOpen, setIsTourOpen] = useState(false);
+
+  // Tour steps - Guida interattiva completa per la creazione package
+  const tourSteps = [
+    {
+      target: '[data-tour="wizard-steps"]',
+      title: 'Wizard di Creazione',
+      content: 'La creazione del package è guidata da un wizard in 3 step:\n\n• Step 1: Informazioni base (livello, nome, descrizione)\n• Step 2: Selezione degli asset da includere\n• Step 3: Configurazione del prezzo\n\nPuoi navigare tra gli step cliccando sui numeri o usando i pulsanti Avanti/Indietro.',
+      placement: 'bottom',
+      icon: <FaLayerGroup size={18} color="white" />,
+      iconBg: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
+      wizardStep: 1,
+      tip: 'Ogni step deve essere completato correttamente prima di passare al successivo.'
+    },
+    {
+      target: '[data-tour="package-level"]',
+      title: 'Scegli il Livello',
+      content: 'Il livello definisce la categoria del package:\n\n• Main Sponsor: massima visibilità, prezzo premium\n• Official Partner: alta esposizione, sponsor di categoria\n• Premium: visibilità elevata su asset selezionati\n• Standard: pacchetto base per nuovi sponsor\n\nPuoi anche creare livelli personalizzati cliccando su "Crea nuovo livello".',
+      placement: 'bottom',
+      icon: <FaStar size={18} color="white" />,
+      iconBg: 'linear-gradient(135deg, #F59E0B, #FBBF24)',
+      wizardStep: 1,
+      tip: 'Il colore del livello verrà usato come colore identificativo del package nelle card.'
+    },
+    {
+      target: '[data-tour="package-info"]',
+      title: 'Informazioni Package',
+      content: 'Inserisci le informazioni di base:\n\n• Nome Package: un nome descrittivo e accattivante (es. "Gold Package 2024/25")\n• Descrizione: spiega cosa include il package e perché è vantaggioso per lo sponsor',
+      placement: 'bottom',
+      icon: <FaCube size={18} color="white" />,
+      iconBg: 'linear-gradient(135deg, #3B82F6, #60A5FA)',
+      wizardStep: 1
+    },
+    {
+      target: '[data-tour="asset-selection"]',
+      title: 'Seleziona gli Asset',
+      content: 'Costruisci il tuo package selezionando gli asset:\n\n• Cerca asset per nome usando la barra di ricerca\n• Clicca su un asset per aggiungerlo al package\n• Usa + e - per modificare la quantità\n• Il valore totale viene calcolato automaticamente\n\nGli asset selezionati appaiono nella sezione "Asset nel Package".',
+      placement: 'top',
+      icon: <FaBoxOpen size={18} color="white" />,
+      iconBg: 'linear-gradient(135deg, #10B981, #34D399)',
+      wizardStep: 2,
+      tip: 'Combina asset di diverse categorie (LED, hospitality, digitale) per creare offerte complete.'
+    },
+    {
+      target: '[data-tour="package-pricing"]',
+      title: 'Configura il Prezzo',
+      content: 'Imposta il prezzo del bundle:\n\n• Il riepilogo mostra: asset inclusi, valore totale e sconto\n• Inserisci il prezzo del package\n• Lo sconto viene calcolato automaticamente\n• Viene mostrato il risparmio per lo sponsor\n\nUn buon sconto bundle è tra il 10% e il 20%.',
+      placement: 'top',
+      icon: <FaEuroSign size={18} color="white" />,
+      iconBg: 'linear-gradient(135deg, #EC4899, #F472B6)',
+      wizardStep: 3,
+      tip: 'Se il prezzo è superiore al valore degli asset, lo sconto sarà 0%.'
+    },
+    {
+      target: '[data-tour="preview-column"]',
+      title: 'Anteprima Live',
+      content: 'Mentre compili il form, l\'anteprima sulla destra ti mostra come apparirà il package:\n\n• Badge del livello con colore\n• Nome e descrizione\n• Lista degli asset inclusi\n• Prezzo finale con eventuale sconto\n\nL\'anteprima si aggiorna in tempo reale.',
+      placement: 'left',
+      icon: <FaEye size={18} color="white" />,
+      iconBg: 'linear-gradient(135deg, #8B5CF6, #A78BFA)',
+      wizardStep: 1
+    },
+    {
+      target: '[data-tour="form-actions"]',
+      title: 'Salva il Package',
+      content: 'Una volta completati tutti gli step:\n\n• Clicca "Crea Package" per salvare\n• Verrà mostrata una conferma con il riepilogo\n• Dopo il salvataggio, verrai reindirizzato alla lista package\n\nPuoi anche annullare in qualsiasi momento.',
+      placement: 'top',
+      icon: <FaCheck size={18} color="white" />,
+      iconBg: 'linear-gradient(135deg, #059669, #34D399)',
+      wizardStep: 3
+    }
+  ];
+
   // Close dropdowns on click outside
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -105,43 +181,50 @@ function PackageForm() {
   // Fetch data
   useEffect(() => {
     const fetchData = async () => {
-      if (!user?.club_id) return;
+      if (!token) return;
       setLoading(true);
 
       try {
-        const [assetsRes, categoriesRes, levelsRes] = await Promise.all([
-          axios.get(`${API_URL}/inventory/assets`, {
-            headers: { Authorization: `Bearer ${token}` }
-          }),
-          axios.get(`${API_URL}/inventory/categories`, {
-            headers: { Authorization: `Bearer ${token}` }
-          }),
-          axios.get(`${API_URL}/inventory/package-levels`, {
-            headers: { Authorization: `Bearer ${token}` }
-          })
+        const headers = { Authorization: `Bearer ${token}` };
+        const [assetsRes, levelsRes] = await Promise.all([
+          axios.get(`${API_URL}/club/inventory/assets`, { headers }).catch(() => ({ data: { assets: [] } })),
+          axios.get(`${API_URL}/club/inventory/package-levels`, { headers }).catch(() => ({ data: { levels: [] } }))
         ]);
 
         setAvailableAssets(assetsRes.data.assets || []);
-        setCategories(categoriesRes.data.categories || []);
 
-        // Build levelConfig from API levels
-        const lvls = levelsRes.data.levels || [];
-        setLevels(lvls);
-        const config = {};
-        lvls.forEach(lv => {
-          config[lv.codice] = {
-            label: lv.nome,
-            color: lv.colore,
-            description: lv.descrizione
+        // Build levelConfig from API response
+        const lvlData = levelsRes.data.levels || [];
+        let config = {};
+
+        if (Array.isArray(lvlData) && lvlData.length > 0) {
+          // Backend restituisce array di livelli
+          lvlData.forEach(lv => {
+            config[lv.codice] = {
+              label: lv.nome,
+              color: lv.colore,
+              description: lv.descrizione
+            };
+          });
+        }
+
+        // Solo se non ci sono livelli creati dall'utente, usa i default
+        if (Object.keys(config).length === 0) {
+          config = {
+            main: { label: 'Main Sponsor', color: '#FFD700', description: 'Partner principale' },
+            official: { label: 'Official Partner', color: '#3B82F6', description: 'Partner ufficiale' },
+            premium: { label: 'Premium', color: '#8B5CF6', description: 'Visibilità premium' },
+            standard: { label: 'Standard', color: '#6B7280', description: 'Pacchetto base' }
           };
-        });
+        }
+
         setLevelConfig(config);
 
         if (isEditing) {
-          const pkgRes = await axios.get(`${API_URL}/inventory/packages/${id}`, {
+          const pkgRes = await axios.get(`${API_URL}/club/inventory/packages/${id}`, {
             headers: { Authorization: `Bearer ${token}` }
           });
-          const pkg = pkgRes.data.package;
+          const pkg = pkgRes.data.package || pkgRes.data;
 
           setFormData({
             nome: pkg.nome || '',
@@ -180,7 +263,7 @@ function PackageForm() {
     };
 
     fetchData();
-  }, [user, token, id, isEditing]);
+  }, [token, id, isEditing]);
 
   // Validation
   const validateStep = (step) => {
@@ -188,7 +271,6 @@ function PackageForm() {
 
     if (step === 1) {
       if (!formData.nome.trim()) newErrors.nome = 'Inserisci il nome del package';
-      if (!formData.codice.trim()) newErrors.codice = 'Inserisci un codice';
       if (!formData.livello) newErrors.livello = 'Seleziona un livello';
     }
 
@@ -254,13 +336,7 @@ function PackageForm() {
 
   const updateAssetQuantity = (assetId, quantity) => {
     setSelectedAssets(selectedAssets.map(a =>
-      a.asset_id === assetId ? { ...a, quantita: parseInt(quantity) || 1 } : a
-    ));
-  };
-
-  const updateAssetNote = (assetId, note) => {
-    setSelectedAssets(selectedAssets.map(a =>
-      a.asset_id === assetId ? { ...a, note } : a
+      a.asset_id === assetId ? { ...a, quantita: Math.max(1, parseInt(quantity) || 1) } : a
     ));
   };
 
@@ -273,53 +349,21 @@ function PackageForm() {
     return total;
   };
 
-  // Auto-calculate discount percentage
-  useEffect(() => {
-    if (formData.prezzo_listino && formData.prezzo_scontato) {
-      const listino = parseFloat(formData.prezzo_listino);
-      const scontato = parseFloat(formData.prezzo_scontato);
-      if (listino > 0 && scontato > 0 && scontato < listino) {
-        const sconto = Math.round(((listino - scontato) / listino) * 100);
-        setFormData(prev => ({ ...prev, sconto_percentuale: sconto }));
-      }
+  // Calculate discount
+  const calculateDiscount = () => {
+    const totalValue = calculateTotals();
+    const packagePrice = parseFloat(formData.prezzo_listino) || 0;
+    if (totalValue > 0 && packagePrice > 0 && packagePrice < totalValue) {
+      return Math.round(((totalValue - packagePrice) / totalValue) * 100);
     }
-  }, [formData.prezzo_listino, formData.prezzo_scontato]);
-
-  // File upload handlers
-  const handleFileUpload = async (files) => {
-    if (!files || files.length === 0) return;
-
-    setUploading(true);
-    setUploadProgress(0);
-
-    try {
-      const file = files[0];
-      const formDataUpload = new FormData();
-      formDataUpload.append('file', file);
-
-      const res = await axios.post(`${API_URL}/upload/media`, formDataUpload, {
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' },
-        onUploadProgress: (e) => setUploadProgress(Math.round((e.loaded * 100) / e.total))
-      });
-
-      setFormData(prev => ({ ...prev, immagine: res.data.file_url }));
-      setToast({ message: 'Immagine caricata con successo!', type: 'success' });
-    } catch (error) {
-      console.error('Errore upload:', error);
-      setToast({ message: "Errore nel caricamento dell'immagine", type: 'error' });
-    } finally {
-      setUploading(false);
-      setUploadProgress(0);
-    }
+    return 0;
   };
 
-  const handleDragOver = useCallback((e) => { e.preventDefault(); setIsDragging(true); }, []);
-  const handleDragLeave = useCallback((e) => { e.preventDefault(); setIsDragging(false); }, []);
-  const handleDrop = useCallback((e) => {
-    e.preventDefault();
-    setIsDragging(false);
-    if (e.dataTransfer.files.length > 0) handleFileUpload(e.dataTransfer.files);
-  }, [token]);
+  // Format currency
+  const formatCurrency = (value) => {
+    const num = parseFloat(value) || 0;
+    return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(num);
+  };
 
   // Level management
   const saveLevel = async () => {
@@ -329,18 +373,19 @@ function PackageForm() {
     try {
       const codice = levelForm.label.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
 
-      const response = await axios.post(`${API_URL}/inventory/package-levels`, {
+      // Invia nel formato che il backend si aspetta
+      const response = await axios.post(`${API_URL}/club/inventory/package-levels`, {
         codice,
         nome: levelForm.label.trim(),
         descrizione: levelForm.description.trim(),
         colore: levelForm.color,
-        ordine: levels.length + 1
+        ordine: Object.keys(levelConfig).length + 1
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
+      // Aggiorna il levelConfig locale
       const newLevel = response.data.level;
-      setLevels([...levels, newLevel]);
       setLevelConfig(prev => ({
         ...prev,
         [newLevel.codice]: {
@@ -349,14 +394,14 @@ function PackageForm() {
           description: newLevel.descrizione
         }
       }));
-
       setFormData(prev => ({ ...prev, livello: newLevel.codice }));
       setLevelForm({ label: '', color: '#3B82F6', description: '' });
       setShowLevelModal(false);
       setToast({ message: 'Livello creato con successo!', type: 'success' });
     } catch (error) {
       console.error('Errore creazione livello:', error);
-      setToast({ message: error.response?.data?.error || 'Errore nella creazione del livello', type: 'error' });
+      const errMsg = error.response?.data?.error || 'Errore nella creazione del livello';
+      setToast({ message: errMsg, type: 'error' });
     } finally {
       setSavingLevel(false);
     }
@@ -383,7 +428,7 @@ function PackageForm() {
         ...formData,
         prezzo_listino: parseFloat(formData.prezzo_listino) || null,
         prezzo_scontato: parseFloat(formData.prezzo_scontato) || null,
-        sconto_percentuale: parseFloat(formData.sconto_percentuale) || null,
+        sconto_percentuale: calculateDiscount(),
         max_vendite: parseInt(formData.max_vendite) || null,
         items: selectedAssets.map(a => ({
           asset_id: a.asset_id,
@@ -392,25 +437,12 @@ function PackageForm() {
         }))
       };
 
-      let response;
       if (isEditing) {
-        response = await axios.put(`${API_URL}/inventory/packages/${id}`, payload, {
+        await axios.put(`${API_URL}/club/inventory/packages/${id}`, payload, {
           headers: { Authorization: `Bearer ${token}` }
         });
-
-        // Update items - first remove all, then add new ones
-        const currentItems = selectedAssets;
-        for (const item of currentItems) {
-          await axios.post(`${API_URL}/inventory/packages/${id}/items`, {
-            asset_id: item.asset_id,
-            quantita: item.quantita,
-            note: item.note
-          }, {
-            headers: { Authorization: `Bearer ${token}` }
-          }).catch(() => {}); // Ignore if already exists
-        }
       } else {
-        response = await axios.post(`${API_URL}/inventory/packages`, payload, {
+        await axios.post(`${API_URL}/club/inventory/packages`, payload, {
           headers: { Authorization: `Bearer ${token}` }
         });
       }
@@ -430,34 +462,46 @@ function PackageForm() {
     const matchesSearch = !assetSearch ||
       asset.nome?.toLowerCase().includes(assetSearch.toLowerCase()) ||
       asset.codice?.toLowerCase().includes(assetSearch.toLowerCase());
-    const matchesCategory = !categoryFilter || asset.category_id === parseInt(categoryFilter);
     const notSelected = !selectedAssets.find(a => a.asset_id === asset.id);
-    return matchesSearch && matchesCategory && notSelected;
+    return matchesSearch && notSelected && asset.disponibile !== false;
   });
+
+  // Tour handlers
+  const handleStartTour = () => setIsTourOpen(true);
+  const handleTourClose = useCallback(() => setIsTourOpen(false), []);
+  const handleTourStepChange = useCallback((stepIndex) => {
+    const step = tourSteps[stepIndex];
+    if (step?.wizardStep && step.wizardStep !== currentStep) {
+      setCurrentStep(step.wizardStep);
+    }
+  }, [currentStep]);
 
   if (loading) {
     return (
-      <div className="sf-container">
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
-          <div className="sf-spinner" />
+      <div className="sponsor-form-page">
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '400px', gap: '16px' }}>
+          <div className="loading-spinner" style={{
+            width: '48px', height: '48px', border: '4px solid #E5E7EB',
+            borderTopColor: '#85FF00', borderRadius: '50%', animation: 'spin 1s linear infinite'
+          }} />
+          <span style={{ color: '#6B7280', fontSize: '15px' }}>Caricamento...</span>
         </div>
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     );
   }
 
   return (
-    <div className="sf-container">
+    <div className="sponsor-form-page">
+      {/* Toast */}
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
-      {/* Header */}
-      <div className="sf-header">
-        <button onClick={() => navigate('/club/inventory/packages')} className="sf-back-btn">
-          <FaArrowLeft /> Packages
-        </button>
-        <div className="sf-header-content">
-          <div className="sf-header-icon" style={{ background: 'linear-gradient(135deg, #85FF00, #66CC00)' }}>
-            <FaBoxOpen size={24} color="#1A1A1A" />
-          </div>
+      {/* Page Header */}
+      <div className="sf-page-header">
+        <div className="sf-header-left">
+          <button className="sf-back-btn" onClick={() => navigate('/club/inventory/packages')}>
+            <FaArrowLeft />
+          </button>
           <div>
             <h1>{isEditing ? 'Modifica Package' : 'Nuovo Package'}</h1>
             <p style={{ color: '#6B7280', fontSize: '14px', margin: '4px 0 0 0' }}>
@@ -473,7 +517,7 @@ function PackageForm() {
         <div className="sf-form-column">
           <div className="sf-card">
             {/* Wizard Steps */}
-            <div className="sf-wizard-steps">
+            <div className="sf-wizard-steps" data-tour="wizard-steps">
               {steps.map((step, index) => {
                 const StepIcon = step.icon;
                 return (
@@ -500,7 +544,7 @@ function PackageForm() {
                   <h2 className="sf-section-title">Informazioni Base</h2>
 
                   {/* Livello */}
-                  <div className="form-group">
+                  <div className="form-group" data-tour="package-level">
                     <label>Livello Package <span className="required">*</span></label>
                     <div ref={levelDropdownRef} style={{ position: 'relative' }}>
                       <button
@@ -524,9 +568,12 @@ function PackageForm() {
                           {formData.livello && levelConfig[formData.livello] ? (
                             <>
                               <div style={{
-                                width: '12px', height: '12px', borderRadius: '50%',
-                                background: levelConfig[formData.livello].color
-                              }} />
+                                width: '28px', height: '28px', borderRadius: '6px',
+                                background: levelConfig[formData.livello].color,
+                                display: 'flex', alignItems: 'center', justifyContent: 'center'
+                              }}>
+                                <FaStar size={12} color="white" />
+                              </div>
                               <span style={{ fontWeight: 500 }}>{levelConfig[formData.livello].label}</span>
                             </>
                           ) : (
@@ -546,32 +593,31 @@ function PackageForm() {
                           boxShadow: '0 10px 40px rgba(0,0,0,0.1)', zIndex: 100, overflow: 'hidden'
                         }}>
                           <div style={{ maxHeight: '240px', overflowY: 'auto' }}>
-                            {Object.keys(levelConfig).length === 0 ? (
-                              <div style={{ padding: '20px', textAlign: 'center', color: '#9CA3AF' }}>
-                                Nessun livello disponibile
-                              </div>
-                            ) : (
-                              Object.entries(levelConfig).map(([key, val]) => (
-                                <div
-                                  key={key}
-                                  onClick={() => { setFormData(prev => ({ ...prev, livello: key })); setLevelDropdownOpen(false); }}
-                                  style={{
-                                    display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px',
-                                    cursor: 'pointer', background: formData.livello === key ? 'rgba(133, 255, 0, 0.1)' : 'transparent',
-                                    borderLeft: formData.livello === key ? '3px solid #85FF00' : '3px solid transparent'
-                                  }}
-                                  onMouseEnter={(e) => { if (formData.livello !== key) e.currentTarget.style.background = '#F9FAFB'; }}
-                                  onMouseLeave={(e) => { if (formData.livello !== key) e.currentTarget.style.background = 'transparent'; }}
-                                >
-                                  <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: val.color }} />
-                                  <div style={{ flex: 1 }}>
-                                    <div style={{ fontWeight: 500, fontSize: '14px' }}>{val.label}</div>
-                                    {val.description && <div style={{ fontSize: '12px', color: '#6B7280' }}>{val.description}</div>}
-                                  </div>
-                                  {formData.livello === key && <FaCheck size={14} color="#85FF00" />}
+                            {Object.entries(levelConfig).map(([key, val]) => (
+                              <div
+                                key={key}
+                                onClick={() => { setFormData(prev => ({ ...prev, livello: key })); setLevelDropdownOpen(false); }}
+                                style={{
+                                  display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px',
+                                  cursor: 'pointer', background: formData.livello === key ? 'rgba(133, 255, 0, 0.1)' : 'transparent',
+                                  borderLeft: formData.livello === key ? '3px solid #85FF00' : '3px solid transparent'
+                                }}
+                                onMouseEnter={(e) => { if (formData.livello !== key) e.currentTarget.style.background = '#F9FAFB'; }}
+                                onMouseLeave={(e) => { if (formData.livello !== key) e.currentTarget.style.background = 'transparent'; }}
+                              >
+                                <div style={{
+                                  width: '32px', height: '32px', borderRadius: '8px',
+                                  background: val.color, display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                }}>
+                                  <FaStar size={14} color="white" />
                                 </div>
-                              ))
-                            )}
+                                <div style={{ flex: 1 }}>
+                                  <div style={{ fontWeight: 500, fontSize: '14px' }}>{val.label}</div>
+                                  {val.description && <div style={{ fontSize: '12px', color: '#6B7280' }}>{val.description}</div>}
+                                </div>
+                                {formData.livello === key && <FaCheck size={14} color="#85FF00" />}
+                              </div>
+                            ))}
                           </div>
                           <div style={{ borderTop: '1px solid #E5E7EB', padding: '8px' }}>
                             <button
@@ -579,9 +625,11 @@ function PackageForm() {
                               onClick={() => { setLevelDropdownOpen(false); setShowLevelModal(true); }}
                               style={{
                                 width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-                                padding: '12px 16px', border: 'none', borderRadius: '8px', background: '#1A1A1A',
-                                color: '#FFFFFF', fontSize: '14px', fontWeight: 600, cursor: 'pointer'
+                                padding: '12px 16px', border: '2px dashed #E5E7EB', borderRadius: '8px', background: 'transparent',
+                                color: '#6B7280', fontSize: '14px', fontWeight: 500, cursor: 'pointer'
                               }}
+                              onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#85FF00'; e.currentTarget.style.color = '#1A1A1A'; }}
+                              onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#E5E7EB'; e.currentTarget.style.color = '#6B7280'; }}
                             >
                               <HiOutlinePlus size={16} /> Crea nuovo livello
                             </button>
@@ -589,63 +637,42 @@ function PackageForm() {
                         </div>
                       )}
                     </div>
-                    {errors.livello && <span className="error-text">{errors.livello}</span>}
+                    {errors.livello && <span className="error-message">{errors.livello}</span>}
                   </div>
 
-                  <div className="form-row">
+                  {/* Nome e Descrizione */}
+                  <div data-tour="package-info">
                     <div className="form-group">
                       <label>Nome Package <span className="required">*</span></label>
                       <input
                         type="text"
                         value={formData.nome}
                         onChange={(e) => setFormData(prev => ({ ...prev, nome: e.target.value }))}
-                        placeholder="es. Main Sponsor Package"
+                        placeholder="es. Gold Package"
                         className={errors.nome ? 'error' : ''}
                       />
-                      {errors.nome && <span className="error-text">{errors.nome}</span>}
+                      {errors.nome && <span className="error-message">{errors.nome}</span>}
                     </div>
+
                     <div className="form-group">
-                      <label>Codice <span className="required">*</span></label>
-                      <input
-                        type="text"
-                        value={formData.codice}
-                        onChange={(e) => setFormData(prev => ({ ...prev, codice: e.target.value.toLowerCase().replace(/\s+/g, '-') }))}
-                        placeholder="es. main-sponsor"
-                        className={errors.codice ? 'error' : ''}
+                      <label>Descrizione</label>
+                      <textarea
+                        value={formData.descrizione}
+                        onChange={(e) => setFormData(prev => ({ ...prev, descrizione: e.target.value }))}
+                        placeholder="Descrivi cosa include questo package..."
+                        rows={4}
                       />
-                      {errors.codice && <span className="error-text">{errors.codice}</span>}
                     </div>
-                  </div>
-
-                  <div className="form-group">
-                    <label>Descrizione Breve</label>
-                    <input
-                      type="text"
-                      value={formData.descrizione_breve}
-                      onChange={(e) => setFormData(prev => ({ ...prev, descrizione_breve: e.target.value }))}
-                      placeholder="Breve descrizione del package"
-                      maxLength={300}
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label>Descrizione Completa</label>
-                    <textarea
-                      value={formData.descrizione}
-                      onChange={(e) => setFormData(prev => ({ ...prev, descrizione: e.target.value }))}
-                      placeholder="Descrizione dettagliata del package, benefici inclusi, target..."
-                      rows={6}
-                    />
                   </div>
                 </div>
               )}
 
               {/* Step 2: Asset Selection */}
               {currentStep === 2 && (
-                <div className="sf-step-content">
+                <div className="sf-step-content" data-tour="asset-selection">
                   <h2 className="sf-section-title">Seleziona Asset</h2>
-                  <p style={{ color: '#6B7280', marginBottom: '20px' }}>
-                    Aggiungi gli asset che compongono questo package. Puoi specificare la quantita per ogni asset.
+                  <p style={{ color: '#6B7280', marginBottom: '24px' }}>
+                    Aggiungi gli asset che compongono questo package
                   </p>
 
                   {errors.assets && (
@@ -655,93 +682,92 @@ function PackageForm() {
                   )}
 
                   {/* Selected Assets */}
-                  {selectedAssets.length > 0 && (
-                    <div style={{ marginBottom: '24px' }}>
-                      <label style={{ display: 'block', marginBottom: '12px', fontWeight: 600 }}>
-                        Asset Selezionati ({selectedAssets.length})
-                      </label>
+                  <div style={{ background: '#F9FAFB', borderRadius: '12px', padding: '20px', marginBottom: '24px' }}>
+                    <h4 style={{ margin: '0 0 16px 0', fontSize: '14px', fontWeight: 600, color: '#374151', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <FaLayerGroup /> Asset nel Package ({selectedAssets.length})
+                    </h4>
+
+                    {selectedAssets.length === 0 ? (
+                      <div style={{
+                        padding: '32px', textAlign: 'center', color: '#9CA3AF',
+                        border: '2px dashed #E5E7EB', borderRadius: '8px', background: 'white'
+                      }}>
+                        <FaBoxOpen size={32} style={{ marginBottom: '12px', opacity: 0.5 }} />
+                        <div>Nessun asset selezionato</div>
+                        <div style={{ fontSize: '13px', marginTop: '4px' }}>Seleziona gli asset dalla lista sottostante</div>
+                      </div>
+                    ) : (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        {selectedAssets.map((item, index) => (
-                          <div
-                            key={item.asset_id}
-                            style={{
-                              display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px',
-                              background: '#F9FAFB', borderRadius: '8px', border: '1px solid #E5E7EB'
-                            }}
-                          >
-                            <FaGripVertical size={14} color="#9CA3AF" />
+                        {selectedAssets.map((item) => (
+                          <div key={item.asset_id} style={{
+                            display: 'flex', alignItems: 'center', gap: '12px',
+                            padding: '12px 16px', background: 'white', borderRadius: '10px',
+                            border: '1px solid #E5E7EB'
+                          }}>
                             <div style={{
-                              width: '40px', height: '40px', borderRadius: '8px', background: '#E5E7EB',
-                              backgroundImage: item.asset?.immagine_principale ? `url(${getImageUrl(item.asset.immagine_principale)})` : 'none',
-                              backgroundSize: 'cover', backgroundPosition: 'center'
-                            }} />
-                            <div style={{ flex: 1 }}>
-                              <div style={{ fontWeight: 600, fontSize: '14px' }}>{item.asset?.nome}</div>
-                              <div style={{ fontSize: '12px', color: '#6B7280' }}>
-                                {item.asset?.codice} - €{(item.asset?.prezzo_listino || 0).toLocaleString()}
-                              </div>
+                              width: '48px', height: '48px', borderRadius: '8px',
+                              background: '#F3F4F6', overflow: 'hidden', flexShrink: 0
+                            }}>
+                              {item.asset?.immagine_principale ? (
+                                <img src={getImageUrl(item.asset.immagine_principale)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                              ) : (
+                                <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                  <FaCube size={20} color="#9CA3AF" />
+                                </div>
+                              )}
+                            </div>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontWeight: 600, color: '#1A1A1A', fontSize: '14px' }}>{item.asset?.nome}</div>
+                              <div style={{ fontSize: '13px', color: '#6B7280' }}>{formatCurrency(item.asset?.prezzo_listino)}</div>
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              <label style={{ fontSize: '12px', color: '#6B7280' }}>Qty:</label>
-                              <input
-                                type="number"
-                                min="1"
-                                value={item.quantita}
-                                onChange={(e) => updateAssetQuantity(item.asset_id, e.target.value)}
-                                style={{ width: '60px', padding: '6px 8px', borderRadius: '6px', border: '1px solid #E5E7EB', fontSize: '14px', textAlign: 'center' }}
-                              />
+                              <button type="button" onClick={() => updateAssetQuantity(item.asset_id, item.quantita - 1)}
+                                style={{ width: '28px', height: '28px', borderRadius: '6px', border: '1px solid #E5E7EB', background: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <FaMinus size={10} />
+                              </button>
+                              <span style={{ fontWeight: 600, minWidth: '24px', textAlign: 'center' }}>{item.quantita}</span>
+                              <button type="button" onClick={() => updateAssetQuantity(item.asset_id, item.quantita + 1)}
+                                style={{ width: '28px', height: '28px', borderRadius: '6px', border: '1px solid #E5E7EB', background: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <FaPlus size={10} />
+                              </button>
                             </div>
-                            <button
-                              type="button"
-                              onClick={() => removeAsset(item.asset_id)}
-                              style={{ padding: '8px', background: 'transparent', border: 'none', cursor: 'pointer', color: '#EF4444' }}
-                            >
-                              <FaTrash size={14} />
+                            <button type="button" onClick={() => removeAsset(item.asset_id)}
+                              style={{ width: '32px', height: '32px', borderRadius: '8px', border: 'none', background: '#FEE2E2', color: '#EF4444', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              <FaTrash size={12} />
                             </button>
                           </div>
                         ))}
-                      </div>
-                      <div style={{ marginTop: '12px', padding: '12px 16px', background: '#F0FDF4', borderRadius: '8px', border: '1px solid #BBF7D0' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span style={{ fontWeight: 600, color: '#166534' }}>Valore totale asset:</span>
-                          <span style={{ fontWeight: 700, fontSize: '18px', color: '#166534' }}>€{calculateTotals().toLocaleString()}</span>
+
+                        {/* Total Value */}
+                        <div style={{ marginTop: '12px', padding: '12px 16px', background: '#F0FDF4', borderRadius: '8px', border: '1px solid #BBF7D0' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ fontWeight: 600, color: '#166534' }}>Valore totale asset:</span>
+                            <span style={{ fontWeight: 700, fontSize: '18px', color: '#166534' }}>{formatCurrency(calculateTotals())}</span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
 
-                  {/* Search and Filter */}
-                  <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
-                    <div style={{ flex: 1, position: 'relative' }}>
+                  {/* Search */}
+                  <div style={{ marginBottom: '16px' }}>
+                    <div style={{ position: 'relative' }}>
                       <FaSearch size={14} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF' }} />
                       <input
                         type="text"
                         value={assetSearch}
                         onChange={(e) => setAssetSearch(e.target.value)}
                         placeholder="Cerca asset..."
-                        style={{ width: '100%', padding: '10px 12px 10px 36px', borderRadius: '8px', border: '1px solid #E5E7EB', fontSize: '14px' }}
+                        style={{ width: '100%', padding: '12px 12px 12px 40px', borderRadius: '8px', border: '2px solid #E5E7EB', fontSize: '14px' }}
                       />
                     </div>
-                    <select
-                      value={categoryFilter}
-                      onChange={(e) => setCategoryFilter(e.target.value)}
-                      style={{ padding: '10px 12px', borderRadius: '8px', border: '1px solid #E5E7EB', fontSize: '14px', minWidth: '160px' }}
-                    >
-                      <option value="">Tutte le categorie</option>
-                      {categories.map(cat => (
-                        <option key={cat.id} value={cat.id}>{cat.nome}</option>
-                      ))}
-                    </select>
                   </div>
 
                   {/* Available Assets */}
-                  <label style={{ display: 'block', marginBottom: '12px', fontWeight: 600 }}>
-                    Asset Disponibili ({filteredAssets.length})
-                  </label>
-                  <div style={{ maxHeight: '400px', overflowY: 'auto', border: '1px solid #E5E7EB', borderRadius: '8px' }}>
+                  <div style={{ border: '1px solid #E5E7EB', borderRadius: '12px', maxHeight: '400px', overflowY: 'auto' }}>
                     {filteredAssets.length === 0 ? (
                       <div style={{ padding: '40px', textAlign: 'center', color: '#9CA3AF' }}>
-                        {assetSearch || categoryFilter ? 'Nessun asset trovato con questi filtri' : 'Tutti gli asset sono stati aggiunti'}
+                        {assetSearch ? 'Nessun asset trovato' : 'Tutti gli asset sono stati aggiunti'}
                       </div>
                     ) : (
                       filteredAssets.map(asset => (
@@ -756,19 +782,27 @@ function PackageForm() {
                           onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                         >
                           <div style={{
-                            width: '48px', height: '48px', borderRadius: '8px', background: '#E5E7EB',
-                            backgroundImage: asset.immagine_principale ? `url(${getImageUrl(asset.immagine_principale)})` : 'none',
-                            backgroundSize: 'cover', backgroundPosition: 'center', flexShrink: 0
-                          }} />
+                            width: '48px', height: '48px', borderRadius: '8px', background: '#F3F4F6',
+                            overflow: 'hidden', flexShrink: 0
+                          }}>
+                            {asset.immagine_principale ? (
+                              <img src={getImageUrl(asset.immagine_principale)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            ) : (
+                              <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <FaCube size={20} color="#9CA3AF" />
+                              </div>
+                            )}
+                          </div>
                           <div style={{ flex: 1 }}>
-                            <div style={{ fontWeight: 600, fontSize: '14px' }}>{asset.nome}</div>
-                            <div style={{ fontSize: '12px', color: '#6B7280' }}>{asset.codice}</div>
+                            <div style={{ fontWeight: 600, fontSize: '14px', color: '#1A1A1A' }}>{asset.nome}</div>
+                            <div style={{ fontSize: '12px', color: '#6B7280' }}>{asset.category?.nome || 'Asset'}</div>
                           </div>
                           <div style={{ textAlign: 'right' }}>
-                            <div style={{ fontWeight: 600, fontSize: '14px' }}>€{(asset.prezzo_listino || 0).toLocaleString()}</div>
-                            <div style={{ fontSize: '12px', color: '#6B7280' }}>Qty: {asset.quantita_disponibile || 0}</div>
+                            <div style={{ fontWeight: 600, fontSize: '14px' }}>{formatCurrency(asset.prezzo_listino)}</div>
                           </div>
-                          <FaPlus size={16} color="#85FF00" />
+                          <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#F0FDF4', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <FaPlus size={12} color="#10B981" />
+                          </div>
                         </div>
                       ))
                     )}
@@ -778,342 +812,195 @@ function PackageForm() {
 
               {/* Step 3: Pricing */}
               {currentStep === 3 && (
-                <div className="sf-step-content">
+                <div className="sf-step-content" data-tour="package-pricing">
                   <h2 className="sf-section-title">Pricing Package</h2>
 
-                  <div style={{ background: '#F0FDF4', borderRadius: '12px', padding: '16px', marginBottom: '24px', border: '1px solid #BBF7D0' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                      <span style={{ color: '#166534', fontWeight: 500 }}>Valore singoli asset:</span>
-                      <span style={{ color: '#166534', fontWeight: 700, fontSize: '18px' }}>€{calculateTotals().toLocaleString()}</span>
-                    </div>
-                    <p style={{ fontSize: '12px', color: '#166534', margin: 0 }}>
-                      Questo e il valore totale se gli asset fossero venduti singolarmente
-                    </p>
-                  </div>
-
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label>Prezzo di Listino <span className="required">*</span></label>
-                      <div className="input-with-icon">
-                        <FaEuroSign className="input-icon" />
-                        <input
-                          type="number"
-                          value={formData.prezzo_listino}
-                          onChange={(e) => setFormData(prev => ({ ...prev, prezzo_listino: e.target.value }))}
-                          placeholder="0.00"
-                          min="0"
-                          step="0.01"
-                          className={errors.prezzo_listino ? 'error' : ''}
-                        />
+                  {/* Summary Card */}
+                  <div style={{
+                    background: 'linear-gradient(135deg, #1F2937, #374151)',
+                    borderRadius: '16px', padding: '24px', marginBottom: '24px'
+                  }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px' }}>
+                      <div>
+                        <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)', marginBottom: '4px' }}>Asset Inclusi</div>
+                        <div style={{ fontSize: '28px', fontWeight: 700, color: 'white' }}>{selectedAssets.length}</div>
                       </div>
-                      {errors.prezzo_listino && <span className="error-text">{errors.prezzo_listino}</span>}
-                    </div>
-                    <div className="form-group">
-                      <label>Prezzo Scontato</label>
-                      <div className="input-with-icon">
-                        <FaEuroSign className="input-icon" />
-                        <input
-                          type="number"
-                          value={formData.prezzo_scontato}
-                          onChange={(e) => setFormData(prev => ({ ...prev, prezzo_scontato: e.target.value }))}
-                          placeholder="0.00"
-                          min="0"
-                          step="0.01"
-                        />
+                      <div>
+                        <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)', marginBottom: '4px' }}>Valore Totale</div>
+                        <div style={{ fontSize: '28px', fontWeight: 700, color: 'white' }}>{formatCurrency(calculateTotals())}</div>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)', marginBottom: '4px' }}>Sconto</div>
+                        <div style={{ fontSize: '28px', fontWeight: 700, color: calculateDiscount() > 0 ? '#10B981' : 'white' }}>
+                          {calculateDiscount() > 0 ? `-${calculateDiscount()}%` : '0%'}
+                        </div>
                       </div>
                     </div>
                   </div>
 
-                  {formData.sconto_percentuale > 0 && (
-                    <div style={{ background: '#FEF3C7', borderRadius: '8px', padding: '12px', marginBottom: '16px', border: '1px solid #FDE68A' }}>
-                      <span style={{ color: '#92400E', fontWeight: 600 }}>
-                        Sconto: {formData.sconto_percentuale}% rispetto al prezzo di listino
-                      </span>
-                    </div>
-                  )}
-
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label>Limite Vendite</label>
+                  {/* Price Input */}
+                  <div className="form-group">
+                    <label>Prezzo Package <span className="required">*</span></label>
+                    <div style={{ position: 'relative' }}>
+                      <FaEuroSign style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF' }} />
                       <input
                         type="number"
-                        value={formData.max_vendite}
-                        onChange={(e) => setFormData(prev => ({ ...prev, max_vendite: e.target.value }))}
-                        placeholder="Illimitato"
-                        min="1"
+                        value={formData.prezzo_listino}
+                        onChange={(e) => setFormData(prev => ({ ...prev, prezzo_listino: e.target.value }))}
+                        placeholder="100000"
+                        className={errors.prezzo_listino ? 'error' : ''}
+                        style={{ paddingLeft: '40px' }}
                       />
-                      <span className="field-hint">Lascia vuoto per vendite illimitate</span>
                     </div>
+                    {errors.prezzo_listino && <span className="error-message">{errors.prezzo_listino}</span>}
                   </div>
 
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label>Disponibile Da</label>
-                      <input
-                        type="date"
-                        value={formData.disponibile_da}
-                        onChange={(e) => setFormData(prev => ({ ...prev, disponibile_da: e.target.value }))}
-                      />
+                  {/* Discount Display */}
+                  {calculateDiscount() > 0 && (
+                    <div style={{
+                      background: '#DCFCE7', border: '1px solid #86EFAC', borderRadius: '12px',
+                      padding: '16px', display: 'flex', alignItems: 'center', gap: '12px'
+                    }}>
+                      <FaPercentage size={20} color="#10B981" />
+                      <div>
+                        <div style={{ fontWeight: 700, color: '#166534' }}>
+                          Risparmio: {formatCurrency(calculateTotals() - (parseFloat(formData.prezzo_listino) || 0))}
+                        </div>
+                        <div style={{ fontSize: '13px', color: '#15803D' }}>
+                          -{calculateDiscount()}% rispetto al valore singolo degli asset
+                        </div>
+                      </div>
                     </div>
-                    <div className="form-group">
-                      <label>Disponibile Fino</label>
-                      <input
-                        type="date"
-                        value={formData.disponibile_fino}
-                        onChange={(e) => setFormData(prev => ({ ...prev, disponibile_fino: e.target.value }))}
-                      />
-                    </div>
-                  </div>
+                  )}
                 </div>
               )}
 
-              {/* Step 4: Opzioni */}
-              {currentStep === 4 && (
-                <div className="sf-step-content">
-                  <h2 className="sf-section-title">Immagine e Opzioni</h2>
-
-                  {/* Image Upload */}
-                  <div className="form-group">
-                    <label>Immagine Package</label>
-                    {formData.immagine ? (
-                      <div style={{ position: 'relative', width: '100%', paddingTop: '50%', borderRadius: '12px', overflow: 'hidden', background: '#F3F4F6' }}>
-                        <img
-                          src={getImageUrl(formData.immagine)}
-                          alt="Package"
-                          style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setFormData(prev => ({ ...prev, immagine: '' }))}
-                          style={{
-                            position: 'absolute', top: '12px', right: '12px', width: '32px', height: '32px',
-                            borderRadius: '50%', background: 'rgba(0,0,0,0.6)', border: 'none',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer'
-                          }}
-                        >
-                          <FaTimes color="white" size={14} />
-                        </button>
-                      </div>
-                    ) : (
-                      <div
-                        onClick={() => fileInputRef.current?.click()}
-                        onDragOver={handleDragOver}
-                        onDragLeave={handleDragLeave}
-                        onDrop={handleDrop}
-                        style={{
-                          border: `2px dashed ${isDragging ? '#85FF00' : '#E5E7EB'}`,
-                          borderRadius: '12px', padding: '40px', textAlign: 'center',
-                          cursor: 'pointer', background: isDragging ? 'rgba(133, 255, 0, 0.05)' : '#FAFAFA',
-                          transition: 'all 0.2s'
-                        }}
-                      >
-                        {uploading ? (
-                          <div>
-                            <div style={{ width: '48px', height: '48px', borderRadius: '50%', border: '3px solid #E5E7EB', borderTopColor: '#85FF00', animation: 'spin 1s linear infinite', margin: '0 auto 12px' }} />
-                            <p style={{ color: '#6B7280', margin: 0 }}>Caricamento... {uploadProgress}%</p>
-                          </div>
-                        ) : (
-                          <>
-                            <FaCloudUploadAlt size={40} color="#9CA3AF" style={{ marginBottom: '12px' }} />
-                            <p style={{ color: '#6B7280', margin: 0 }}>
-                              <span style={{ color: '#85FF00', fontWeight: 600 }}>Clicca per caricare</span> o trascina qui
-                            </p>
-                            <p style={{ color: '#9CA3AF', fontSize: '12px', margin: '8px 0 0' }}>PNG, JPG fino a 5MB</p>
-                          </>
-                        )}
-                      </div>
-                    )}
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => handleFileUpload(e.target.files)}
-                      style={{ display: 'none' }}
-                    />
-                  </div>
-
-                  {/* Options */}
-                  <div style={{ marginTop: '24px' }}>
-                    <label style={{ display: 'block', marginBottom: '16px', fontWeight: 600 }}>Visibilita</label>
-
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                      <label style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px', background: '#F9FAFB', borderRadius: '8px', cursor: 'pointer' }}>
-                        <input
-                          type="checkbox"
-                          checked={formData.attivo}
-                          onChange={(e) => setFormData(prev => ({ ...prev, attivo: e.target.checked }))}
-                          style={{ width: '20px', height: '20px', accentColor: '#85FF00' }}
-                        />
-                        <div>
-                          <div style={{ fontWeight: 600, fontSize: '14px' }}>Package Attivo</div>
-                          <div style={{ fontSize: '12px', color: '#6B7280' }}>Il package e disponibile per la vendita</div>
-                        </div>
-                      </label>
-
-                      <label style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px', background: '#F9FAFB', borderRadius: '8px', cursor: 'pointer' }}>
-                        <input
-                          type="checkbox"
-                          checked={formData.visibile_marketplace}
-                          onChange={(e) => setFormData(prev => ({ ...prev, visibile_marketplace: e.target.checked }))}
-                          style={{ width: '20px', height: '20px', accentColor: '#85FF00' }}
-                        />
-                        <div>
-                          <div style={{ fontWeight: 600, fontSize: '14px' }}>Visibile nel Marketplace</div>
-                          <div style={{ fontSize: '12px', color: '#6B7280' }}>Il package appare nel catalogo pubblico</div>
-                        </div>
-                      </label>
-
-                      <label style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px', background: formData.in_evidenza ? 'rgba(133, 255, 0, 0.1)' : '#F9FAFB', borderRadius: '8px', cursor: 'pointer', border: formData.in_evidenza ? '2px solid #85FF00' : '2px solid transparent' }}>
-                        <input
-                          type="checkbox"
-                          checked={formData.in_evidenza}
-                          onChange={(e) => setFormData(prev => ({ ...prev, in_evidenza: e.target.checked }))}
-                          style={{ width: '20px', height: '20px', accentColor: '#85FF00' }}
-                        />
-                        <div style={{ flex: 1 }}>
-                          <div style={{ fontWeight: 600, fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <FaStar color="#F59E0B" /> In Evidenza
-                          </div>
-                          <div style={{ fontSize: '12px', color: '#6B7280' }}>Mostra il package in primo piano</div>
-                        </div>
-                      </label>
-                    </div>
-                  </div>
+              {/* Form Actions */}
+              <div className="sf-form-actions" data-tour="form-actions">
+                <div className="sf-actions-left">
+                  {currentStep > 1 && (
+                    <button type="button" className="sf-btn sf-btn-outline" onClick={prevStep}>
+                      <FaArrowLeft /> Indietro
+                    </button>
+                  )}
                 </div>
-              )}
 
-              {/* Navigation */}
-              <div className="sf-form-actions">
-                {currentStep > 1 && (
-                  <button type="button" onClick={prevStep} className="sf-btn-secondary">
-                    <FaArrowLeft /> Indietro
+                <div className="sf-actions-right">
+                  <button type="button" className="sf-btn sf-btn-outline" onClick={() => navigate('/club/inventory/packages')}>
+                    Annulla
                   </button>
-                )}
-                <div style={{ flex: 1 }} />
-                {currentStep < totalSteps ? (
-                  <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); nextStep(); }} className="sf-btn-primary">
-                    Avanti <FaArrowRight />
-                  </button>
-                ) : (
-                  <button type="submit" className="sf-btn-primary" disabled={saving}>
-                    {saving ? 'Salvataggio...' : (isEditing ? 'Aggiorna Package' : 'Crea Package')} <FaCheck />
-                  </button>
-                )}
+
+                  {currentStep === totalSteps ? (
+                    <button type="submit" className="sf-btn sf-btn-primary" disabled={saving}>
+                      {saving ? 'Salvataggio...' : (isEditing ? 'Salva Modifiche' : 'Crea Package')}
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      className="sf-btn sf-btn-primary"
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); nextStep(); }}
+                    >
+                      Avanti <FaArrowRight />
+                    </button>
+                  )}
+                </div>
               </div>
             </form>
           </div>
         </div>
 
-        {/* Right Column - Preview */}
-        <div className="sf-preview-column">
-          <div className="sf-preview-card" style={{ position: 'sticky', top: '100px' }}>
-            <div className="sf-preview-header">
-              <FaEye /> Anteprima Package
-            </div>
-            <div className="sf-preview-content">
-              {/* Package Preview Card */}
-              <div style={{
-                background: '#1A1A1A', borderRadius: '16px', overflow: 'hidden',
-                border: `2px solid ${levelConfig[formData.livello]?.color || '#333'}`
-              }}>
-                {/* Image */}
-                <div style={{
-                  height: '140px', background: formData.immagine ? `url(${getImageUrl(formData.immagine)})` : 'linear-gradient(135deg, #2A2A2A, #1A1A1A)',
-                  backgroundSize: 'cover', backgroundPosition: 'center', position: 'relative'
-                }}>
-                  {formData.livello && levelConfig[formData.livello] && (
-                    <div style={{
-                      position: 'absolute', top: '12px', left: '12px', padding: '6px 12px',
-                      background: levelConfig[formData.livello].color, borderRadius: '20px',
-                      fontSize: '12px', fontWeight: 600, color: 'white'
-                    }}>
-                      {levelConfig[formData.livello].label}
-                    </div>
-                  )}
-                  {formData.in_evidenza && (
-                    <div style={{
-                      position: 'absolute', top: '12px', right: '12px', padding: '6px 10px',
-                      background: 'rgba(245, 158, 11, 0.9)', borderRadius: '20px',
-                      fontSize: '12px', fontWeight: 600, color: 'white', display: 'flex', alignItems: 'center', gap: '4px'
-                    }}>
-                      <FaStar size={10} /> Featured
-                    </div>
-                  )}
-                </div>
-
-                {/* Content */}
-                <div style={{ padding: '20px' }}>
-                  <h3 style={{ color: 'white', fontSize: '18px', fontWeight: 700, margin: '0 0 8px' }}>
-                    {formData.nome || 'Nome Package'}
-                  </h3>
-                  <p style={{ color: '#9CA3AF', fontSize: '13px', margin: '0 0 16px', lineHeight: 1.5 }}>
-                    {formData.descrizione_breve || 'Descrizione breve del package...'}
-                  </p>
-
-                  {/* Assets count */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-                    <FaCube size={14} color="#85FF00" />
-                    <span style={{ color: '#9CA3AF', fontSize: '13px' }}>
-                      {selectedAssets.length} asset inclusi
-                    </span>
-                  </div>
-
-                  {/* Pricing */}
-                  <div style={{ borderTop: '1px solid #333', paddingTop: '16px' }}>
-                    {formData.prezzo_scontato && parseFloat(formData.prezzo_scontato) < parseFloat(formData.prezzo_listino) ? (
-                      <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ color: '#6B7280', textDecoration: 'line-through', fontSize: '14px' }}>
-                            €{parseFloat(formData.prezzo_listino || 0).toLocaleString()}
-                          </span>
-                          {formData.sconto_percentuale > 0 && (
-                            <span style={{ background: '#85FF00', color: '#1A1A1A', padding: '2px 8px', borderRadius: '4px', fontSize: '12px', fontWeight: 600 }}>
-                              -{formData.sconto_percentuale}%
-                            </span>
-                          )}
-                        </div>
-                        <div style={{ color: 'white', fontSize: '24px', fontWeight: 700 }}>
-                          €{parseFloat(formData.prezzo_scontato).toLocaleString()}
-                        </div>
-                      </div>
-                    ) : (
-                      <div style={{ color: 'white', fontSize: '24px', fontWeight: 700 }}>
-                        €{parseFloat(formData.prezzo_listino || 0).toLocaleString()}
-                      </div>
-                    )}
-                  </div>
-                </div>
+        {/* Right Column - Live Preview */}
+        <div className="sf-preview-column" data-tour="preview-column">
+          <div style={{
+            background: 'white',
+            borderRadius: '16px',
+            boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+            overflow: 'hidden'
+          }}>
+            {/* Preview Header */}
+            <div style={{
+              background: 'linear-gradient(135deg, #1A1A1A 0%, #2D2D2D 100%)',
+              padding: '20px',
+              color: 'white'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+                <FaEye style={{ color: '#85FF00' }} />
+                <span style={{ fontSize: '14px', fontWeight: 600 }}>Anteprima Package</span>
               </div>
 
-              {/* Asset List Preview */}
-              {selectedAssets.length > 0 && (
-                <div style={{ marginTop: '20px' }}>
-                  <div style={{ fontSize: '13px', fontWeight: 600, color: '#6B7280', marginBottom: '12px' }}>
-                    ASSET INCLUSI
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    {selectedAssets.slice(0, 5).map(item => (
-                      <div key={item.asset_id} style={{
-                        display: 'flex', alignItems: 'center', gap: '10px', padding: '10px',
-                        background: '#F9FAFB', borderRadius: '8px', fontSize: '13px'
-                      }}>
-                        <div style={{
-                          width: '32px', height: '32px', borderRadius: '6px', background: '#E5E7EB',
-                          backgroundImage: item.asset?.immagine_principale ? `url(${getImageUrl(item.asset.immagine_principale)})` : 'none',
-                          backgroundSize: 'cover', backgroundPosition: 'center', flexShrink: 0
-                        }} />
-                        <span style={{ flex: 1, fontWeight: 500 }}>{item.asset?.nome}</span>
-                        <span style={{ color: '#6B7280' }}>x{item.quantita}</span>
-                      </div>
-                    ))}
-                    {selectedAssets.length > 5 && (
-                      <div style={{ textAlign: 'center', color: '#6B7280', fontSize: '12px', padding: '8px' }}>
-                        +{selectedAssets.length - 5} altri asset
-                      </div>
-                    )}
-                  </div>
+              {/* Level Badge */}
+              {formData.livello && levelConfig[formData.livello] && (
+                <div style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '6px',
+                  padding: '6px 12px', borderRadius: '20px',
+                  background: levelConfig[formData.livello].color, marginBottom: '12px'
+                }}>
+                  <FaStar size={10} />
+                  <span style={{ fontSize: '12px', fontWeight: 600 }}>{levelConfig[formData.livello].label}</span>
                 </div>
               )}
+
+              <h3 style={{ fontSize: '20px', fontWeight: 700, margin: '0 0 8px 0' }}>
+                {formData.nome || 'Nome Package'}
+              </h3>
+              {formData.descrizione && (
+                <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.7)', margin: 0, lineHeight: 1.5 }}>
+                  {formData.descrizione.substring(0, 100)}{formData.descrizione.length > 100 ? '...' : ''}
+                </p>
+              )}
+            </div>
+
+            {/* Preview Content */}
+            <div style={{ padding: '20px' }}>
+              {/* Assets */}
+              <div style={{ marginBottom: '20px' }}>
+                <div style={{ fontSize: '12px', fontWeight: 600, color: '#6B7280', marginBottom: '12px', textTransform: 'uppercase' }}>
+                  Asset Inclusi ({selectedAssets.length})
+                </div>
+                {selectedAssets.length === 0 ? (
+                  <div style={{ color: '#9CA3AF', fontSize: '13px', fontStyle: 'italic' }}>
+                    Nessun asset selezionato
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                    {selectedAssets.slice(0, 5).map(item => (
+                      <span key={item.asset_id} style={{
+                        padding: '4px 10px', background: '#F3F4F6', borderRadius: '6px',
+                        fontSize: '12px', color: '#374151'
+                      }}>
+                        {item.asset?.nome} {item.quantita > 1 && `(x${item.quantita})`}
+                      </span>
+                    ))}
+                    {selectedAssets.length > 5 && (
+                      <span style={{ padding: '4px 10px', background: '#F3F4F6', borderRadius: '6px', fontSize: '12px', color: '#6B7280' }}>
+                        +{selectedAssets.length - 5}
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Pricing */}
+              <div style={{ borderTop: '1px solid #E5E7EB', paddingTop: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px' }}>
+                  <span style={{ fontSize: '28px', fontWeight: 700, color: '#1A1A1A' }}>
+                    {formatCurrency(formData.prezzo_listino || 0)}
+                  </span>
+                  {calculateDiscount() > 0 && (
+                    <span style={{
+                      padding: '4px 8px', background: '#DCFCE7', color: '#166534',
+                      borderRadius: '6px', fontSize: '12px', fontWeight: 600
+                    }}>
+                      -{calculateDiscount()}%
+                    </span>
+                  )}
+                </div>
+                {calculateDiscount() > 0 && (
+                  <div style={{ fontSize: '13px', color: '#9CA3AF', textDecoration: 'line-through', marginTop: '4px' }}>
+                    {formatCurrency(calculateTotals())}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -1124,31 +1011,28 @@ function PackageForm() {
         isOpen={showConfirmModal}
         onClose={() => setShowConfirmModal(false)}
         title={isEditing ? 'Conferma Modifiche' : 'Conferma Creazione'}
+        maxWidth="480px"
       >
-        <div style={{ padding: '20px' }}>
-          <p style={{ marginBottom: '20px', color: '#4B5563' }}>
+        <div style={{ padding: '8px 0' }}>
+          <p style={{ color: '#6B7280', marginBottom: '20px' }}>
             {isEditing
               ? `Sei sicuro di voler salvare le modifiche al package "${formData.nome}"?`
               : `Sei sicuro di voler creare il package "${formData.nome}" con ${selectedAssets.length} asset?`}
           </p>
+
+          <div style={{ background: '#F9FAFB', borderRadius: '12px', padding: '16px', marginBottom: '24px' }}>
+            <div style={{ fontWeight: 600, color: '#1A1A1A', marginBottom: '8px' }}>{formData.nome}</div>
+            <div style={{ fontSize: '14px', color: '#6B7280' }}>
+              {selectedAssets.length} asset • {formatCurrency(formData.prezzo_listino)}
+              {calculateDiscount() > 0 && ` (sconto ${calculateDiscount()}%)`}
+            </div>
+          </div>
+
           <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-            <button
-              onClick={() => setShowConfirmModal(false)}
-              style={{
-                padding: '10px 20px', borderRadius: '8px', border: '1px solid #E5E7EB',
-                background: 'white', cursor: 'pointer', fontWeight: 500
-              }}
-            >
+            <button onClick={() => setShowConfirmModal(false)} className="sf-btn sf-btn-outline">
               Annulla
             </button>
-            <button
-              onClick={handleConfirmedSubmit}
-              disabled={saving}
-              style={{
-                padding: '10px 20px', borderRadius: '8px', border: 'none',
-                background: '#85FF00', color: '#1A1A1A', cursor: 'pointer', fontWeight: 600
-              }}
-            >
+            <button onClick={handleConfirmedSubmit} className="sf-btn sf-btn-primary" disabled={saving}>
               {saving ? 'Salvataggio...' : 'Conferma'}
             </button>
           </div>
@@ -1160,30 +1044,33 @@ function PackageForm() {
         isOpen={showLevelModal}
         onClose={() => setShowLevelModal(false)}
         title="Crea Nuovo Livello"
+        maxWidth="480px"
       >
-        <div style={{ padding: '20px' }}>
-          <div className="form-group">
-            <label>Nome Livello <span className="required">*</span></label>
+        <div style={{ padding: '8px 0' }}>
+          <div className="form-group" style={{ marginBottom: '16px' }}>
+            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Nome Livello *</label>
             <input
               type="text"
               value={levelForm.label}
               onChange={(e) => setLevelForm(prev => ({ ...prev, label: e.target.value }))}
               placeholder="es. Main Sponsor"
+              style={{ width: '100%', padding: '12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '14px' }}
             />
           </div>
 
-          <div className="form-group">
-            <label>Descrizione</label>
+          <div className="form-group" style={{ marginBottom: '16px' }}>
+            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Descrizione</label>
             <input
               type="text"
               value={levelForm.description}
               onChange={(e) => setLevelForm(prev => ({ ...prev, description: e.target.value }))}
-              placeholder="es. Partner principale con massima visibilita"
+              placeholder="es. Partner principale con massima visibilità"
+              style={{ width: '100%', padding: '12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '14px' }}
             />
           </div>
 
-          <div className="form-group">
-            <label>Colore</label>
+          <div className="form-group" style={{ marginBottom: '24px' }}>
+            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Colore</label>
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
               {availableColors.map(color => (
                 <button
@@ -1202,25 +1089,15 @@ function PackageForm() {
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '24px' }}>
-            <button
-              onClick={() => setShowLevelModal(false)}
-              style={{
-                padding: '10px 20px', borderRadius: '8px', border: '1px solid #E5E7EB',
-                background: 'white', cursor: 'pointer', fontWeight: 500
-              }}
-            >
+          <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+            <button onClick={() => setShowLevelModal(false)} className="sf-btn sf-btn-outline">
               Annulla
             </button>
             <button
               onClick={saveLevel}
               disabled={!levelForm.label.trim() || savingLevel}
-              style={{
-                padding: '10px 20px', borderRadius: '8px', border: 'none',
-                background: levelForm.label.trim() ? '#1A1A1A' : '#E5E7EB',
-                color: levelForm.label.trim() ? 'white' : '#9CA3AF',
-                cursor: levelForm.label.trim() ? 'pointer' : 'not-allowed', fontWeight: 600
-              }}
+              className="sf-btn sf-btn-primary"
+              style={{ opacity: levelForm.label.trim() ? 1 : 0.5 }}
             >
               {savingLevel ? 'Creazione...' : 'Crea Livello'}
             </button>
@@ -1228,11 +1105,24 @@ function PackageForm() {
         </div>
       </Modal>
 
-      <style>{`
-        @keyframes spin {
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
+      {/* Support Widget */}
+      <SupportWidget
+        pageTitle={isEditing ? 'Modifica Package' : 'Nuovo Package'}
+        pageDescription={isEditing
+          ? "Modifica le informazioni, gli asset inclusi o il prezzo di questo package. Le modifiche non influenzano le assegnazioni già effettuate."
+          : "Crea un nuovo package di sponsorizzazione in 3 semplici step: scegli il livello, seleziona gli asset da includere e configura il prezzo. L'anteprima live ti mostra come apparirà il package finale. Puoi creare livelli personalizzati e combinare asset di diverse categorie."}
+        pageIcon={FaLayerGroup}
+        docsSection="inventory-packages"
+        onStartTour={handleStartTour}
+      />
+
+      {/* Guided Tour */}
+      <GuidedTour
+        steps={tourSteps}
+        isOpen={isTourOpen}
+        onClose={handleTourClose}
+        onStepChange={handleTourStepChange}
+      />
     </div>
   );
 }

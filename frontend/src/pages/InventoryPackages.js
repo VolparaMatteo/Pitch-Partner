@@ -95,41 +95,59 @@ function InventoryPackages() {
     items: []
   });
 
-  // Tour steps
+  // Tour steps - Guida interattiva completa
   const tourSteps = [
     {
       target: '[data-tour="page-header"]',
-      title: 'Package Sponsorizzazione',
-      content: 'Questa pagina ti permette di creare e gestire pacchetti di asset per i tuoi sponsor. Combina più asset in offerte complete e competitive.',
+      title: 'Benvenuto nei Package',
+      content: 'I Package sono bundle di asset che puoi offrire agli sponsor come pacchetti completi. Combinando più asset in un unico package, puoi proporre offerte competitive con sconti bundle attrattivi.',
       placement: 'bottom',
       icon: <FaLayerGroup size={18} color="white" />,
       iconBg: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
-      tip: 'I package permettono di offrire sconti bundle e semplificare la vendita.'
+      tip: 'Esempio: crea un "Gold Package" con LED bordocampo + logo maglia + hospitality per offrire visibilità premium agli sponsor.'
+    },
+    {
+      target: '[data-tour="new-package-btn"]',
+      title: 'Crea Nuovo Package',
+      content: 'Clicca qui per creare un nuovo package. Verrai guidato attraverso 3 step: definizione delle informazioni base, selezione degli asset da includere e configurazione del pricing.',
+      placement: 'bottom',
+      icon: <FaPlus size={18} color="white" />,
+      iconBg: 'linear-gradient(135deg, #10B981, #34D399)',
+      tip: 'Puoi creare package per diversi livelli di sponsorizzazione: Main Sponsor, Official Partner, Premium e Standard.'
     },
     {
       target: '[data-tour="stats-row"]',
-      title: 'Statistiche Package',
-      content: 'Monitora le metriche chiave: totale package, package venduti, valore totale e sconto medio applicato ai tuoi bundle.',
+      title: 'Dashboard Statistiche',
+      content: 'Monitora le performance dei tuoi package in tempo reale:\n\n• Package Totali: numero di bundle creati\n• Package Venduti: quanti sono stati assegnati a sponsor\n• Valore Venduto: ricavi generati dai package\n• Sconto Medio: percentuale media di sconto applicata',
       placement: 'bottom',
       icon: <FaChartLine size={18} color="white" />,
-      iconBg: 'linear-gradient(135deg, #10B981, #34D399)'
-    },
-    {
-      target: '[data-tour="filters"]',
-      title: 'Filtri e Ricerca',
-      content: 'Filtra i package per livello (Main, Official, Premium, Standard) o cerca per nome per trovare rapidamente quello che cerchi.',
-      placement: 'bottom',
-      icon: <FaFilter size={18} color="white" />,
       iconBg: 'linear-gradient(135deg, #F59E0B, #FBBF24)'
     },
     {
+      target: '[data-tour="level-filter"]',
+      title: 'Filtro per Livello',
+      content: 'Filtra i package per livello di sponsorizzazione. I livelli ti permettono di categorizzare le offerte in base al valore e alla visibilità:\n\n• Main Sponsor: massima visibilità\n• Official Partner: partnership ufficiale\n• Premium: visibilità elevata\n• Standard: pacchetto base',
+      placement: 'bottom',
+      icon: <FaStar size={18} color="white" />,
+      iconBg: 'linear-gradient(135deg, #8B5CF6, #A78BFA)',
+      tip: 'Puoi creare livelli personalizzati cliccando su "Configura Livelli" nel menu filtri.'
+    },
+    {
+      target: '[data-tour="filters"]',
+      title: 'Ricerca e Ordinamento',
+      content: 'Usa la barra di ricerca per trovare package specifici per nome. Puoi anche alternare tra visualizzazione a griglia e lista tabellare usando i pulsanti dedicati.',
+      placement: 'bottom',
+      icon: <FaSearch size={18} color="white" />,
+      iconBg: 'linear-gradient(135deg, #3B82F6, #60A5FA)'
+    },
+    {
       target: '[data-tour="packages-grid"]',
-      title: 'Griglia Package',
-      content: 'Qui trovi tutti i tuoi package. Ogni card mostra livello, prezzo, asset inclusi e disponibilità. Puoi modificare, eliminare o assegnare i package agli sponsor.',
+      title: 'I Tuoi Package',
+      content: 'Ogni card mostra:\n\n• Colore e livello del package\n• Nome e descrizione\n• Numero di asset inclusi\n• Vendite effettuate\n• Prezzo (con eventuale sconto)\n\nClicca sulla card per vedere i dettagli, usa i pulsanti per modificare o eliminare.',
       placement: 'top',
       icon: <FaCube size={18} color="white" />,
-      iconBg: 'linear-gradient(135deg, #3B82F6, #60A5FA)',
-      tip: 'Clicca su "Assegna" per collegare il package a uno sponsor o contratto esistente.'
+      iconBg: 'linear-gradient(135deg, #EC4899, #F472B6)',
+      tip: 'I package con lo stato "Sold Out" hanno raggiunto il numero massimo di vendite consentite.'
     }
   ];
 
@@ -420,18 +438,7 @@ function InventoryPackages() {
   };
 
   const openEditModal = (pkg) => {
-    setEditingPackage(pkg);
-    setNewPackage({
-      nome: pkg.nome,
-      codice: pkg.codice,
-      descrizione: pkg.descrizione || '',
-      livello: pkg.livello || 'standard',
-      prezzo_listino: pkg.prezzo_listino || '',
-      prezzo_scontato: pkg.prezzo_scontato || '',
-      colore: pkg.colore || '#85FF00',
-      items: pkg.items || []
-    });
-    setShowCreateModal(true);
+    navigate(`/club/inventory/packages/${pkg.id}/edit`);
   };
 
   // Assignment handlers
@@ -561,20 +568,8 @@ function InventoryPackages() {
           </button>
           <button
             className="tp-btn tp-btn-primary"
-            onClick={() => {
-              setEditingPackage(null);
-              setNewPackage({
-                nome: '',
-                codice: '',
-                descrizione: '',
-                livello: 'standard',
-                prezzo_listino: '',
-                prezzo_scontato: '',
-                colore: '#85FF00',
-                items: []
-              });
-              setShowCreateModal(true);
-            }}
+            onClick={() => navigate('/club/inventory/packages/new')}
+            data-tour="new-package-btn"
           >
             <FaPlus /> Nuovo Package
           </button>
@@ -638,7 +633,7 @@ function InventoryPackages() {
             </div>
 
             {/* Filter Level - Custom Dropdown */}
-            <div ref={levelDropdownRef} style={{ position: 'relative' }}>
+            <div ref={levelDropdownRef} style={{ position: 'relative' }} data-tour="level-filter">
               <button
                 type="button"
                 onClick={() => setLevelDropdownOpen(!levelDropdownOpen)}
@@ -847,82 +842,238 @@ function InventoryPackages() {
                   Rimuovi filtri
                 </button>
               ) : (
-                <button className="tp-btn tp-btn-primary" onClick={() => setShowCreateModal(true)}>
+                <button className="tp-btn tp-btn-primary" onClick={() => navigate('/club/inventory/packages/new')}>
                   <FaPlus /> Crea Package
                 </button>
               )}
             </div>
           ) : viewMode === 'grid' ? (
             /* GRID VIEW */
-            <div className="tp-packages-grid">
+            <div className="tp-grid">
               {filteredPackages.map(pkg => (
                 <div
                   key={pkg.id}
-                  className="tp-package-card"
-                  style={{ '--package-color': pkg.colore || levelConfig[pkg.livello]?.color || '#85FF00' }}
+                  style={{
+                    background: '#ffffff',
+                    borderRadius: '16px',
+                    border: '1px solid #e5e7eb',
+                    overflow: 'hidden',
+                    transition: 'all 0.2s ease',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    flexDirection: 'column'
+                  }}
+                  onClick={() => navigate(`/club/inventory/packages/${pkg.id}`)}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = '#22c55e';
+                    e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.12)';
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = '#e5e7eb';
+                    e.currentTarget.style.boxShadow = 'none';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                  }}
                 >
-                  <div className="tp-package-header">
-                    <div className="tp-package-level" style={{ background: levelConfig[pkg.livello]?.color }}>
-                      {levelConfig[pkg.livello]?.label || pkg.livello}
-                    </div>
-                    {pkg.vendite_attuali >= (pkg.max_vendite || 999) && (
-                      <span className="tp-package-badge sold-out">Sold Out</span>
-                    )}
-                  </div>
+                  {/* Header con colore livello */}
+                  <div style={{
+                    width: '100%',
+                    height: '160px',
+                    background: `linear-gradient(135deg, ${levelConfig[pkg.livello]?.color || pkg.colore || '#85FF00'} 0%, ${levelConfig[pkg.livello]?.color || pkg.colore || '#85FF00'}dd 100%)`,
+                    position: 'relative',
+                    overflow: 'hidden',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}>
+                    <FaLayerGroup size={48} color="rgba(255,255,255,0.3)" />
 
-                  <div className="tp-package-content">
-                    <h3 className="tp-package-name">{pkg.nome}</h3>
-                    <p className="tp-package-description">
-                      {pkg.descrizione || levelConfig[pkg.livello]?.description}
-                    </p>
-
-                    <div className="tp-package-stats">
-                      <div className="tp-package-stat">
-                        <FaCube />
-                        <span>{pkg.items_count || pkg.items?.length || 0} asset</span>
-                      </div>
-                      <div className="tp-package-stat">
-                        <span>{pkg.vendite_attuali || 0} venduti</span>
-                      </div>
-                    </div>
-
-                    <div className="tp-package-pricing">
-                      {pkg.prezzo_scontato && pkg.prezzo_scontato < pkg.prezzo_listino ? (
-                        <>
-                          <span className="tp-package-price-old">
-                            {formatCurrency(pkg.prezzo_listino)}
-                          </span>
-                          <span className="tp-package-price">
-                            {formatCurrency(pkg.prezzo_scontato)}
-                          </span>
-                        </>
+                    {/* Badge Stato - in alto a destra */}
+                    <div style={{ position: 'absolute', top: '12px', right: '12px' }}>
+                      {pkg.vendite_attuali >= (pkg.max_vendite || 999) ? (
+                        <span style={{
+                          background: '#FEE2E2',
+                          color: '#991B1B',
+                          padding: '6px 12px',
+                          borderRadius: '20px',
+                          fontSize: '12px',
+                          fontWeight: 600,
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                        }}>
+                          Sold Out
+                        </span>
                       ) : (
-                        <span className="tp-package-price">
-                          {formatCurrency(pkg.prezzo_listino)}
+                        <span style={{
+                          background: pkg.attivo ? '#DCFCE7' : '#FEE2E2',
+                          color: pkg.attivo ? '#166534' : '#991B1B',
+                          padding: '6px 12px',
+                          borderRadius: '20px',
+                          fontSize: '12px',
+                          fontWeight: 600,
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                        }}>
+                          {pkg.attivo ? 'Attivo' : 'Non attivo'}
                         </span>
                       )}
-                        </div>
+                    </div>
+
+                    {/* Badge Livello - in basso a sinistra */}
+                    <div style={{ position: 'absolute', bottom: '12px', left: '12px' }}>
+                      <span style={{
+                        background: 'rgba(255,255,255,0.95)',
+                        color: levelConfig[pkg.livello]?.color || '#1f2937',
+                        padding: '6px 12px',
+                        borderRadius: '20px',
+                        fontSize: '11px',
+                        fontWeight: 600,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '5px',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+                      }}>
+                        <FaStar size={10} />
+                        {levelConfig[pkg.livello]?.label || pkg.livello || 'Package'}
+                      </span>
+                    </div>
                   </div>
 
-                  <div className="tp-package-actions">
-                    <button
-                      className="tp-btn tp-btn-primary"
-                      onClick={() => navigate(`/club/inventory/packages/${pkg.id}`)}
-                    >
-                      <FaEye /> Visualizza
-                    </button>
-                    <button
-                      className="tp-btn tp-btn-secondary"
-                      onClick={() => openEditModal(pkg)}
-                    >
-                      <FaEdit />
-                    </button>
-                    <button
-                      className="tp-btn-icon danger"
-                      onClick={() => handleDeletePackage(pkg.id)}
-                    >
-                      <FaTrash />
-                    </button>
+                  {/* Contenuto Card */}
+                  <div style={{ padding: '20px', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                    {/* Nome Package */}
+                    <h3 style={{
+                      fontSize: '17px',
+                      fontWeight: 700,
+                      color: '#111827',
+                      margin: '0 0 8px 0',
+                      lineHeight: 1.3,
+                      display: '-webkit-box',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden'
+                    }}>
+                      {pkg.nome}
+                    </h3>
+
+                    {/* Descrizione */}
+                    {(pkg.descrizione || levelConfig[pkg.livello]?.description) && (
+                      <p style={{
+                        fontSize: '13px',
+                        color: '#6b7280',
+                        margin: '0 0 16px 0',
+                        lineHeight: 1.5,
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden'
+                      }}>
+                        {pkg.descrizione || levelConfig[pkg.livello]?.description}
+                      </p>
+                    )}
+
+                    {/* Info Grid */}
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: '1fr 1fr',
+                      gap: '12px',
+                      marginBottom: '16px'
+                    }}>
+                      <div>
+                        <div style={{ fontSize: '11px', color: '#9ca3af', fontWeight: 500, marginBottom: '2px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                          Asset inclusi
+                        </div>
+                        <div style={{ fontSize: '14px', color: '#374151', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <FaCube size={12} color="#6b7280" />
+                          {pkg.items_count || pkg.items?.length || 0} asset
+                        </div>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '11px', color: '#9ca3af', fontWeight: 500, marginBottom: '2px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                          Vendite
+                        </div>
+                        <div style={{ fontSize: '14px', color: '#374151', fontWeight: 500 }}>
+                          {pkg.vendite_attuali || 0} / {pkg.max_vendite || '∞'}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Spacer */}
+                    <div style={{ flex: 1 }} />
+
+                    {/* Footer con Prezzo e Azioni */}
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      paddingTop: '16px',
+                      borderTop: '1px solid #f3f4f6'
+                    }}>
+                      {/* Prezzo */}
+                      <div>
+                        <div style={{ fontSize: '11px', color: '#9ca3af', fontWeight: 500, marginBottom: '2px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                          Prezzo
+                        </div>
+                        {pkg.prezzo_scontato && pkg.prezzo_scontato < pkg.prezzo_listino ? (
+                          <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+                            <span style={{ fontSize: '20px', fontWeight: 700, color: '#111827' }}>
+                              {formatCurrency(pkg.prezzo_scontato)}
+                            </span>
+                            <span style={{ fontSize: '14px', color: '#9ca3af', textDecoration: 'line-through' }}>
+                              {formatCurrency(pkg.prezzo_listino)}
+                            </span>
+                          </div>
+                        ) : (
+                          <div style={{ fontSize: '20px', fontWeight: 700, color: '#111827' }}>
+                            {formatCurrency(pkg.prezzo_listino)}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Azioni */}
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); openEditModal(pkg); }}
+                          title="Modifica"
+                          style={{
+                            width: '36px',
+                            height: '36px',
+                            borderRadius: '10px',
+                            border: '1px solid #e5e7eb',
+                            background: '#ffffff',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: '#6b7280',
+                            transition: 'all 0.15s ease'
+                          }}
+                          onMouseEnter={(e) => { e.currentTarget.style.background = '#f3f4f6'; e.currentTarget.style.borderColor = '#d1d5db'; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.background = '#ffffff'; e.currentTarget.style.borderColor = '#e5e7eb'; }}
+                        >
+                          <FaEdit size={14} />
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleDeletePackage(pkg.id); }}
+                          title="Elimina"
+                          style={{
+                            width: '36px',
+                            height: '36px',
+                            borderRadius: '10px',
+                            border: '1px solid #e5e7eb',
+                            background: '#ffffff',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: '#EF4444',
+                            transition: 'all 0.15s ease'
+                          }}
+                          onMouseEnter={(e) => { e.currentTarget.style.background = '#FEE2E2'; e.currentTarget.style.borderColor = '#EF4444'; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.background = '#ffffff'; e.currentTarget.style.borderColor = '#e5e7eb'; }}
+                        >
+                          <FaTrash size={14} />
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -2165,7 +2316,7 @@ function InventoryPackages() {
       {/* Support Widget */}
       <SupportWidget
         pageTitle="Package Sponsorizzazione"
-        pageDescription="Crea e gestisci pacchetti di asset per offrire bundle completi agli sponsor. Combina più asset in offerte competitive con sconti bundle."
+        pageDescription="Gestisci i tuoi pacchetti di sponsorizzazione in un'unica vista. I Package ti permettono di combinare più asset (LED, hospitality, digitale, ecc.) in offerte bundle con pricing vantaggioso. Puoi creare livelli personalizzati (Main Sponsor, Official Partner, Premium, Standard), monitorare le vendite, e assegnare i package direttamente a sponsor o contratti esistenti."
         pageIcon={FaLayerGroup}
         docsSection="inventory-packages"
         onStartTour={handleStartTour}
