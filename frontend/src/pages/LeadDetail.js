@@ -1410,20 +1410,12 @@ function LeadDetail() {
                 {getPendingFollowups() > 0 && <span className="sd-tab-alert" />}
               </button>
               <button
-                className={`sd-tab-btn ${activeTab === 'notes' ? 'active' : ''}`}
-                onClick={() => setActiveTab('notes')}
+                className={`sd-tab-btn ${activeTab === 'assets' ? 'active' : ''}`}
+                onClick={() => setActiveTab('assets')}
               >
-                <span className="sd-tab-icon"><FaStickyNote /></span>
-                Note
-                <span className="sd-tab-count">{notes.length}</span>
-              </button>
-              <button
-                className={`sd-tab-btn ${activeTab === 'stages' ? 'active' : ''}`}
-                onClick={() => setActiveTab('stages')}
-              >
-                <span className="sd-tab-icon"><FaChartLine /></span>
-                Storico Fasi
-                <span className="sd-tab-count">{stageHistory.length}</span>
+                <span className="sd-tab-icon"><FaBoxOpen /></span>
+                Interessata a
+                <span className="sd-tab-count">{assetInterests.length}</span>
               </button>
               <button
                 className={`sd-tab-btn ${activeTab === 'proposals' ? 'active' : ''}`}
@@ -1434,20 +1426,28 @@ function LeadDetail() {
                 <span className="sd-tab-count">{proposals.length}</span>
               </button>
               <button
+                className={`sd-tab-btn ${activeTab === 'stages' ? 'active' : ''}`}
+                onClick={() => setActiveTab('stages')}
+              >
+                <span className="sd-tab-icon"><FaChartLine /></span>
+                Fasi
+                <span className="sd-tab-count">{stageHistory.length}</span>
+              </button>
+              <button
+                className={`sd-tab-btn ${activeTab === 'notes' ? 'active' : ''}`}
+                onClick={() => setActiveTab('notes')}
+              >
+                <span className="sd-tab-icon"><FaStickyNote /></span>
+                Note
+                <span className="sd-tab-count">{notes.length}</span>
+              </button>
+              <button
                 className={`sd-tab-btn ${activeTab === 'documents' ? 'active' : ''}`}
                 onClick={() => setActiveTab('documents')}
               >
                 <span className="sd-tab-icon"><FaPaperclip /></span>
-                Documenti
+                Allegati
                 <span className="sd-tab-count">{documents.length}</span>
-              </button>
-              <button
-                className={`sd-tab-btn ${activeTab === 'assets' ? 'active' : ''}`}
-                onClick={() => setActiveTab('assets')}
-              >
-                <span className="sd-tab-icon"><FaBoxOpen /></span>
-                Interessi Asset
-                <span className="sd-tab-count">{assetInterests.length}</span>
               </button>
             </div>
 
@@ -1757,7 +1757,7 @@ function LeadDetail() {
               {activeTab === 'documents' && (
                 <>
                   <div className="sd-tab-header">
-                    <h2 className="sd-tab-title"><FaPaperclip /> Documenti</h2>
+                    <h2 className="sd-tab-title"><FaPaperclip /> Allegati</h2>
                     <button className="sd-btn sd-btn-primary" onClick={() => {
                       setDocFile(null);
                       setDocForm({ nome: '', categoria: 'altro', descrizione: '' });
@@ -1921,7 +1921,7 @@ function LeadDetail() {
               {activeTab === 'stages' && (
                 <>
                   <div className="sd-tab-header">
-                    <h2 className="sd-tab-title"><FaChartLine /> Storico Fasi</h2>
+                    <h2 className="sd-tab-title"><FaChartLine /> Fasi</h2>
                   </div>
 
                   {stageHistory.length === 0 ? (
@@ -2071,7 +2071,7 @@ function LeadDetail() {
               {activeTab === 'assets' && (
                 <>
                   <div className="sd-tab-header">
-                    <h2 className="sd-tab-title"><FaBoxOpen /> Interessi Asset</h2>
+                    <h2 className="sd-tab-title"><FaBoxOpen /> Interessata a</h2>
                     {!lead.convertito && (
                       <button
                         className="sd-btn sd-btn-primary"

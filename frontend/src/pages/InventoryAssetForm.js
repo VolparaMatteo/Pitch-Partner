@@ -11,7 +11,7 @@ import {
   FaArrowLeft, FaArrowRight, FaCheck, FaCube, FaPlus, FaTrash, FaTimes,
   FaCloudUploadAlt, FaGlobe, FaStar, FaLayerGroup, FaTshirt, FaBullhorn,
   FaUsers, FaVideo, FaTv, FaFootballBall, FaHandshake, FaGift, FaBoxOpen,
-  FaTags, FaEuroSign, FaImage, FaCog, FaEye, FaMapMarkerAlt
+  FaTags, FaEuroSign, FaImage, FaCog, FaEye, FaMapMarkerAlt, FaGavel
 } from 'react-icons/fa';
 import {
   HiOutlineCube, HiOutlinePhoto, HiOutlineCurrencyEuro,
@@ -231,6 +231,7 @@ function InventoryAssetForm() {
     { value: 'fisico', label: 'Fisico', icon: FaCube, desc: 'LED, Banner, Cartelloni' },
     { value: 'digitale', label: 'Digitale', icon: FaGlobe, desc: 'Banner web, Social, App' },
     { value: 'esperienza', label: 'Esperienza', icon: FaStar, desc: 'Hospitality, VIP, Eventi' },
+    { value: 'diritto', label: 'Diritto', icon: FaGavel, desc: 'Naming, Licenze, Esclusività' },
     { value: 'misto', label: 'Misto', icon: FaLayerGroup, desc: 'Combinazione di elementi' }
   ];
 
@@ -239,6 +240,7 @@ function InventoryAssetForm() {
     fisico: ['Dimensioni', 'Larghezza', 'Altezza', 'Materiale', 'Peso', 'Illuminazione'],
     digitale: ['Dimensioni', 'Risoluzione', 'Formato', 'Durata Spot', 'Impression/mese', 'Pixel Pitch'],
     esperienza: ['Capacità', 'Durata', 'Servizi Inclusi', 'Catering', 'Posti'],
+    diritto: ['Durata Licenza', 'Ambito Territoriale', 'Esclusività', 'Utilizzi Consentiti', 'Limitazioni'],
     misto: ['Dimensioni', 'Componente Digitale', 'Durata', 'Formato']
   };
 
@@ -456,7 +458,7 @@ function InventoryAssetForm() {
   };
 
   const addPricingTier = () => {
-    setPricingTiers([...pricingTiers, { nome: '', codice: '', prezzo: '', durata_tipo: 'partita' }]);
+    setPricingTiers([...pricingTiers, { nome: '', prezzo: '', durata_tipo: 'partita' }]);
   };
 
   const removePricingTier = (index) => {
@@ -886,7 +888,7 @@ function InventoryAssetForm() {
 
               <div className="form-group" data-tour="asset-type">
                 <label>Tipo di Asset</label>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginTop: '8px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '12px', marginTop: '8px' }}>
                   {assetTypes.map(type => {
                     const TypeIcon = type.icon;
                     const isSelected = formData.tipo === type.value;
@@ -1146,7 +1148,7 @@ function InventoryAssetForm() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   {pricingTiers.map((tier, index) => (
                     <div key={index} style={{
-                      display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr auto', gap: '12px',
+                      display: 'grid', gridTemplateColumns: '2fr 1fr 1fr auto', gap: '12px',
                       alignItems: 'center', padding: '16px', background: '#F9FAFB',
                       borderRadius: '12px', border: '1px solid #E5E7EB'
                     }}>
@@ -1155,13 +1157,6 @@ function InventoryAssetForm() {
                         value={tier.nome}
                         onChange={(e) => handlePricingChange(index, 'nome', e.target.value)}
                         placeholder="Nome tier (es: Derby)"
-                        style={{ padding: '10px 14px', border: '1px solid #E5E7EB', borderRadius: '8px', fontSize: '14px' }}
-                      />
-                      <input
-                        type="text"
-                        value={tier.codice}
-                        onChange={(e) => handlePricingChange(index, 'codice', e.target.value)}
-                        placeholder="Codice"
                         style={{ padding: '10px 14px', border: '1px solid #E5E7EB', borderRadius: '8px', fontSize: '14px' }}
                       />
                       <div style={{ position: 'relative' }}>
@@ -1183,6 +1178,7 @@ function InventoryAssetForm() {
                         style={{ padding: '10px 14px', border: '1px solid #E5E7EB', borderRadius: '8px', fontSize: '14px' }}
                       >
                         <option value="partita">/ Partita</option>
+                        <option value="evento">/ Evento</option>
                         <option value="mese">/ Mese</option>
                         <option value="stagione">/ Stagione</option>
                         <option value="anno">/ Anno</option>
@@ -1497,11 +1493,6 @@ function InventoryAssetForm() {
                             Disponibile
                           </span>
                         )}
-                        {formData.visibile_marketplace && (
-                          <span style={{ padding: '4px 10px', background: 'rgba(59, 130, 246, 0.2)', borderRadius: '20px', fontSize: '12px', color: '#60A5FA' }}>
-                            Marketplace
-                          </span>
-                        )}
                       </div>
                     </div>
                   </div>
@@ -1618,14 +1609,17 @@ function InventoryAssetForm() {
                   padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: 600,
                   background: formData.tipo === 'fisico' ? '#DBEAFE' :
                              formData.tipo === 'digitale' ? '#F3E8FF' :
-                             formData.tipo === 'esperienza' ? '#FEF3C7' : '#ECFDF5',
+                             formData.tipo === 'esperienza' ? '#FEF3C7' :
+                             formData.tipo === 'diritto' ? '#FCE7F3' : '#ECFDF5',
                   color: formData.tipo === 'fisico' ? '#1D4ED8' :
                          formData.tipo === 'digitale' ? '#7C3AED' :
-                         formData.tipo === 'esperienza' ? '#D97706' : '#059669'
+                         formData.tipo === 'esperienza' ? '#D97706' :
+                         formData.tipo === 'diritto' ? '#DB2777' : '#059669'
                 }}>
                   {formData.tipo === 'fisico' ? 'Fisico' :
                    formData.tipo === 'digitale' ? 'Digitale' :
-                   formData.tipo === 'esperienza' ? 'Esperienza' : 'Misto'}
+                   formData.tipo === 'esperienza' ? 'Esperienza' :
+                   formData.tipo === 'diritto' ? 'Diritto' : 'Misto'}
                 </span>
                 {formData.in_evidenza && (
                   <span style={{
@@ -1747,17 +1741,12 @@ function InventoryAssetForm() {
 
               {/* Availability */}
               <div style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                display: 'flex', alignItems: 'center',
                 padding: '12px', background: formData.disponibile ? '#ECFDF5' : '#FEF2F2', borderRadius: '10px'
               }}>
                 <span style={{ fontSize: '13px', fontWeight: 600, color: formData.disponibile ? '#059669' : '#DC2626' }}>
                   {formData.disponibile ? 'Disponibile' : 'Non Disponibile'}
                 </span>
-                {formData.visibile_marketplace && (
-                  <span style={{ fontSize: '11px', color: '#6B7280' }}>
-                    <FaGlobe style={{ marginRight: '4px' }} /> Marketplace
-                  </span>
-                )}
               </div>
 
               {/* Tags */}

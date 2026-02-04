@@ -3550,7 +3550,6 @@ class AssetPricingTier(db.Model):
 
     # Identificazione tier
     nome = db.Column(db.String(100), nullable=False)  # "Partita Standard", "Derby", "Champions League"
-    codice = db.Column(db.String(50), nullable=False)  # standard, derby, champions, coppa_italia
     descrizione = db.Column(db.Text)
 
     # Pricing
@@ -3576,7 +3575,6 @@ class AssetPricingTier(db.Model):
             'id': self.id,
             'asset_id': self.asset_id,
             'nome': self.nome,
-            'codice': self.codice,
             'descrizione': self.descrizione,
             'prezzo': self.prezzo,
             'prezzo_scontato': self.prezzo_scontato,

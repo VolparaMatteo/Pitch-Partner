@@ -584,13 +584,10 @@
 /* Tabs Navigation */
 .sd-tabs-nav {
   display: flex;
-  gap: 0;
-  padding: 6px 12px;
-  background: #FAFAFA;
-  border-bottom: 1px solid #F0F0F0;
-  overflow-x: auto;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+  gap: 6px;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #FAFAFA 0%, #F5F5F5 100%);
+  border-bottom: 1px solid #E5E7EB;
   align-items: center;
 }
 
@@ -616,7 +613,7 @@
 
 .sd-tab-group-buttons {
   display: flex;
-  gap: 0;
+  gap: 6px;
 }
 
 .sd-tab-divider {
@@ -628,85 +625,115 @@
 }
 
 .sd-tab-btn {
-  flex: 0 0 auto;
+  flex: 1 1 0;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 10px 10px;
-  border: none;
-  background: transparent;
-  font-size: 12px;
+  padding: 10px 12px;
+  border: 2px solid transparent;
+  background: white;
+  font-size: 13px;
   font-weight: 600;
   color: #6B7280;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   white-space: nowrap;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  min-width: 0;
 }
 
-.sd-tab-btn::after {
+.sd-tab-btn::before {
   content: '';
   position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: transparent;
-  transition: all 0.2s ease;
+  inset: 0;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(133, 255, 0, 0.1) 0%, rgba(133, 255, 0, 0.05) 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
 .sd-tab-btn:hover {
-  background: #F5F5F5;
+  border-color: #E5E7EB;
   color: #1A1A1A;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.sd-tab-btn:hover::before {
+  opacity: 1;
 }
 
 .sd-tab-btn.active {
-  background: white;
-  color: #1A1A1A;
+  background: linear-gradient(135deg, #1A1A1A 0%, #2D2D2D 100%);
+  color: white;
   font-weight: 700;
+  border-color: transparent;
+  box-shadow: 0 4px 16px rgba(26, 26, 26, 0.25);
+  transform: translateY(-2px);
 }
 
-.sd-tab-btn.active::after {
-  background: #85FF00;
-  height: 4px;
-  border-radius: 4px 4px 0 0;
+.sd-tab-btn.active::before {
+  display: none;
 }
 
 .sd-tab-icon {
-  font-size: 12px;
+  font-size: 14px;
   display: flex;
   align-items: center;
+  transition: transform 0.3s ease;
+}
+
+.sd-tab-btn:hover .sd-tab-icon {
+  transform: scale(1.1);
+}
+
+.sd-tab-btn.active .sd-tab-icon {
+  color: white;
 }
 
 .sd-tab-count {
   background: #F0F0F0;
   color: #6B7280;
-  padding: 2px 6px;
-  border-radius: 10px;
-  font-size: 10px;
+  padding: 3px 8px;
+  border-radius: 20px;
+  font-size: 11px;
   font-weight: 700;
+  min-width: 22px;
+  text-align: center;
+  transition: all 0.3s ease;
 }
 
 .sd-tab-btn.active .sd-tab-count {
-  background: #1A1A1A;
+  background: rgba(255, 255, 255, 0.2);
   color: white;
 }
 
 .sd-tab-alert {
-  width: 8px;
-  height: 8px;
-  background: #EF4444;
+  width: 10px;
+  height: 10px;
+  background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
   border-radius: 50%;
   position: absolute;
-  top: 14px;
-  right: 14px;
-  animation: pulse 2s infinite;
+  top: -2px;
+  right: -2px;
+  animation: pulse-alert 2s infinite;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
 }
 
-@keyframes pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.7; transform: scale(0.9); }
+@keyframes pulse-alert {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.1);
+    box-shadow: 0 0 0 6px rgba(239, 68, 68, 0.1);
+  }
 }
 
 /* Tab Content */
@@ -1195,8 +1222,8 @@
   }
 
   .sd-tabs-nav {
-    flex-direction: column;
-    gap: 12px;
+    flex-wrap: wrap;
+    gap: 8px;
     padding: 12px;
   }
 
@@ -1206,23 +1233,24 @@
 
   .sd-tab-group-buttons {
     flex-wrap: wrap;
+    gap: 8px;
   }
 
   .sd-tab-divider {
     display: none;
   }
 
-  .sd-tab-btn::after {
-    display: none;
+  .sd-tab-btn {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+
+  .sd-tab-btn:hover {
+    transform: none;
   }
 
   .sd-tab-btn.active {
-    background: #1A1A1A;
-    color: white;
-  }
-
-  .sd-tab-btn.active .sd-tab-count {
-    background: rgba(133, 255, 0, 0.3);
+    transform: none;
   }
 
   .sd-contract-stats {

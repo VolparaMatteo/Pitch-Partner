@@ -290,7 +290,6 @@ def create_asset():
             tier = AssetPricingTier(
                 asset_id=asset.id,
                 nome=tier_data.get('nome'),
-                codice=tier_data.get('codice'),
                 descrizione=tier_data.get('descrizione'),
                 prezzo=tier_data.get('prezzo'),
                 prezzo_scontato=tier_data.get('prezzo_scontato'),
