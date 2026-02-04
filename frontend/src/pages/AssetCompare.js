@@ -810,10 +810,25 @@ function AssetCompare() {
                   <div
                     className="compare-modal-item-icon"
                     style={{
-                      background: `linear-gradient(135deg, ${asset.categoria?.colore || asset.category?.colore || '#6B7280'}, ${asset.categoria?.colore || asset.category?.colore || '#6B7280'}dd)`
+                      background: asset.immagine_principale
+                        ? 'transparent'
+                        : `linear-gradient(135deg, ${asset.categoria?.colore || asset.category?.colore || '#6B7280'}, ${asset.categoria?.colore || asset.category?.colore || '#6B7280'}dd)`
                     }}
                   >
-                    {getCategoryIcon(asset.categoria?.icona || asset.category?.icona)}
+                    {asset.immagine_principale ? (
+                      <img
+                        src={getImageUrl(asset.immagine_principale)}
+                        alt={asset.nome}
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
+                          borderRadius: '12px'
+                        }}
+                      />
+                    ) : (
+                      getCategoryIcon(asset.categoria?.icona || asset.category?.icona)
+                    )}
                   </div>
                   <div className="compare-modal-item-content">
                     <span className="compare-modal-item-code">{asset.codice}</span>
