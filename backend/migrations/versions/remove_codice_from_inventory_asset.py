@@ -17,9 +17,13 @@ depends_on = None
 
 
 def upgrade():
-    # Remove codice column from inventory_assets table
-    with op.batch_alter_table('inventory_assets', schema=None) as batch_op:
-        batch_op.drop_column('codice')
+    # Remove codice column from inventory_assets table (if it exists)
+    conn = op.get_bind()
+    inspector = sa.inspect(conn)
+    columns = [col['name'] for col in inspector.get_columns('inventory_assets')]
+    if 'codice' in columns:
+        with op.batch_alter_table('inventory_assets', schema=None) as batch_op:
+            batch_op.drop_column('codice')
 
 
 def downgrade():

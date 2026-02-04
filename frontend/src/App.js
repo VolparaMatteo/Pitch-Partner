@@ -7,6 +7,11 @@ import AdminLeadForm from './pages/AdminLeadForm';
 import AdminClubListPage from './pages/AdminClubListPage';
 import AdminClubDetail from './pages/AdminClubDetail';
 import AdminClubForm from './pages/AdminClubForm';
+import AdminObiettivi2026 from './pages/AdminObiettivi2026';
+import AdminAndamento from './pages/AdminAndamento';
+import AdminContracts from './pages/AdminContracts';
+import AdminFinance from './pages/AdminFinance';
+import AdminGuide from './pages/AdminGuide';
 import ClubLogin from './pages/ClubLogin';
 import ClubDashboard from './pages/ClubDashboard';
 import ClubAnalytics from './pages/ClubAnalytics';
@@ -146,6 +151,11 @@ function App() {
                                         <Route path="/admin/clubs/new" element={<AdminClubForm />} />
                                         <Route path="/admin/clubs/:clubId" element={<AdminClubDetail />} />
                                         <Route path="/admin/clubs/:clubId/edit" element={<AdminClubForm />} />
+                                        <Route path="/admin/obiettivi-2026" element={<AdminObiettivi2026 />} />
+                                        <Route path="/admin/andamento" element={<AdminAndamento />} />
+                                        <Route path="/admin/contratti" element={<AdminContracts />} />
+                                        <Route path="/admin/finanze" element={<AdminFinance />} />
+                                        <Route path="/admin/guida" element={<AdminGuide />} />
 
                                         {/* Club Routes */}
                                         <Route path="/club/login" element={<ClubLogin />} />

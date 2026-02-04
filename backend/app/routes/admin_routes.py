@@ -1559,8 +1559,9 @@ def add_lead_activity(lead_id):
 
     db.session.add(activity)
 
-    # Aggiorna data ultimo contatto
-    if data['tipo'] in ['call', 'email', 'meeting']:
+    # Aggiorna data ultimo contatto per attività di contatto effettivo
+    contact_activities = ['call', 'email', 'meeting', 'demo', 'proposal_sent', 'follow_up']
+    if data['tipo'] in contact_activities:
         lead.data_ultimo_contatto = datetime.utcnow()
 
     # Aggiorna temperatura se specificata
@@ -1680,7 +1681,8 @@ def get_pipeline():
     if not verify_admin():
         return jsonify({'error': 'Accesso non autorizzato'}), 403
 
-    stages = ['nuovo', 'contattato', 'qualificato', 'demo', 'proposta', 'negoziazione']
+    # TUTTI gli 8 stage del pipeline - inclusi vinto e perso
+    stages = ['nuovo', 'contattato', 'qualificato', 'demo', 'proposta', 'negoziazione', 'vinto', 'perso']
 
     pipeline = {}
     for stage in stages:
@@ -1693,9 +1695,10 @@ def get_pipeline():
             'value': sum(l.valore_stimato or 0 for l in leads)
         }
 
-    # Aggiungi statistiche generali
-    total_value = sum(p['value'] for p in pipeline.values())
-    total_leads = sum(p['count'] for p in pipeline.values())
+    # Statistiche generali - escludi vinto/perso dal valore pipeline attiva
+    active_stages = ['nuovo', 'contattato', 'qualificato', 'demo', 'proposta', 'negoziazione']
+    total_value = sum(pipeline[s]['value'] for s in active_stages)
+    total_leads = sum(pipeline[s]['count'] for s in active_stages)
 
     # Won/Lost questo mese
     month_start = datetime.utcnow().replace(day=1, hour=0, minute=0, second=0)

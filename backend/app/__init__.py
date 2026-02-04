@@ -113,8 +113,16 @@ def create_app():
     from app.routes.catalog_routes import catalog_bp
     # Club Activation Routes (public)
     from app.routes.club_activation_routes import club_activation_bp
+    # KPI Tracking Routes
+    from app.routes.admin_kpi_routes import admin_kpi_bp
+    # Contract & Finance Routes
+    from app.routes.admin_contract_routes import admin_contract_bp
+    from app.routes.admin_finance_routes import admin_finance_bp
 
     app.register_blueprint(admin_bp, url_prefix='/api/admin')
+    app.register_blueprint(admin_kpi_bp, url_prefix='/api/admin/kpi')
+    app.register_blueprint(admin_contract_bp, url_prefix='/api/admin')
+    app.register_blueprint(admin_finance_bp, url_prefix='/api/admin')
     app.register_blueprint(club_bp, url_prefix='/api/club')
     app.register_blueprint(sponsor_bp, url_prefix='/api')
     app.register_blueprint(upload_bp, url_prefix='/api')

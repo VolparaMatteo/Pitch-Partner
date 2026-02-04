@@ -37,7 +37,8 @@ import {
     HiOutlineBolt,
     HiOutlineArchiveBox,
     HiOutlineDocumentDuplicate,
-    HiOutlineShoppingCart
+    HiOutlineShoppingCart,
+    HiOutlineFlag
 } from 'react-icons/hi2';
 
 function Sidebar() {
@@ -301,6 +302,22 @@ function Sidebar() {
             ];
         } else if (user?.role === 'admin') {
             return [
+                {
+                    id: 'main',
+                    items: [
+                        { id: 'dashboard', label: 'Dashboard', path: '/admin/guida', icon: HiOutlineSquares2X2 },
+                        { id: 'obiettivi', label: 'Obiettivi 2026', path: '/admin/obiettivi-2026', icon: HiOutlineFlag },
+                        { id: 'andamento', label: 'Andamento', path: '/admin/andamento', icon: HiOutlineChartBar },
+                    ]
+                },
+                {
+                    id: 'finanze',
+                    label: 'Finanze',
+                    items: [
+                        { id: 'contratti', label: 'Contratti', path: '/admin/contratti', icon: HiOutlineDocumentText },
+                        { id: 'fatturazione', label: 'Fatturazione', path: '/admin/finanze', icon: HiOutlineWallet },
+                    ]
+                },
                 {
                     id: 'crm',
                     label: 'CRM',

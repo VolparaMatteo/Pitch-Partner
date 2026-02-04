@@ -6219,3 +6219,342 @@ class ClubActivity(db.Model):
             'created_by': self.created_by,
             'created_at': self.created_at.isoformat() if self.created_at else None
         }
+
+
+# ==================== KPI TRACKING SYSTEM ====================
+
+class KPIMonthlyData(db.Model):
+    """Dati KPI mensili per tracking andamento"""
+    __tablename__ = 'kpi_monthly_data'
+
+    id = db.Column(db.Integer, primary_key=True)
+    year = db.Column(db.Integer, nullable=False)
+    month = db.Column(db.Integer, nullable=False)  # 1-12
+
+    # Funnel Vendite (manuali)
+    contacts = db.Column(db.Integer, default=0)  # Contatti qualificati
+    demos = db.Column(db.Integer, default=0)  # Demo effettuate
+    proposals = db.Column(db.Integer, default=0)  # Proposte inviate
+    contracts = db.Column(db.Integer, default=0)  # Contratti chiusi
+
+    # Revenue (manuali per tracking specifico)
+    booking = db.Column(db.Float, default=0)  # Booking mensile
+    arr_new = db.Column(db.Float, default=0)  # ARR nuovo acquisito
+
+    # Add-on Revenue (manuali)
+    addon_setup = db.Column(db.Float, default=0)  # Setup & onboarding
+    addon_training = db.Column(db.Float, default=0)  # Formazione team
+    addon_custom = db.Column(db.Float, default=0)  # Custom/integrazioni
+
+    # Club per piano (manuali per tracking specifico)
+    new_clubs_basic = db.Column(db.Integer, default=0)
+    new_clubs_premium = db.Column(db.Integer, default=0)
+    new_clubs_elite = db.Column(db.Integer, default=0)
+
+    # Note
+    notes = db.Column(db.Text)
+
+    # Metadata
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    __table_args__ = (
+        db.UniqueConstraint('year', 'month', name='uq_kpi_year_month'),
+    )
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'year': self.year,
+            'month': self.month,
+            'contacts': self.contacts,
+            'demos': self.demos,
+            'proposals': self.proposals,
+            'contracts': self.contracts,
+            'booking': self.booking,
+            'arr_new': self.arr_new,
+            'addon_setup': self.addon_setup,
+            'addon_training': self.addon_training,
+            'addon_custom': self.addon_custom,
+            'new_clubs_basic': self.new_clubs_basic,
+            'new_clubs_premium': self.new_clubs_premium,
+            'new_clubs_elite': self.new_clubs_elite,
+            'notes': self.notes,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+        }
+
+
+class KPIMilestone(db.Model):
+    """Milestone e checklist 2026"""
+    __tablename__ = 'kpi_milestones'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(200), nullable=False)
+    quarter = db.Column(db.String(10), nullable=False)  # Q1, Q2, Q3, Q4
+    status = db.Column(db.String(50), default='not_started')  # not_started, in_progress, completed
+    completion_date = db.Column(db.Date)
+    owner = db.Column(db.String(100))
+    notes = db.Column(db.Text)
+    order = db.Column(db.Integer, default=0)
+
+    # Metadata
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'quarter': self.quarter,
+            'status': self.status,
+            'completion_date': self.completion_date.isoformat() if self.completion_date else None,
+            'owner': self.owner,
+            'notes': self.notes,
+            'order': self.order,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+        }
+
+
+class KPIProductMetrics(db.Model):
+    """Metriche prodotto mensili"""
+    __tablename__ = 'kpi_product_metrics'
+
+    id = db.Column(db.Integer, primary_key=True)
+    year = db.Column(db.Integer, nullable=False)
+    month = db.Column(db.Integer, nullable=False)
+
+    # Attivazione
+    avg_onboarding_days = db.Column(db.Float)  # Tempo medio onboarding
+    clubs_fully_onboarded_pct = db.Column(db.Float)  # % club fully onboarded
+
+    # Utilizzo
+    avg_sponsors_per_club = db.Column(db.Float)  # Sponsor per club
+    avg_assets_per_club = db.Column(db.Float)  # Asset per club
+    avg_events_per_club = db.Column(db.Float)  # Eventi per club
+
+    # Engagement Sponsor
+    sponsors_with_access_pct = db.Column(db.Float)  # % sponsor con accesso attivo
+    avg_monthly_sponsor_logins = db.Column(db.Float)  # Accessi mensili medi
+    feature_adoption_pct = db.Column(db.Float)  # % feature adoption
+
+    # Retention
+    churn_rate = db.Column(db.Float)  # Churn %
+    renewal_intention_pct = db.Column(db.Float)  # Renewal intention %
+    nps_score = db.Column(db.Integer)  # NPS
+
+    # Note
+    notes = db.Column(db.Text)
+
+    # Metadata
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    __table_args__ = (
+        db.UniqueConstraint('year', 'month', name='uq_kpi_product_year_month'),
+    )
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'year': self.year,
+            'month': self.month,
+            'avg_onboarding_days': self.avg_onboarding_days,
+            'clubs_fully_onboarded_pct': self.clubs_fully_onboarded_pct,
+            'avg_sponsors_per_club': self.avg_sponsors_per_club,
+            'avg_assets_per_club': self.avg_assets_per_club,
+            'avg_events_per_club': self.avg_events_per_club,
+            'sponsors_with_access_pct': self.sponsors_with_access_pct,
+            'avg_monthly_sponsor_logins': self.avg_monthly_sponsor_logins,
+            'feature_adoption_pct': self.feature_adoption_pct,
+            'churn_rate': self.churn_rate,
+            'renewal_intention_pct': self.renewal_intention_pct,
+            'nps_score': self.nps_score,
+            'notes': self.notes,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+        }
+
+
+class KPICredibility(db.Model):
+    """KPI Credibilità per investitori"""
+    __tablename__ = 'kpi_credibility'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(200), nullable=False, unique=True)
+    target = db.Column(db.String(100))
+    current_value = db.Column(db.String(100))
+    status = db.Column(db.String(50), default='in_progress')  # in_progress, completed, at_risk
+    deadline = db.Column(db.String(50))  # Q1 2026, Q2 2026, etc.
+    notes = db.Column(db.Text)
+    order = db.Column(db.Integer, default=0)
+
+    # Metadata
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'target': self.target,
+            'current_value': self.current_value,
+            'status': self.status,
+            'deadline': self.deadline,
+            'notes': self.notes,
+            'order': self.order,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+        }
+
+
+# ========================================
+# ADMIN CONTRACT & INVOICING MODELS
+# ========================================
+
+class AdminContract(db.Model):
+    """Contratti tra Pitch Partner e Club"""
+    __tablename__ = 'admin_contracts'
+
+    id = db.Column(db.Integer, primary_key=True)
+    club_id = db.Column(db.Integer, db.ForeignKey('clubs.id'), nullable=False)
+
+    # Piano sottoscritto
+    plan_type = db.Column(db.String(50), nullable=False)  # basic, premium, elite
+    plan_price = db.Column(db.Float, nullable=False)  # Prezzo annuale del piano
+
+    # Add-ons acquistati (JSON array)
+    addons = db.Column(db.JSON, default=[])  # [{"name": "Setup", "price": 2500}, ...]
+
+    # Valore totale contratto
+    total_value = db.Column(db.Float, nullable=False)  # ARR totale (piano + addons)
+
+    # Date contratto
+    start_date = db.Column(db.Date, nullable=False)
+    end_date = db.Column(db.Date, nullable=False)
+    renewal_date = db.Column(db.Date)  # Data prossimo rinnovo
+
+    # Stato contratto
+    status = db.Column(db.String(50), default='active')  # draft, active, expired, cancelled, renewed
+
+    # Termini di pagamento
+    payment_terms = db.Column(db.String(50), default='annual')  # annual, semi_annual, quarterly, monthly
+    payment_method = db.Column(db.String(50))  # bank_transfer, credit_card, sepa
+
+    # Note e documenti
+    notes = db.Column(db.Text)
+    contract_document_url = db.Column(db.String(500))  # Link al documento firmato
+
+    # Firma
+    signed_by = db.Column(db.String(200))  # Nome del firmatario
+    signed_date = db.Column(db.Date)
+
+    # Metadata
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_by = db.Column(db.Integer)  # Admin ID che ha creato il contratto
+
+    # Relazioni
+    club = db.relationship('Club', backref=db.backref('admin_contracts', lazy='dynamic'))
+    invoices = db.relationship('AdminInvoice', backref='contract', lazy='dynamic')
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'club_id': self.club_id,
+            'club_name': self.club.nome if self.club else None,
+            'plan_type': self.plan_type,
+            'plan_price': self.plan_price,
+            'addons': self.addons or [],
+            'total_value': self.total_value,
+            'start_date': self.start_date.isoformat() if self.start_date else None,
+            'end_date': self.end_date.isoformat() if self.end_date else None,
+            'renewal_date': self.renewal_date.isoformat() if self.renewal_date else None,
+            'status': self.status,
+            'payment_terms': self.payment_terms,
+            'payment_method': self.payment_method,
+            'notes': self.notes,
+            'contract_document_url': self.contract_document_url,
+            'signed_by': self.signed_by,
+            'signed_date': self.signed_date.isoformat() if self.signed_date else None,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'created_by': self.created_by
+        }
+
+
+class AdminInvoice(db.Model):
+    """Fatture emesse da Pitch Partner ai Club"""
+    __tablename__ = 'admin_invoices'
+
+    id = db.Column(db.Integer, primary_key=True)
+    contract_id = db.Column(db.Integer, db.ForeignKey('admin_contracts.id'), nullable=False)
+    club_id = db.Column(db.Integer, db.ForeignKey('clubs.id'), nullable=False)
+
+    # Numero fattura
+    invoice_number = db.Column(db.String(50), unique=True, nullable=False)
+
+    # Importi
+    amount = db.Column(db.Float, nullable=False)  # Importo netto
+    vat_rate = db.Column(db.Float, default=22.0)  # IVA %
+    vat_amount = db.Column(db.Float)  # Importo IVA
+    total_amount = db.Column(db.Float, nullable=False)  # Importo totale (netto + IVA)
+
+    # Descrizione voci fattura (JSON array)
+    line_items = db.Column(db.JSON, default=[])  # [{"description": "Piano Premium", "amount": 15000}, ...]
+
+    # Date
+    issue_date = db.Column(db.Date, nullable=False)  # Data emissione
+    due_date = db.Column(db.Date, nullable=False)  # Data scadenza
+    payment_date = db.Column(db.Date)  # Data pagamento effettivo
+
+    # Stato pagamento
+    status = db.Column(db.String(50), default='pending')  # draft, pending, paid, overdue, cancelled
+
+    # Metodo pagamento
+    payment_method = db.Column(db.String(50))  # bank_transfer, credit_card, sepa
+    payment_reference = db.Column(db.String(200))  # Riferimento bonifico/transazione
+
+    # Periodo di riferimento
+    period_start = db.Column(db.Date)  # Inizio periodo fatturato
+    period_end = db.Column(db.Date)  # Fine periodo fatturato
+
+    # Note e documenti
+    notes = db.Column(db.Text)
+    invoice_document_url = db.Column(db.String(500))  # Link al PDF fattura
+
+    # Metadata
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_by = db.Column(db.Integer)  # Admin ID
+
+    # Relazioni
+    club = db.relationship('Club', backref=db.backref('admin_invoices', lazy='dynamic'))
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'contract_id': self.contract_id,
+            'club_id': self.club_id,
+            'club_name': self.club.nome if self.club else None,
+            'invoice_number': self.invoice_number,
+            'amount': self.amount,
+            'vat_rate': self.vat_rate,
+            'vat_amount': self.vat_amount,
+            'total_amount': self.total_amount,
+            'line_items': self.line_items or [],
+            'issue_date': self.issue_date.isoformat() if self.issue_date else None,
+            'due_date': self.due_date.isoformat() if self.due_date else None,
+            'payment_date': self.payment_date.isoformat() if self.payment_date else None,
+            'status': self.status,
+            'payment_method': self.payment_method,
+            'payment_reference': self.payment_reference,
+            'period_start': self.period_start.isoformat() if self.period_start else None,
+            'period_end': self.period_end.isoformat() if self.period_end else None,
+            'notes': self.notes,
+            'invoice_document_url': self.invoice_document_url,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'created_by': self.created_by
+        }

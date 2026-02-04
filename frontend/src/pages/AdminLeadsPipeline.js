@@ -78,13 +78,16 @@ function AdminLeadsPipeline() {
     note: ''
   });
 
+  // Pipeline stages completi - TUTTI gli 8 stage del CRM
   const stages = [
     { id: 'nuovo', label: 'Nuovo', color: '#6B7280' },
     { id: 'contattato', label: 'Contattato', color: '#3B82F6' },
     { id: 'qualificato', label: 'Qualificato', color: '#8B5CF6' },
     { id: 'demo', label: 'Demo', color: '#F59E0B' },
     { id: 'proposta', label: 'Proposta', color: '#EC4899' },
-    { id: 'negoziazione', label: 'Negoziazione', color: '#10B981' }
+    { id: 'negoziazione', label: 'Negoziazione', color: '#6366F1' },
+    { id: 'vinto', label: 'Vinto ✓', color: '#10B981' },
+    { id: 'perso', label: 'Perso ✗', color: '#EF4444' }
   ];
 
   const temperatureLabels = {
