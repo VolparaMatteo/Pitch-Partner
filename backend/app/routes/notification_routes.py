@@ -22,7 +22,11 @@ def get_notifications():
     only_unread = request.args.get('only_unread', 'false').lower() == 'true'
     limit = request.args.get('limit', type=int)
 
-    query = Notification.query.filter_by(user_type=role, user_id=user_id)
+    # Per admin, filtra solo per user_type (user_id=0 come sentinella)
+    if role == 'admin':
+        query = Notification.query.filter_by(user_type='admin')
+    else:
+        query = Notification.query.filter_by(user_type=role, user_id=user_id)
 
     if only_unread:
         query = query.filter_by(letta=False)
@@ -42,17 +46,25 @@ def get_notifications():
             'titolo': notif.titolo,
             'messaggio': notif.messaggio,
             'link': notif.link,
+            'priorita': notif.priorita,
             'letta': notif.letta,
             'letta_il': notif.letta_il.isoformat() if notif.letta_il else None,
-            'created_at': notif.created_at.isoformat()
+            'created_at': notif.created_at.isoformat(),
+            'time_ago': notif.get_time_ago()
         })
 
     # Conta notifiche non lette
-    unread_count = Notification.query.filter_by(
-        user_type=role,
-        user_id=user_id,
-        letta=False
-    ).count()
+    if role == 'admin':
+        unread_count = Notification.query.filter_by(
+            user_type='admin',
+            letta=False
+        ).count()
+    else:
+        unread_count = Notification.query.filter_by(
+            user_type=role,
+            user_id=user_id,
+            letta=False
+        ).count()
 
     return jsonify({
         'notifications': notifications_data,
@@ -71,11 +83,17 @@ def get_unread_count():
     if role not in ['admin', 'club', 'sponsor']:
         return jsonify({'error': 'Accesso non autorizzato'}), 403
 
-    unread_count = Notification.query.filter_by(
-        user_type=role,
-        user_id=user_id,
-        letta=False
-    ).count()
+    if role == 'admin':
+        unread_count = Notification.query.filter_by(
+            user_type='admin',
+            letta=False
+        ).count()
+    else:
+        unread_count = Notification.query.filter_by(
+            user_type=role,
+            user_id=user_id,
+            letta=False
+        ).count()
 
     return jsonify({'unread_count': unread_count}), 200
 
@@ -93,8 +111,12 @@ def mark_as_read(notification_id):
         return jsonify({'error': 'Notifica non trovata'}), 404
 
     # Verifica che la notifica appartenga all'utente
-    if notification.user_type != role or notification.user_id != user_id:
-        return jsonify({'error': 'Accesso non autorizzato'}), 403
+    if role == 'admin':
+        if notification.user_type != 'admin':
+            return jsonify({'error': 'Accesso non autorizzato'}), 403
+    else:
+        if notification.user_type != role or notification.user_id != user_id:
+            return jsonify({'error': 'Accesso non autorizzato'}), 403
 
     notification.letta = True
     notification.letta_il = datetime.utcnow()
@@ -111,11 +133,17 @@ def mark_all_as_read():
     role = claims.get('role')
     user_id = int(get_jwt_identity())
 
-    notifications = Notification.query.filter_by(
-        user_type=role,
-        user_id=user_id,
-        letta=False
-    ).all()
+    if role == 'admin':
+        notifications = Notification.query.filter_by(
+            user_type='admin',
+            letta=False
+        ).all()
+    else:
+        notifications = Notification.query.filter_by(
+            user_type=role,
+            user_id=user_id,
+            letta=False
+        ).all()
 
     for notif in notifications:
         notif.letta = True
@@ -139,8 +167,12 @@ def delete_notification(notification_id):
         return jsonify({'error': 'Notifica non trovata'}), 404
 
     # Verifica che la notifica appartenga all'utente
-    if notification.user_type != role or notification.user_id != user_id:
-        return jsonify({'error': 'Accesso non autorizzato'}), 403
+    if role == 'admin':
+        if notification.user_type != 'admin':
+            return jsonify({'error': 'Accesso non autorizzato'}), 403
+    else:
+        if notification.user_type != role or notification.user_id != user_id:
+            return jsonify({'error': 'Accesso non autorizzato'}), 403
 
     db.session.delete(notification)
     db.session.commit()
@@ -156,11 +188,17 @@ def clear_read_notifications():
     role = claims.get('role')
     user_id = int(get_jwt_identity())
 
-    notifications = Notification.query.filter_by(
-        user_type=role,
-        user_id=user_id,
-        letta=True
-    ).all()
+    if role == 'admin':
+        notifications = Notification.query.filter_by(
+            user_type='admin',
+            letta=True
+        ).all()
+    else:
+        notifications = Notification.query.filter_by(
+            user_type=role,
+            user_id=user_id,
+            letta=True
+        ).all()
 
     count = len(notifications)
 

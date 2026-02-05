@@ -2479,3 +2479,105 @@ def create_club_activity(club_id):
 ## GET /invoices route rimossa - gestita da admin_finance_routes.py (admin_finance_bp)
 ## La vecchia route leggeva da ClubInvoice (tabella sbagliata)
 ## La route corretta in admin_finance_routes legge da AdminInvoice
+
+
+# ============================================
+# GLOBAL SEARCH
+# ============================================
+
+@admin_bp.route('/search', methods=['GET'])
+@jwt_required()
+def admin_global_search():
+    """Ricerca globale su lead, club, contratti, fatture"""
+    if not verify_admin():
+        return jsonify({'error': 'Accesso non autorizzato'}), 403
+
+    q = request.args.get('q', '').strip()
+    if not q or len(q) < 2:
+        return jsonify({'results': [], 'total': 0}), 200
+
+    limit_per_type = 5
+    search_term = f'%{q}%'
+    results = []
+
+    # Search Leads
+    leads = CRMLead.query.filter(
+        or_(
+            CRMLead.nome_club.ilike(search_term),
+            CRMLead.contatto_nome.ilike(search_term),
+            CRMLead.contatto_cognome.ilike(search_term),
+            CRMLead.email.ilike(search_term),
+            CRMLead.citta.ilike(search_term)
+        )
+    ).limit(limit_per_type).all()
+
+    for lead in leads:
+        results.append({
+            'type': 'lead',
+            'id': lead.id,
+            'title': lead.nome_club,
+            'subtitle': f'{lead.stage} - {lead.citta or ""}',
+            'link': f'/admin/leads/{lead.id}'
+        })
+
+    # Search Clubs
+    clubs = Club.query.filter(
+        or_(
+            Club.nome.ilike(search_term),
+            Club.email.ilike(search_term),
+            Club.referente_nome.ilike(search_term),
+            Club.referente_cognome.ilike(search_term)
+        )
+    ).limit(limit_per_type).all()
+
+    for club in clubs:
+        results.append({
+            'type': 'club',
+            'id': club.id,
+            'title': club.nome,
+            'subtitle': f'{club.email}',
+            'link': f'/admin/clubs/{club.id}'
+        })
+
+    # Search Admin Contracts
+    contracts = AdminContract.query.join(Club).filter(
+        or_(
+            Club.nome.ilike(search_term),
+            AdminContract.plan_type.ilike(search_term),
+            AdminContract.notes.ilike(search_term)
+        )
+    ).limit(limit_per_type).all()
+
+    for c in contracts:
+        club_name = c.club.nome if c.club else 'N/D'
+        results.append({
+            'type': 'contratto',
+            'id': c.id,
+            'title': f'{c.plan_type} - {club_name}',
+            'subtitle': f'{c.status} | {c.start_date.strftime("%d/%m/%Y") if c.start_date else ""} - {c.end_date.strftime("%d/%m/%Y") if c.end_date else ""}',
+            'link': f'/admin/contratti/{c.id}'
+        })
+
+    # Search Admin Invoices
+    invoices = AdminInvoice.query.join(Club).filter(
+        or_(
+            AdminInvoice.invoice_number.ilike(search_term),
+            Club.nome.ilike(search_term)
+        )
+    ).limit(limit_per_type).all()
+
+    for inv in invoices:
+        club_name = inv.club.nome if inv.club else 'N/D'
+        results.append({
+            'type': 'fattura',
+            'id': inv.id,
+            'title': f'{inv.invoice_number} - {club_name}',
+            'subtitle': f'{inv.status} | {inv.total_amount:.2f}€',
+            'link': '/admin/finanze'
+        })
+
+    return jsonify({
+        'results': results,
+        'total': len(results),
+        'query': q
+    }), 200

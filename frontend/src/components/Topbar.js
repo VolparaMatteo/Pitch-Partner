@@ -1,8 +1,9 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useSidebar } from '../contexts/SidebarContext';
 import { getAuth } from '../utils/auth';
 import { getImageUrl } from '../utils/imageUtils';
+import { adminAPI } from '../services/api';
 import FavIcon from '../static/logo/FavIcon.png';
 import '../styles/topbar.css';
 
@@ -29,6 +30,12 @@ const breadcrumbConfig = {
     // Admin routes
     '/admin/profile': { title: 'Profilo', breadcrumb: ['Profilo'] },
     '/admin/leads': { title: 'Pipeline Lead', breadcrumb: ['CRM', 'Lead'] },
+    '/admin/notifiche': { title: 'Centro Notifiche', breadcrumb: ['Admin', 'Notifiche'] },
+    '/admin/dashboard': { title: 'Dashboard', breadcrumb: ['Admin', 'Dashboard'] },
+    '/admin/clubs': { title: 'Club', breadcrumb: ['Admin', 'Club'] },
+    '/admin/contratti': { title: 'Contratti', breadcrumb: ['Admin', 'Contratti'] },
+    '/admin/finanze': { title: 'Finanze', breadcrumb: ['Admin', 'Finanze'] },
+    '/admin/andamento': { title: 'Andamento', breadcrumb: ['Admin', 'Andamento'] },
 
     // Club routes
     '/club/dashboard': { title: 'Dashboard', breadcrumb: ['Home'] },
@@ -68,7 +75,10 @@ function Topbar() {
     const [showQuickActions, setShowQuickActions] = useState(false);
     const [showUserMenu, setShowUserMenu] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
+    const [searchResults, setSearchResults] = useState([]);
+    const [searchLoading, setSearchLoading] = useState(false);
     const [currentUser, setCurrentUser] = useState(null);
+    const searchTimerRef = useRef(null);
 
     // Initialize user and listen for updates
     useEffect(() => {
@@ -112,6 +122,8 @@ function Topbar() {
         setShowSearch(false);
         setShowQuickActions(false);
         setShowUserMenu(false);
+        setSearchQuery('');
+        setSearchResults([]);
     }, [location.pathname]);
 
     // Get page info
@@ -179,14 +191,55 @@ function Topbar() {
         return [];
     };
 
-    // Handle search (mock)
+    // Debounced search
+    const performSearch = useCallback(async (query) => {
+        if (!query || query.length < 2 || user?.role !== 'admin') {
+            setSearchResults([]);
+            setSearchLoading(false);
+            return;
+        }
+        try {
+            setSearchLoading(true);
+            const res = await adminAPI.globalSearch(query);
+            setSearchResults(res.data.results || []);
+        } catch (err) {
+            console.error('Errore ricerca:', err);
+            setSearchResults([]);
+        } finally {
+            setSearchLoading(false);
+        }
+    }, [user?.role]);
+
+    const handleSearchChange = (value) => {
+        setSearchQuery(value);
+        if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+        if (value.length >= 2) {
+            setSearchLoading(true);
+            searchTimerRef.current = setTimeout(() => performSearch(value), 300);
+        } else {
+            setSearchResults([]);
+            setSearchLoading(false);
+        }
+    };
+
     const handleSearch = (e) => {
         e.preventDefault();
-        console.log('Search:', searchQuery);
-        // TODO: Implement global search
-        alert(`Ricerca per: "${searchQuery}" - Coming soon!`);
-        setSearchQuery('');
+        performSearch(searchQuery);
+    };
+
+    const handleSearchResultClick = (result) => {
+        navigate(result.link);
         setShowSearch(false);
+        setSearchQuery('');
+        setSearchResults([]);
+    };
+
+    // Search result type config
+    const SEARCH_TYPE_CONFIG = {
+        lead: { label: 'Lead', icon: '🎯', color: '#3B82F6' },
+        club: { label: 'Club', icon: '🏟️', color: '#059669' },
+        contratto: { label: 'Contratto', icon: '📄', color: '#F59E0B' },
+        fattura: { label: 'Fattura', icon: '💶', color: '#DC2626' }
     };
 
     const pageInfo = getPageInfo();
@@ -249,20 +302,88 @@ function Topbar() {
                                     <HiOutlineMagnifyingGlass size={20} />
                                     <input
                                         type="text"
-                                        placeholder="Cerca sponsor, contratti, eventi..."
+                                        placeholder={user?.role === 'admin' ? 'Cerca lead, club, contratti, fatture...' : 'Cerca sponsor, contratti, eventi...'}
                                         value={searchQuery}
-                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        onChange={(e) => handleSearchChange(e.target.value)}
                                         autoFocus
                                     />
                                 </div>
                             </form>
-                            <div className="search-hint">
-                                <span>Premi <kbd>Enter</kbd> per cercare</span>
-                                <span>Premi <kbd>Esc</kbd> per chiudere</span>
-                            </div>
-                            <div className="search-mock-notice">
-                                Ricerca globale in arrivo...
-                            </div>
+
+                            {user?.role === 'admin' && searchQuery.length >= 2 ? (
+                                <div style={{ maxHeight: '360px', overflowY: 'auto' }}>
+                                    {searchLoading ? (
+                                        <div style={{ padding: '20px', textAlign: 'center', color: '#9CA3AF', fontSize: '13px' }}>
+                                            Ricerca in corso...
+                                        </div>
+                                    ) : searchResults.length > 0 ? (
+                                        <>
+                                            {/* Group results by type */}
+                                            {Object.entries(
+                                                searchResults.reduce((acc, r) => {
+                                                    if (!acc[r.type]) acc[r.type] = [];
+                                                    acc[r.type].push(r);
+                                                    return acc;
+                                                }, {})
+                                            ).map(([type, items]) => (
+                                                <div key={type}>
+                                                    <div style={{
+                                                        padding: '8px 16px 4px',
+                                                        fontSize: '11px',
+                                                        fontWeight: 600,
+                                                        textTransform: 'uppercase',
+                                                        letterSpacing: '0.5px',
+                                                        color: '#9CA3AF'
+                                                    }}>
+                                                        {SEARCH_TYPE_CONFIG[type]?.icon} {SEARCH_TYPE_CONFIG[type]?.label || type}
+                                                    </div>
+                                                    {items.map((result, idx) => (
+                                                        <button
+                                                            key={`${type}-${idx}`}
+                                                            className="dropdown-item"
+                                                            onClick={() => handleSearchResultClick(result)}
+                                                            style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '2px' }}
+                                                        >
+                                                            <span style={{ fontSize: '14px', fontWeight: 500, color: '#1F2937' }}>
+                                                                {result.title}
+                                                            </span>
+                                                            <span style={{ fontSize: '12px', color: '#9CA3AF' }}>
+                                                                {result.subtitle}
+                                                            </span>
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            ))}
+                                            <div style={{
+                                                padding: '8px 16px',
+                                                fontSize: '12px',
+                                                color: '#9CA3AF',
+                                                textAlign: 'center',
+                                                borderTop: '1px solid #E5E7EB',
+                                                marginTop: '4px'
+                                            }}>
+                                                {searchResults.length} risultati trovati
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <div style={{ padding: '20px', textAlign: 'center', color: '#9CA3AF', fontSize: '13px' }}>
+                                            Nessun risultato per "{searchQuery}"
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                <>
+                                    <div className="search-hint">
+                                        <span>Premi <kbd>Enter</kbd> per cercare</span>
+                                        <span>Premi <kbd>Esc</kbd> per chiudere</span>
+                                    </div>
+                                    {searchQuery.length > 0 && searchQuery.length < 2 && (
+                                        <div style={{ padding: '12px 16px', textAlign: 'center', color: '#9CA3AF', fontSize: '13px' }}>
+                                            Digita almeno 2 caratteri...
+                                        </div>
+                                    )}
+                                </>
+                            )}
                         </div>
                     )}
                 </div>
@@ -306,20 +427,22 @@ function Topbar() {
                     </div>
                 )}
 
-                {/* Help Button */}
-                <button
-                    className="topbar-btn"
-                    onClick={() => alert('Centro assistenza in arrivo!')}
-                    aria-label="Aiuto"
-                    title="Aiuto"
-                >
-                    <HiOutlineQuestionMarkCircle size={22} />
-                </button>
+                {/* Help Button - solo per club/sponsor */}
+                {user?.role !== 'admin' && (
+                    <button
+                        className="topbar-btn"
+                        onClick={() => navigate('/centro-assistenza')}
+                        aria-label="Aiuto"
+                        title="Aiuto"
+                    >
+                        <HiOutlineQuestionMarkCircle size={22} />
+                    </button>
+                )}
 
                 {/* Notifications */}
                 <button
                     className="topbar-btn"
-                    onClick={() => navigate('/notifications')}
+                    onClick={() => navigate(user?.role === 'admin' ? '/admin/notifiche' : '/notifications')}
                     aria-label="Notifiche"
                     title="Notifiche"
                 >
@@ -379,13 +502,6 @@ function Topbar() {
                                 >
                                     <HiOutlineUser size={18} />
                                     <span>Profilo</span>
-                                </button>
-                                <button
-                                    className="dropdown-item"
-                                    onClick={() => alert('Impostazioni in arrivo!')}
-                                >
-                                    <HiOutlineCog6Tooth size={18} />
-                                    <span>Impostazioni</span>
                                 </button>
                                 <div className="dropdown-divider" />
                                 <button

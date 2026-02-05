@@ -118,11 +118,13 @@ def create_app():
     # Contract & Finance Routes
     from app.routes.admin_contract_routes import admin_contract_bp
     from app.routes.admin_finance_routes import admin_finance_bp
+    from app.routes.admin_notification_routes import admin_notification_bp
 
     app.register_blueprint(admin_bp, url_prefix='/api/admin')
     app.register_blueprint(admin_kpi_bp, url_prefix='/api/admin/kpi')
     app.register_blueprint(admin_contract_bp, url_prefix='/api/admin')
     app.register_blueprint(admin_finance_bp, url_prefix='/api/admin')
+    app.register_blueprint(admin_notification_bp, url_prefix='/api/admin')
     app.register_blueprint(club_bp, url_prefix='/api/club')
     app.register_blueprint(sponsor_bp, url_prefix='/api')
     app.register_blueprint(upload_bp, url_prefix='/api')

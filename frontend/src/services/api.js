@@ -81,7 +81,10 @@ export const adminAPI = {
     api.get(`/admin/clubs/${clubId}/fatture`),
 
   createFattura: (clubId, data) =>
-    api.post(`/admin/clubs/${clubId}/fatture`, data)
+    api.post(`/admin/clubs/${clubId}/fatture`, data),
+
+  globalSearch: (q) =>
+    api.get('/admin/search', { params: { q } })
 };
 
 // Club API
@@ -960,6 +963,34 @@ export const bestPracticeAPI = {
   // Public - Feedback
   submitFeedback: (eventId, data) =>
     api.post(`/best-practice-events/${eventId}/feedback`, data)
+};
+
+// Admin Notification API
+export const adminNotificationAPI = {
+  generate: () =>
+    api.post('/admin/notifications/generate'),
+
+  getNotifications: (params = {}) => {
+    const queryParams = new URLSearchParams();
+    if (params.tipo) queryParams.append('tipo', params.tipo);
+    if (params.priorita) queryParams.append('priorita', params.priorita);
+    if (params.letta !== undefined) queryParams.append('letta', params.letta);
+    if (params.page) queryParams.append('page', params.page);
+    if (params.per_page) queryParams.append('per_page', params.per_page);
+    return api.get(`/admin/notifications?${queryParams.toString()}`);
+  },
+
+  getSummary: () =>
+    api.get('/admin/notifications/summary'),
+
+  markAsRead: (id) =>
+    api.put(`/admin/notifications/${id}/read`),
+
+  markAllAsRead: () =>
+    api.put('/admin/notifications/read-all'),
+
+  deleteNotification: (id) =>
+    api.delete(`/admin/notifications/${id}`)
 };
 
 // Public Catalog API (no auth required)

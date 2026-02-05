@@ -305,7 +305,7 @@ function Sidebar() {
                 {
                     id: 'main',
                     items: [
-                        { id: 'dashboard', label: 'Dashboard', path: '/admin/guida', icon: HiOutlineSquares2X2 },
+                        { id: 'dashboard', label: 'Dashboard', path: '/admin/dashboard', icon: HiOutlineSquares2X2 },
                         { id: 'obiettivi', label: 'Obiettivi 2026', path: '/admin/obiettivi-2026', icon: HiOutlineFlag },
                         { id: 'andamento', label: 'Andamento', path: '/admin/andamento', icon: HiOutlineChartBar },
                     ]
@@ -462,8 +462,8 @@ function Sidebar() {
                             </button>
                         )}
                         <button
-                            className={`action-btn ${isPathActive('/notifications') ? 'active' : ''}`}
-                            onClick={() => handleNavigation('/notifications')}
+                            className={`action-btn ${isPathActive(user.role === 'admin' ? '/admin/notifiche' : '/notifications') ? 'active' : ''}`}
+                            onClick={() => handleNavigation(user.role === 'admin' ? '/admin/notifiche' : '/notifications')}
                             aria-label={`Notifiche${unreadCount > 0 ? `, ${unreadCount} non lette` : ''}`}
                             title="Notifiche"
                         >

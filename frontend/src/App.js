@@ -14,7 +14,8 @@ import AdminContractDetail from './pages/AdminContractDetail';
 import AdminContractForm from './pages/AdminContractForm';
 import AdminFinance from './pages/AdminFinance';
 import AdminInvoiceForm from './pages/AdminInvoiceForm';
-import AdminGuide from './pages/AdminGuide';
+import AdminDashboard from './pages/AdminDashboard';
+import AdminNotifications from './pages/AdminNotifications';
 import ClubLogin from './pages/ClubLogin';
 import ClubDashboard from './pages/ClubDashboard';
 import ClubAnalytics from './pages/ClubAnalytics';
@@ -142,7 +143,7 @@ function App() {
                                         {/* Admin Routes */}
                                         <Route path="/" element={<AdminLogin />} />
                                         <Route path="/admin/login" element={<AdminLogin />} />
-                                        <Route path="/admin/dashboard" element={<Navigate to="/admin/leads" replace />} />
+                                        <Route path="/admin/dashboard" element={<AdminDashboard />} />
                                         <Route path="/admin/profile" element={<AdminProfile />} />
                                         <Route path="/admin/leads" element={<AdminLeadListPage />} />
                                         <Route path="/admin/leads/new" element={<AdminLeadForm />} />
@@ -163,7 +164,7 @@ function App() {
                                         <Route path="/admin/finanze" element={<AdminFinance />} />
                                         <Route path="/admin/fatture/new" element={<AdminInvoiceForm />} />
                                         <Route path="/admin/fatture/:invoiceId/edit" element={<AdminInvoiceForm />} />
-                                        <Route path="/admin/guida" element={<AdminGuide />} />
+                                        <Route path="/admin/notifiche" element={<AdminNotifications />} />
 
                                         {/* Club Routes */}
                                         <Route path="/club/login" element={<ClubLogin />} />
