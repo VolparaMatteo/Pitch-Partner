@@ -210,6 +210,93 @@ def get_kpi_dashboard():
         }
     }
 
+    # ===== CALCOLA MONTHLY ACTUALS (100% AUTOMATICO) =====
+    # Aggregazione mensile automatica da Lead, Contratti e Fatture
+
+    def get_monthly_leads_count(stages, month):
+        """Conta lead in determinati stages creati nel mese specificato"""
+        return CRMLead.query.filter(
+            CRMLead.stage.in_(stages),
+            extract('year', CRMLead.created_at) == year,
+            extract('month', CRMLead.created_at) == month
+        ).count()
+
+    def get_monthly_contracts_data(month):
+        """Calcola dati da contratti firmati nel mese specificato"""
+        contracts = AdminContract.query.filter(
+            AdminContract.status == 'active',
+            extract('year', AdminContract.signed_date) == year,
+            extract('month', AdminContract.signed_date) == month
+        ).all()
+
+        clubs_by_plan = {'basic': 0, 'premium': 0, 'elite': 0}
+        arr_total = 0
+        addon_total = 0
+        addon_breakdown = {'setup': 0, 'training': 0, 'custom': 0}
+
+        for c in contracts:
+            arr_total += c.total_value
+            plan = c.plan_type.lower()
+            if plan in clubs_by_plan:
+                clubs_by_plan[plan] += 1
+            elif plan == 'kickoff':
+                clubs_by_plan['basic'] += 1
+
+            for addon in (c.addons or []):
+                addon_price = addon.get('price', 0)
+                addon_total += addon_price
+                addon_id = addon.get('id', '').lower()
+                addon_name = addon.get('name', '').lower()
+                if addon_id == 'setup' or 'setup' in addon_name or 'onboarding' in addon_name:
+                    addon_breakdown['setup'] += addon_price
+                elif addon_id == 'training' or 'training' in addon_name or 'formazione' in addon_name:
+                    addon_breakdown['training'] += addon_price
+                elif addon_id == 'custom' or 'custom' in addon_name:
+                    addon_breakdown['custom'] += addon_price
+
+        return {
+            'count': len(contracts),
+            'arr': arr_total,
+            'addon_total': addon_total,
+            'addon_breakdown': addon_breakdown,
+            'clubs_by_plan': clubs_by_plan
+        }
+
+    # Calcola dati mensili automatici per tutti i 12 mesi
+    monthly_auto_data = []
+    for month in range(1, 13):
+        m_contacts = get_monthly_leads_count(contacted_stages, month)
+        m_demos = get_monthly_leads_count(demo_stages, month)
+        m_proposals = get_monthly_leads_count(proposal_stages, month)
+        m_contracts = get_monthly_leads_count(['vinto'], month)
+        m_contract_data = get_monthly_contracts_data(month)
+        m_cash_in = cash_in_by_month.get(month, 0)
+
+        monthly_auto_data.append({
+            'month': month,
+            'year': year,
+            # Funnel (da Lead stages)
+            'contacts': m_contacts,
+            'demos': m_demos,
+            'proposals': m_proposals,
+            'contracts': m_contracts,
+            # Revenue (da Contratti)
+            'booking': m_cash_in,
+            'arr_new': m_contract_data['arr'],
+            # Add-on (da Contratti)
+            'addon_setup': m_contract_data['addon_breakdown']['setup'],
+            'addon_training': m_contract_data['addon_breakdown']['training'],
+            'addon_custom': m_contract_data['addon_breakdown']['custom'],
+            'addon_total': m_contract_data['addon_total'],
+            # Club (da Contratti)
+            'new_clubs_basic': m_contract_data['clubs_by_plan']['basic'],
+            'new_clubs_premium': m_contract_data['clubs_by_plan']['premium'],
+            'new_clubs_elite': m_contract_data['clubs_by_plan']['elite'],
+            'new_clubs_total': m_contract_data['count'],
+            # Flag automatico
+            'is_auto': True
+        })
+
     # ===== CALCOLA QUARTERLY ACTUALS (100% AUTOMATICO) =====
     # Basato sulla data di creazione/conversione dei lead e contratti
 
@@ -305,6 +392,7 @@ def get_kpi_dashboard():
         },
         'ytd_totals': ytd_totals,
         'monthly_data': [m.to_dict() for m in monthly_data],
+        'monthly_auto_data': monthly_auto_data,  # Dati mensili 100% automatici
         'quarterly_actuals': quarterly_actuals,
         'conversion_rates': conversion_rates,
         # Dati manuali

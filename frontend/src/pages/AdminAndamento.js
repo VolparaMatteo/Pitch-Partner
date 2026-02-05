@@ -2,17 +2,39 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { getAuth } from '../utils/auth';
-import '../styles/template-style.css';
+import Sidebar from '../components/Sidebar';
+import '../styles/admin-dashboard.css';
 
+// Icons - Heroicons style (hi2)
 import {
-  FaChartLine, FaUsers, FaEuroSign, FaCalendarAlt, FaEdit, FaSave,
-  FaTimes, FaCheckCircle, FaClock, FaExclamationTriangle, FaArrowUp,
-  FaArrowDown, FaPhone, FaVideo, FaFileAlt, FaHandshake, FaPlus,
-  FaSyncAlt, FaChartBar, FaPercent, FaTrophy, FaRocket, FaStar,
-  FaCrown, FaGem, FaDatabase, FaUserCheck, FaBuilding, FaFlag,
-  FaClipboardCheck, FaBullseye, FaLightbulb, FaCoins, FaReceipt,
-  FaPencilAlt, FaInfoCircle, FaRobot, FaKeyboard, FaMousePointer
-} from 'react-icons/fa';
+  HiOutlineChartBar,
+  HiOutlineCalendarDays,
+  HiOutlineUserGroup,
+  HiOutlineCurrencyEuro,
+  HiOutlineFlag,
+  HiOutlineTrophy,
+  HiOutlineArrowTrendingUp,
+  HiOutlineArrowTrendingDown,
+  HiOutlineCheckCircle,
+  HiOutlineXCircle,
+  HiOutlineExclamationTriangle,
+  HiOutlineArrowPath,
+  HiOutlineChartPie,
+  HiOutlineDocumentText,
+  HiOutlinePhone,
+  HiOutlineVideoCamera,
+  HiOutlineHandRaised,
+  HiOutlineStar,
+  HiOutlineSparkles,
+  HiOutlineBolt,
+  HiOutlineServerStack,
+  HiOutlinePencilSquare,
+  HiOutlineInformationCircle,
+  HiOutlineCpuChip,
+  HiOutlineChevronDown,
+  HiOutlineXMark,
+  HiOutlineCursorArrowRays
+} from 'react-icons/hi2';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5003/api';
 
@@ -20,63 +42,14 @@ const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5003/api';
 const DataTypeBadge = ({ type, small = false }) => {
   const isAuto = type === 'auto';
   return (
-    <span style={{
-      display: 'inline-flex',
-      alignItems: 'center',
-      gap: '4px',
-      padding: small ? '2px 6px' : '4px 10px',
-      borderRadius: '20px',
-      fontSize: small ? '9px' : '10px',
-      fontWeight: '700',
-      textTransform: 'uppercase',
-      letterSpacing: '0.5px',
-      background: isAuto ? 'linear-gradient(135deg, #ECFDF5, #D1FAE5)' : 'linear-gradient(135deg, #FEF3C7, #FDE68A)',
-      color: isAuto ? '#047857' : '#92400E',
-      border: `1px solid ${isAuto ? '#A7F3D0' : '#FCD34D'}`
-    }}>
-      {isAuto ? <FaRobot size={small ? 8 : 10} /> : <FaPencilAlt size={small ? 8 : 10} />}
+    <span className={`inline-flex items-center gap-1 ${small ? 'px-2 py-0.5 text-[9px]' : 'px-2.5 py-1 text-[10px]'} rounded-full font-bold uppercase tracking-wide ${
+      isAuto
+        ? 'bg-gradient-to-r from-emerald-50 to-green-100 text-emerald-700 border border-emerald-200'
+        : 'bg-gradient-to-r from-amber-50 to-yellow-100 text-amber-700 border border-amber-300'
+    }`}>
+      {isAuto ? <HiOutlineCpuChip className={small ? 'w-2 h-2' : 'w-3 h-3'} /> : <HiOutlinePencilSquare className={small ? 'w-2 h-2' : 'w-3 h-3'} />}
       {isAuto ? 'Auto' : 'Manuale'}
     </span>
-  );
-};
-
-// Editable field wrapper with hover effect
-const EditableField = ({ children, onClick, tooltip = 'Clicca per modificare' }) => {
-  const [isHovered, setIsHovered] = useState(false);
-
-  return (
-    <div
-      onClick={onClick}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      style={{
-        position: 'relative',
-        cursor: 'pointer',
-        transition: 'all 0.2s ease',
-        transform: isHovered ? 'scale(1.02)' : 'scale(1)',
-      }}
-    >
-      {children}
-      {isHovered && (
-        <div style={{
-          position: 'absolute',
-          top: '-8px',
-          right: '-8px',
-          background: '#1A1A1A',
-          color: 'white',
-          width: '24px',
-          height: '24px',
-          borderRadius: '50%',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
-          zIndex: 10
-        }}>
-          <FaPencilAlt size={10} />
-        </div>
-      )}
-    </div>
   );
 };
 
@@ -92,12 +65,11 @@ function AdminAndamento() {
   const [dashboardData, setDashboardData] = useState(null);
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
-  const [editingMonth, setEditingMonth] = useState(null);
-  const [monthlyFormData, setMonthlyFormData] = useState({});
   const [editingMilestone, setEditingMilestone] = useState(null);
   const [editingCredibility, setEditingCredibility] = useState(null);
   const [toast, setToast] = useState(null);
   const [showLegend, setShowLegend] = useState(true);
+  const [expandedQuarter, setExpandedQuarter] = useState('Q1');
 
   const months = [
     { value: 1, label: 'Gennaio', short: 'Gen' },
@@ -159,45 +131,6 @@ function AdminAndamento() {
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3000);
-  };
-
-  const startEditMonth = (month) => {
-    const monthData = dashboardData?.monthly_data?.find(m => m.month === month) || {};
-    setMonthlyFormData({
-      year: 2026,
-      month: month,
-      contacts: monthData.contacts || 0,
-      demos: monthData.demos || 0,
-      proposals: monthData.proposals || 0,
-      contracts: monthData.contracts || 0,
-      booking: monthData.booking || 0,
-      arr_new: monthData.arr_new || 0,
-      addon_setup: monthData.addon_setup || 0,
-      addon_training: monthData.addon_training || 0,
-      addon_custom: monthData.addon_custom || 0,
-      new_clubs_basic: monthData.new_clubs_basic || 0,
-      new_clubs_premium: monthData.new_clubs_premium || 0,
-      new_clubs_elite: monthData.new_clubs_elite || 0,
-      notes: monthData.notes || ''
-    });
-    setEditingMonth(month);
-  };
-
-  const saveMonthlyData = async () => {
-    try {
-      setSaving(true);
-      await axios.post(`${API_URL}/admin/kpi/monthly`, monthlyFormData, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      await fetchDashboard();
-      setEditingMonth(null);
-      showToast('Dati salvati con successo', 'success');
-    } catch (error) {
-      console.error('Error saving monthly data:', error);
-      showToast('Errore nel salvataggio', 'error');
-    } finally {
-      setSaving(false);
-    }
   };
 
   const updateMilestone = async (id, updates) => {
@@ -277,1613 +210,949 @@ function AdminAndamento() {
   };
 
   const tabs = [
-    { id: 'overview', label: 'Overview', icon: FaChartBar },
-    { id: 'monthly', label: 'Dati Mensili', icon: FaCalendarAlt },
-    { id: 'funnel', label: 'Funnel Vendite', icon: FaChartLine },
-    { id: 'milestones', label: 'Milestone', icon: FaFlag },
-    { id: 'credibility', label: 'Credibilità', icon: FaTrophy }
+    { id: 'overview', label: 'Overview', icon: HiOutlineChartPie },
+    { id: 'monthly', label: 'Mensile', icon: HiOutlineCalendarDays },
+    { id: 'funnel', label: 'Funnel', icon: HiOutlineChartBar },
+    { id: 'milestones', label: 'Milestone', icon: HiOutlineFlag },
+    { id: 'credibility', label: 'Credibilità', icon: HiOutlineTrophy }
   ];
 
   if (loading) {
     return (
-      <div className="tp-page">
-        <div className="tp-loading">
-          <div className="tp-spinner"></div>
-          <p>Caricamento dati...</p>
+      <div className="flex h-screen bg-gray-50">
+        <Sidebar />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-12 h-12 border-4 border-gray-200 border-t-gray-900 rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-500">Caricamento dati...</p>
+          </div>
         </div>
       </div>
     );
   }
 
-  const { auto_calculated, ytd_totals, targets, quarterly_actuals, conversion_rates, milestones, credibility } = dashboardData || {};
+  if (!user || user.role !== 'admin') {
+    return null;
+  }
+
+  const { auto_calculated, ytd_totals, targets, quarterly_actuals, conversion_rates, milestones, credibility, monthly_auto_data } = dashboardData || {};
 
   return (
-    <div className="tp-page">
-      {/* Toast Notification */}
-      {toast && (
-        <div style={{
-          position: 'fixed',
-          top: '20px',
-          right: '20px',
-          padding: '16px 24px',
-          borderRadius: '12px',
-          background: toast.type === 'success' ? '#10B981' : '#EF4444',
-          color: 'white',
-          fontWeight: '600',
-          zIndex: 9999,
-          boxShadow: '0 10px 40px rgba(0,0,0,0.2)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '10px'
-        }}>
-          {toast.type === 'success' ? <FaCheckCircle /> : <FaExclamationTriangle />}
-          {toast.message}
-        </div>
-      )}
-
-      {/* Page Header */}
-      <div className="tp-page-header">
-        <div className="tp-header-content">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <div style={{
-              width: '56px',
-              height: '56px',
-              borderRadius: '16px',
-              background: 'linear-gradient(135deg, #10B981, #059669)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              <FaChartLine size={24} style={{ color: 'white' }} />
+    <div className="flex h-screen bg-gray-50">
+      <Sidebar />
+      <div className="flex-1 overflow-auto">
+        <div className="p-8">
+          {/* Toast Notification */}
+          {toast && (
+            <div className={`fixed top-5 right-5 px-6 py-4 rounded-xl font-semibold z-50 shadow-lg flex items-center gap-3 ${
+              toast.type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+            }`}>
+              {toast.type === 'success' ? <HiOutlineCheckCircle className="w-5 h-5" /> : <HiOutlineExclamationTriangle className="w-5 h-5" />}
+              {toast.message}
             </div>
+          )}
+
+          {/* Header */}
+          <div className="flex justify-between items-start mb-8">
             <div>
-              <h1 className="tp-page-title">Andamento 2026</h1>
-              <p className="tp-page-subtitle">
-                Monitoraggio KPI in tempo reale
-              </p>
+              <h1 className="text-2xl font-bold text-gray-900">Andamento 2026</h1>
+              <p className="text-gray-500 mt-1">Monitoraggio KPI in tempo reale</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={fetchDashboard}
+                disabled={saving}
+                className="flex items-center gap-2 px-4 py-2 bg-white text-gray-700 rounded-xl text-sm font-semibold border border-gray-200 hover:bg-gray-50 transition-all"
+              >
+                <HiOutlineArrowPath className={`w-4 h-4 ${saving ? 'animate-spin' : ''}`} />
+                Aggiorna
+              </button>
+              {(!dashboardData?.milestones?.items?.length) && (
+                <button
+                  onClick={seedInitialData}
+                  disabled={saving}
+                  className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-xl text-sm font-semibold hover:bg-gray-800 transition-all"
+                >
+                  <HiOutlineServerStack className="w-4 h-4" />
+                  Inizializza Dati
+                </button>
+              )}
+              <div className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-xl text-sm">
+                <HiOutlineCalendarDays className="w-4 h-4" />
+                <span>4 Feb 2026</span>
+              </div>
             </div>
           </div>
-        </div>
-        <div className="tp-page-actions">
-          <button
-            className="tp-btn tp-btn-outline"
-            onClick={fetchDashboard}
-            disabled={saving}
-          >
-            <FaSyncAlt className={saving ? 'spinning' : ''} /> Aggiorna
-          </button>
-          {(!dashboardData?.milestones?.items?.length) && (
+
+          {/* Context Banner - Auto Data */}
+          <div className="bg-gradient-to-r from-gray-900 to-gray-800 rounded-2xl p-6 mb-6 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-lime-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+            <div className="relative">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-50 to-green-100 flex items-center justify-center">
+                    <HiOutlineCpuChip className="w-5 h-5 text-emerald-700" />
+                  </div>
+                  <div>
+                    <span className="text-white font-bold">Dati Automatici</span>
+                    <div className="flex items-center gap-2 mt-1">
+                      <DataTypeBadge type="auto" small />
+                      <span className="text-gray-400 text-xs">Aggiornati in tempo reale</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/30 rounded-lg">
+                  <HiOutlineServerStack className="w-4 h-4 text-emerald-400" />
+                  <span className="text-emerald-400 text-xs font-semibold">Sincronizzazione live</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-4 gap-4">
+                <div className="bg-white/5 rounded-xl p-5 border border-white/10">
+                  <div className="flex items-center justify-between mb-2">
+                    <HiOutlineUserGroup className="w-5 h-5 text-lime-400" />
+                    <span className="text-[10px] font-semibold px-2 py-0.5 bg-lime-400/20 text-lime-400 rounded-md">LIVE</span>
+                  </div>
+                  <div className="text-3xl font-extrabold text-lime-400">{auto_calculated?.total_clubs || 0}</div>
+                  <div className="text-sm text-gray-400 mt-1">Club Attivi</div>
+                </div>
+
+                <div className="bg-white/5 rounded-xl p-5 border border-white/10">
+                  <div className="flex items-center justify-between mb-2">
+                    <HiOutlineCurrencyEuro className="w-5 h-5 text-green-500" />
+                    <span className="text-[10px] font-semibold px-2 py-0.5 bg-green-500/20 text-green-500 rounded-md">LIVE</span>
+                  </div>
+                  <div className="text-3xl font-extrabold text-green-500">{formatCurrency(auto_calculated?.total_arr || 0)}</div>
+                  <div className="text-sm text-gray-400 mt-1">ARR Attuale</div>
+                </div>
+
+                <div className="bg-white/5 rounded-xl p-5 border border-white/10">
+                  <div className="flex items-center justify-between mb-2">
+                    <HiOutlineCheckCircle className="w-5 h-5 text-indigo-500" />
+                    <span className="text-[10px] font-semibold px-2 py-0.5 bg-indigo-500/20 text-indigo-500 rounded-md">LIVE</span>
+                  </div>
+                  <div className="text-3xl font-extrabold text-indigo-500">{auto_calculated?.converted_leads || 0}</div>
+                  <div className="text-sm text-gray-400 mt-1">Lead Convertiti</div>
+                </div>
+
+                <div className="bg-white/5 rounded-xl p-5 border border-white/10">
+                  <div className="flex items-center justify-between mb-2">
+                    <HiOutlineHandRaised className="w-5 h-5 text-amber-500" />
+                    <span className="text-[10px] font-semibold px-2 py-0.5 bg-amber-500/20 text-amber-500 rounded-md">LIVE</span>
+                  </div>
+                  <div className="text-3xl font-extrabold text-amber-500">{auto_calculated?.total_sponsors || 0}</div>
+                  <div className="text-sm text-gray-400 mt-1">Sponsor Attivi</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Legend Banner */}
+          {showLegend && (
+            <div className="bg-gray-50 rounded-2xl p-5 mb-6 border-2 border-gray-200 relative">
+              <button
+                onClick={() => setShowLegend(false)}
+                className="absolute top-3 right-3 p-1 text-gray-400 hover:text-gray-600"
+              >
+                <HiOutlineXMark className="w-4 h-4" />
+              </button>
+
+              <div className="flex items-center gap-3 mb-4">
+                <HiOutlineInformationCircle className="w-5 h-5 text-blue-500" />
+                <span className="text-sm font-bold text-gray-900">Come leggere i dati</span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-white rounded-xl p-4 border-2 border-emerald-200">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-emerald-50 to-green-100 flex items-center justify-center">
+                      <HiOutlineCpuChip className="w-4 h-4 text-emerald-700" />
+                    </div>
+                    <div>
+                      <div className="font-bold text-emerald-700 text-sm">Dati Automatici</div>
+                      <DataTypeBadge type="auto" small />
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-600 leading-relaxed">
+                    Calcolati in tempo reale: <strong>Funnel</strong> da Lead stages, <strong>ARR</strong> da Contratti attivi.
+                    <span className="text-emerald-700 font-semibold"> Non modificabili.</span>
+                  </p>
+                </div>
+
+                <div className="bg-white rounded-xl p-4 border-2 border-amber-300">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-amber-50 to-yellow-100 flex items-center justify-center">
+                      <HiOutlinePencilSquare className="w-4 h-4 text-amber-700" />
+                    </div>
+                    <div>
+                      <div className="font-bold text-amber-700 text-sm">Dati Manuali</div>
+                      <DataTypeBadge type="manual" small />
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-600 leading-relaxed">
+                    Solo per <strong>Milestone</strong> e <strong>Credibilità</strong> (obiettivi qualitativi).
+                    <span className="text-amber-700 font-semibold"> Clicca per modificare.</span>
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {!showLegend && (
             <button
-              className="tp-btn tp-btn-primary"
-              onClick={seedInitialData}
-              disabled={saving}
+              onClick={() => setShowLegend(true)}
+              className="flex items-center gap-2 px-4 py-2.5 mb-6 bg-gray-100 border-2 border-gray-200 rounded-xl text-gray-500 text-sm font-semibold hover:bg-gray-50 transition-all"
             >
-              <FaDatabase /> Inizializza Dati
+              <HiOutlineInformationCircle className="w-4 h-4" />
+              Mostra legenda dati
             </button>
           )}
-        </div>
-      </div>
 
-      {/* Legend Banner - Data Types Explanation */}
-      {showLegend && (
-        <div style={{
-          background: 'linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%)',
-          borderRadius: '16px',
-          padding: '20px 24px',
-          marginBottom: '20px',
-          border: '2px solid #E2E8F0',
-          position: 'relative'
-        }}>
-          <button
-            onClick={() => setShowLegend(false)}
-            style={{
-              position: 'absolute',
-              top: '12px',
-              right: '12px',
-              background: 'transparent',
-              border: 'none',
-              cursor: 'pointer',
-              color: '#94A3B8',
-              padding: '4px'
-            }}
-          >
-            <FaTimes size={14} />
-          </button>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-            <FaInfoCircle size={18} style={{ color: '#3B82F6' }} />
-            <span style={{ fontSize: '15px', fontWeight: '700', color: '#1E293B' }}>
-              Come leggere i dati
-            </span>
+          {/* Navigation Tabs */}
+          <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
+            {tabs.map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-2 px-5 py-3 rounded-xl font-semibold text-sm transition-all whitespace-nowrap ${
+                  activeTab === tab.id
+                    ? 'bg-gray-900 text-white'
+                    : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+                }`}
+              >
+                <tab.icon className="w-5 h-5" />
+                {tab.label}
+              </button>
+            ))}
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '20px' }}>
-            {/* Auto Data */}
-            <div style={{
-              background: 'white',
-              borderRadius: '12px',
-              padding: '16px',
-              border: '2px solid #A7F3D0'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
-                <div style={{
-                  width: '36px',
-                  height: '36px',
-                  borderRadius: '10px',
-                  background: 'linear-gradient(135deg, #ECFDF5, #D1FAE5)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                  <FaRobot size={16} style={{ color: '#047857' }} />
+          {/* TAB: OVERVIEW */}
+          {activeTab === 'overview' && (
+            <>
+              {/* KPI Progress Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                {/* Club Progress */}
+                <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-5 text-white">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="w-11 h-11 bg-lime-400 rounded-xl flex items-center justify-center">
+                      <HiOutlineUserGroup className="w-6 h-6 text-gray-900" />
+                    </div>
+                    <DataTypeBadge type="auto" small />
+                  </div>
+                  <div className="text-3xl font-bold mb-1">{auto_calculated?.total_clubs || 0} / {targets?.clubs}</div>
+                  <div className="text-gray-400 text-sm">Club Target</div>
+                  <div className="mt-3 h-1.5 bg-gray-700 rounded-full overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all"
+                      style={{
+                        width: `${Math.min(((auto_calculated?.total_clubs || 0) / targets?.clubs) * 100, 100)}%`,
+                        backgroundColor: getProgressColor(auto_calculated?.total_clubs, targets?.clubs)
+                      }}
+                    />
+                  </div>
                 </div>
-                <div>
-                  <div style={{ fontWeight: '700', color: '#047857', fontSize: '14px' }}>Dati Automatici</div>
-                  <DataTypeBadge type="auto" small />
+
+                {/* ARR Progress */}
+                <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-5 text-white">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="w-11 h-11 bg-lime-400 rounded-xl flex items-center justify-center">
+                      <HiOutlineCurrencyEuro className="w-6 h-6 text-gray-900" />
+                    </div>
+                    <DataTypeBadge type="auto" small />
+                  </div>
+                  <div className="text-3xl font-bold mb-1">{formatPercent(auto_calculated?.total_arr, targets?.arr)}</div>
+                  <div className="text-gray-400 text-sm">ARR vs Target €225k</div>
+                  <div className="mt-3 h-1.5 bg-gray-700 rounded-full overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all"
+                      style={{
+                        width: `${Math.min(((auto_calculated?.total_arr || 0) / targets?.arr) * 100, 100)}%`,
+                        backgroundColor: getProgressColor(auto_calculated?.total_arr, targets?.arr)
+                      }}
+                    />
+                  </div>
                 </div>
-              </div>
-              <p style={{ fontSize: '13px', color: '#6B7280', margin: 0, lineHeight: '1.5' }}>
-                Calcolati in tempo reale dal database:<br/>
-                <strong>Funnel</strong> (contatti/demo/proposte/contratti) da Lead stages<br/>
-                <strong>ARR</strong> da Contratti attivi &bull; <strong>Cash-in</strong> da Fatture pagate
-                <strong style={{ color: '#047857' }}> Non modificabili manualmente.</strong>
-              </p>
-            </div>
 
-            {/* Manual Data */}
-            <div style={{
-              background: 'white',
-              borderRadius: '12px',
-              padding: '16px',
-              border: '2px solid #FCD34D'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
-                <div style={{
-                  width: '36px',
-                  height: '36px',
-                  borderRadius: '10px',
-                  background: 'linear-gradient(135deg, #FEF3C7, #FDE68A)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                  <FaPencilAlt size={14} style={{ color: '#92400E' }} />
+                {/* Contracts Progress */}
+                <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-5 text-white">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="w-11 h-11 bg-lime-400 rounded-xl flex items-center justify-center">
+                      <HiOutlineHandRaised className="w-6 h-6 text-gray-900" />
+                    </div>
+                    <DataTypeBadge type="auto" small />
+                  </div>
+                  <div className="text-3xl font-bold mb-1">{auto_calculated?.funnel?.contracts || ytd_totals?.contracts || 0} / {targets?.contracts}</div>
+                  <div className="text-gray-400 text-sm">Contratti Chiusi</div>
+                  <div className="mt-3 h-1.5 bg-gray-700 rounded-full overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all"
+                      style={{
+                        width: `${Math.min(((auto_calculated?.funnel?.contracts || ytd_totals?.contracts || 0) / targets?.contracts) * 100, 100)}%`,
+                        backgroundColor: getProgressColor(auto_calculated?.funnel?.contracts || ytd_totals?.contracts, targets?.contracts)
+                      }}
+                    />
+                  </div>
                 </div>
-                <div>
-                  <div style={{ fontWeight: '700', color: '#92400E', fontSize: '14px' }}>Dati Manuali</div>
-                  <DataTypeBadge type="manual" small />
-                </div>
-              </div>
-              <p style={{ fontSize: '13px', color: '#6B7280', margin: 0, lineHeight: '1.5' }}>
-                Solo per <strong>Milestone</strong> e <strong>Credibilità</strong> (obiettivi qualitativi).
-                Tutti i dati numerici del funnel/revenue sono ora automatici!
-                <strong style={{ color: '#92400E' }}> Clicca "Modifica" per aggiornare milestone e credibility.</strong>
-              </p>
-            </div>
-          </div>
 
-          {/* Quick tip */}
-          <div style={{
-            marginTop: '16px',
-            padding: '12px 16px',
-            background: '#EFF6FF',
-            borderRadius: '10px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '10px'
-          }}>
-            <FaMousePointer size={14} style={{ color: '#3B82F6' }} />
-            <span style={{ fontSize: '13px', color: '#1E40AF' }}>
-              <strong>Suggerimento:</strong> Cerca il badge <DataTypeBadge type="manual" small /> per identificare i campi modificabili.
-              I pulsanti <span style={{ background: '#1A1A1A', color: 'white', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: '600' }}><FaEdit size={10} style={{ marginRight: '4px' }} />Modifica</span> appaiono accanto ai dati editabili.
-            </span>
-          </div>
-        </div>
-      )}
-
-      {/* Show legend button when hidden */}
-      {!showLegend && (
-        <button
-          onClick={() => setShowLegend(true)}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '10px 16px',
-            marginBottom: '20px',
-            background: '#F1F5F9',
-            border: '2px solid #E2E8F0',
-            borderRadius: '10px',
-            color: '#64748B',
-            fontSize: '13px',
-            fontWeight: '600',
-            cursor: 'pointer'
-          }}
-        >
-          <FaInfoCircle size={14} />
-          Mostra legenda dati
-        </button>
-      )}
-
-      {/* Auto-calculated Stats Banner */}
-      <div style={{
-        background: 'linear-gradient(135deg, #1A1A1A 0%, #2D2D2D 100%)',
-        borderRadius: '20px',
-        padding: '24px 32px',
-        marginBottom: '24px',
-        border: '3px solid #065F46'
-      }}>
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: '20px',
-          marginBottom: '20px'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div style={{
-              width: '40px',
-              height: '40px',
-              borderRadius: '12px',
-              background: 'linear-gradient(135deg, #ECFDF5, #D1FAE5)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              <FaRobot size={18} style={{ color: '#047857' }} />
-            </div>
-            <div>
-              <span style={{ color: 'white', fontSize: '16px', fontWeight: '700' }}>Dati Automatici</span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
-                <DataTypeBadge type="auto" />
-                <span style={{ color: '#9CA3AF', fontSize: '12px' }}>Aggiornati in tempo reale dal database</span>
-              </div>
-            </div>
-          </div>
-          <div style={{
-            background: 'rgba(16, 185, 129, 0.1)',
-            border: '1px solid rgba(16, 185, 129, 0.3)',
-            borderRadius: '10px',
-            padding: '8px 16px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px'
-          }}>
-            <FaDatabase size={14} style={{ color: '#10B981' }} />
-            <span style={{ color: '#10B981', fontSize: '12px', fontWeight: '600' }}>
-              Sincronizzazione live
-            </span>
-          </div>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px' }}>
-          <div style={{
-            background: 'rgba(255,255,255,0.05)',
-            borderRadius: '16px',
-            padding: '20px',
-            border: '1px solid rgba(255,255,255,0.1)'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-              <FaUsers size={18} style={{ color: '#85FF00' }} />
-              <span style={{
-                background: 'rgba(133, 255, 0, 0.2)',
-                color: '#85FF00',
-                padding: '2px 8px',
-                borderRadius: '6px',
-                fontSize: '10px',
-                fontWeight: '600'
-              }}>LIVE</span>
-            </div>
-            <div style={{ fontSize: '32px', fontWeight: '800', color: '#85FF00' }}>
-              {auto_calculated?.total_clubs || 0}
-            </div>
-            <div style={{ fontSize: '13px', color: '#9CA3AF', marginTop: '4px' }}>Club Attivi</div>
-          </div>
-
-          <div style={{
-            background: 'rgba(255,255,255,0.05)',
-            borderRadius: '16px',
-            padding: '20px',
-            border: '1px solid rgba(255,255,255,0.1)'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-              <FaEuroSign size={18} style={{ color: '#10B981' }} />
-              <span style={{
-                background: 'rgba(16, 185, 129, 0.2)',
-                color: '#10B981',
-                padding: '2px 8px',
-                borderRadius: '6px',
-                fontSize: '10px',
-                fontWeight: '600'
-              }}>LIVE</span>
-            </div>
-            <div style={{ fontSize: '32px', fontWeight: '800', color: '#10B981' }}>
-              {formatCurrency(auto_calculated?.total_arr || 0)}
-            </div>
-            <div style={{ fontSize: '13px', color: '#9CA3AF', marginTop: '4px' }}>ARR Attuale</div>
-          </div>
-
-          <div style={{
-            background: 'rgba(255,255,255,0.05)',
-            borderRadius: '16px',
-            padding: '20px',
-            border: '1px solid rgba(255,255,255,0.1)'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-              <FaUserCheck size={18} style={{ color: '#6366F1' }} />
-              <span style={{
-                background: 'rgba(99, 102, 241, 0.2)',
-                color: '#6366F1',
-                padding: '2px 8px',
-                borderRadius: '6px',
-                fontSize: '10px',
-                fontWeight: '600'
-              }}>LIVE</span>
-            </div>
-            <div style={{ fontSize: '32px', fontWeight: '800', color: '#6366F1' }}>
-              {auto_calculated?.converted_leads || 0}
-            </div>
-            <div style={{ fontSize: '13px', color: '#9CA3AF', marginTop: '4px' }}>Lead Convertiti</div>
-          </div>
-
-          <div style={{
-            background: 'rgba(255,255,255,0.05)',
-            borderRadius: '16px',
-            padding: '20px',
-            border: '1px solid rgba(255,255,255,0.1)'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-              <FaHandshake size={18} style={{ color: '#F59E0B' }} />
-              <span style={{
-                background: 'rgba(245, 158, 11, 0.2)',
-                color: '#F59E0B',
-                padding: '2px 8px',
-                borderRadius: '6px',
-                fontSize: '10px',
-                fontWeight: '600'
-              }}>LIVE</span>
-            </div>
-            <div style={{ fontSize: '32px', fontWeight: '800', color: '#F59E0B' }}>
-              {auto_calculated?.total_sponsors || 0}
-            </div>
-            <div style={{ fontSize: '13px', color: '#9CA3AF', marginTop: '4px' }}>Sponsor Attivi</div>
-          </div>
-        </div>
-      </div>
-
-      {/* Navigation Tabs */}
-      <div style={{
-        display: 'flex',
-        gap: '8px',
-        marginBottom: '24px',
-        overflowX: 'auto',
-        paddingBottom: '8px'
-      }}>
-        {tabs.map(tab => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '12px 20px',
-              borderRadius: '12px',
-              border: 'none',
-              background: activeTab === tab.id ? '#1A1A1A' : '#F5F5F5',
-              color: activeTab === tab.id ? 'white' : '#6B7280',
-              fontSize: '14px',
-              fontWeight: '600',
-              cursor: 'pointer',
-              transition: 'all 0.2s',
-              whiteSpace: 'nowrap'
-            }}
-          >
-            <tab.icon size={16} />
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
-      {/* TAB: OVERVIEW */}
-      {activeTab === 'overview' && (
-        <>
-          {/* KPI Progress Cards */}
-          <div className="tp-stats-row" style={{ marginBottom: '24px' }}>
-            {/* Club Progress */}
-            <div className="tp-stat-card-dark">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-                <div className="tp-stat-icon" style={{ background: '#85FF00' }}>
-                  <FaUsers style={{ color: '#1A1A1A' }} />
-                </div>
-                <DataTypeBadge type="auto" small />
-              </div>
-              <div className="tp-stat-content">
-                <div className="tp-stat-value">{auto_calculated?.total_clubs || 0} / {targets?.clubs}</div>
-                <div className="tp-stat-label">Club Target</div>
-                <div style={{
-                  marginTop: '8px',
-                  height: '6px',
-                  background: '#374151',
-                  borderRadius: '3px',
-                  overflow: 'hidden'
-                }}>
-                  <div style={{
-                    width: `${Math.min(((auto_calculated?.total_clubs || 0) / targets?.clubs) * 100, 100)}%`,
-                    height: '100%',
-                    background: getProgressColor(auto_calculated?.total_clubs, targets?.clubs),
-                    borderRadius: '3px',
-                    transition: 'width 0.3s'
-                  }} />
+                {/* Milestones Progress */}
+                <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-5 text-white">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="w-11 h-11 bg-lime-400 rounded-xl flex items-center justify-center">
+                      <HiOutlineFlag className="w-6 h-6 text-gray-900" />
+                    </div>
+                    <DataTypeBadge type="manual" small />
+                  </div>
+                  <div className="text-3xl font-bold mb-1">{milestones?.completed || 0} / {milestones?.total || 0}</div>
+                  <div className="text-gray-400 text-sm">Milestone Completate</div>
+                  <div className="mt-3 h-1.5 bg-gray-700 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-green-500 rounded-full transition-all"
+                      style={{
+                        width: `${milestones?.total ? (milestones.completed / milestones.total) * 100 : 0}%`
+                      }}
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* ARR Progress */}
-            <div className="tp-stat-card-dark">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-                <div className="tp-stat-icon" style={{ background: '#85FF00' }}>
-                  <FaEuroSign style={{ color: '#1A1A1A' }} />
+              {/* Quarterly Progress */}
+              <div className="bg-white rounded-2xl border border-gray-200 mb-6">
+                <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <HiOutlineCalendarDays className="w-5 h-5 text-purple-500" />
+                    <h3 className="font-semibold text-gray-900">Andamento Trimestrale</h3>
+                  </div>
+                  <DataTypeBadge type="auto" />
                 </div>
-                <DataTypeBadge type="auto" small />
-              </div>
-              <div className="tp-stat-content">
-                <div className="tp-stat-value">{formatPercent(auto_calculated?.total_arr, targets?.arr)}</div>
-                <div className="tp-stat-label">ARR vs Target €225k</div>
-                <div style={{
-                  marginTop: '8px',
-                  height: '6px',
-                  background: '#374151',
-                  borderRadius: '3px',
-                  overflow: 'hidden'
-                }}>
-                  <div style={{
-                    width: `${Math.min(((auto_calculated?.total_arr || 0) / targets?.arr) * 100, 100)}%`,
-                    height: '100%',
-                    background: getProgressColor(auto_calculated?.total_arr, targets?.arr),
-                    borderRadius: '3px'
-                  }} />
-                </div>
-              </div>
-            </div>
+                <div className="p-6">
+                  <div className="grid grid-cols-4 gap-4">
+                    {['Q1', 'Q2', 'Q3', 'Q4'].map(q => {
+                      const target = targets?.quarterly?.[q];
+                      const actual = quarterly_actuals?.[q];
+                      const isCurrentQuarter = (q === 'Q1' && new Date().getMonth() < 3) ||
+                        (q === 'Q2' && new Date().getMonth() >= 3 && new Date().getMonth() < 6) ||
+                        (q === 'Q3' && new Date().getMonth() >= 6 && new Date().getMonth() < 9) ||
+                        (q === 'Q4' && new Date().getMonth() >= 9);
 
-            {/* Contracts Progress - Auto from Lead stages */}
-            <div className="tp-stat-card-dark">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-                <div className="tp-stat-icon" style={{ background: '#85FF00' }}>
-                  <FaHandshake style={{ color: '#1A1A1A' }} />
-                </div>
-                <DataTypeBadge type="auto" small />
-              </div>
-              <div className="tp-stat-content">
-                <div className="tp-stat-value">{auto_calculated?.funnel?.contracts || ytd_totals?.contracts || 0} / {targets?.contracts}</div>
-                <div className="tp-stat-label">Contratti Chiusi (Lead Vinti)</div>
-                <div style={{
-                  marginTop: '8px',
-                  height: '6px',
-                  background: '#374151',
-                  borderRadius: '3px',
-                  overflow: 'hidden'
-                }}>
-                  <div style={{
-                    width: `${Math.min(((auto_calculated?.funnel?.contracts || ytd_totals?.contracts || 0) / targets?.contracts) * 100, 100)}%`,
-                    height: '100%',
-                    background: getProgressColor(auto_calculated?.funnel?.contracts || ytd_totals?.contracts, targets?.contracts),
-                    borderRadius: '3px'
-                  }} />
-                </div>
-              </div>
-            </div>
+                      return (
+                        <div
+                          key={q}
+                          className={`rounded-2xl p-5 ${
+                            isCurrentQuarter
+                              ? 'bg-gradient-to-br from-gray-900 to-gray-800 border-2 border-lime-400'
+                              : 'bg-gray-50 border-2 border-gray-200'
+                          }`}
+                        >
+                          <div className="flex justify-between items-center mb-4">
+                            <span className={`text-lg font-bold ${isCurrentQuarter ? 'text-white' : 'text-gray-900'}`}>
+                              {q}
+                            </span>
+                            {isCurrentQuarter && (
+                              <span className="px-2 py-1 bg-lime-400 text-gray-900 rounded-lg text-[10px] font-bold">
+                                ATTUALE
+                              </span>
+                            )}
+                          </div>
 
-            {/* Milestones Progress - Manual */}
-            <div className="tp-stat-card-dark">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-                <div className="tp-stat-icon" style={{ background: '#85FF00' }}>
-                  <FaFlag style={{ color: '#1A1A1A' }} />
-                </div>
-                <DataTypeBadge type="manual" small />
-              </div>
-              <div className="tp-stat-content">
-                <div className="tp-stat-value">{milestones?.completed || 0} / {milestones?.total || 0}</div>
-                <div className="tp-stat-label">Milestone Completate</div>
-                <div style={{
-                  marginTop: '8px',
-                  height: '6px',
-                  background: '#374151',
-                  borderRadius: '3px',
-                  overflow: 'hidden'
-                }}>
-                  <div style={{
-                    width: `${milestones?.total ? (milestones.completed / milestones.total) * 100 : 0}%`,
-                    height: '100%',
-                    background: '#10B981',
-                    borderRadius: '3px'
-                  }} />
-                </div>
-              </div>
-            </div>
-          </div>
+                          <div className="space-y-3">
+                            <div>
+                              <div className={`flex justify-between text-xs mb-1 ${isCurrentQuarter ? 'text-gray-400' : 'text-gray-500'}`}>
+                                <span>Club</span>
+                                <span>{actual?.new_clubs || 0} / {target?.clubs}</span>
+                              </div>
+                              <div className={`h-1 rounded-full ${isCurrentQuarter ? 'bg-gray-700' : 'bg-gray-200'}`}>
+                                <div
+                                  className="h-full rounded-full"
+                                  style={{
+                                    width: `${Math.min(((actual?.new_clubs || 0) / (target?.clubs || 1)) * 100, 100)}%`,
+                                    backgroundColor: getProgressColor(actual?.new_clubs, target?.clubs)
+                                  }}
+                                />
+                              </div>
+                            </div>
 
-          {/* Quarterly Progress */}
-          <div className="tp-card" style={{ marginBottom: '24px' }}>
-            <div className="tp-card-header">
-              <h3 className="tp-card-title">
-                <FaCalendarAlt /> Andamento Trimestrale
-              </h3>
-              <DataTypeBadge type="auto" />
-            </div>
-            <div className="tp-card-body">
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
-                {['Q1', 'Q2', 'Q3', 'Q4'].map(q => {
-                  const target = targets?.quarterly?.[q];
-                  const actual = quarterly_actuals?.[q];
-                  const isCurrentQuarter = (q === 'Q1' && new Date().getMonth() < 3) ||
-                    (q === 'Q2' && new Date().getMonth() >= 3 && new Date().getMonth() < 6) ||
-                    (q === 'Q3' && new Date().getMonth() >= 6 && new Date().getMonth() < 9) ||
-                    (q === 'Q4' && new Date().getMonth() >= 9);
+                            <div>
+                              <div className={`flex justify-between text-xs mb-1 ${isCurrentQuarter ? 'text-gray-400' : 'text-gray-500'}`}>
+                                <span>Demo</span>
+                                <span>{actual?.demos || 0} / {target?.demos}</span>
+                              </div>
+                              <div className={`h-1 rounded-full ${isCurrentQuarter ? 'bg-gray-700' : 'bg-gray-200'}`}>
+                                <div
+                                  className="h-full rounded-full"
+                                  style={{
+                                    width: `${Math.min(((actual?.demos || 0) / (target?.demos || 1)) * 100, 100)}%`,
+                                    backgroundColor: getProgressColor(actual?.demos, target?.demos)
+                                  }}
+                                />
+                              </div>
+                            </div>
+
+                            <div>
+                              <div className={`flex justify-between text-xs mb-1 ${isCurrentQuarter ? 'text-gray-400' : 'text-gray-500'}`}>
+                                <span>Contratti</span>
+                                <span>{actual?.contracts || 0} / {target?.contracts}</span>
+                              </div>
+                              <div className={`h-1 rounded-full ${isCurrentQuarter ? 'bg-gray-700' : 'bg-gray-200'}`}>
+                                <div
+                                  className="h-full rounded-full"
+                                  style={{
+                                    width: `${Math.min(((actual?.contracts || 0) / (target?.contracts || 1)) * 100, 100)}%`,
+                                    backgroundColor: getProgressColor(actual?.contracts, target?.contracts)
+                                  }}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* Club Mix */}
+              <div className="bg-white rounded-2xl border border-gray-200">
+                <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <HiOutlineSparkles className="w-5 h-5 text-purple-500" />
+                    <h3 className="font-semibold text-gray-900">Distribuzione Club per Piano</h3>
+                  </div>
+                  <DataTypeBadge type="auto" />
+                </div>
+                <div className="p-6">
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="bg-gray-50 rounded-2xl p-6 text-center border-2 border-gray-200">
+                      <HiOutlineStar className="w-8 h-8 mx-auto text-gray-500 mb-3" />
+                      <div className="text-4xl font-extrabold text-gray-900 mb-2">
+                        {auto_calculated?.clubs_by_plan?.basic || 0}
+                      </div>
+                      <div className="text-sm text-gray-500 mb-2">Basic / Kickoff</div>
+                      <span className="inline-block px-3 py-1 bg-gray-200 text-gray-600 rounded-full text-xs font-semibold">
+                        Target: {targets?.clubs_basic}
+                      </span>
+                    </div>
+
+                    <div className="bg-indigo-50 rounded-2xl p-6 text-center border-2 border-indigo-200">
+                      <HiOutlineSparkles className="w-8 h-8 mx-auto text-indigo-500 mb-3" />
+                      <div className="text-4xl font-extrabold text-gray-900 mb-2">
+                        {auto_calculated?.clubs_by_plan?.premium || 0}
+                      </div>
+                      <div className="text-sm text-indigo-600 mb-2">Premium</div>
+                      <span className="inline-block px-3 py-1 bg-indigo-200 text-indigo-700 rounded-full text-xs font-semibold">
+                        Target: {targets?.clubs_premium}
+                      </span>
+                    </div>
+
+                    <div className="bg-amber-50 rounded-2xl p-6 text-center border-2 border-amber-300">
+                      <HiOutlineBolt className="w-8 h-8 mx-auto text-amber-500 mb-3" />
+                      <div className="text-4xl font-extrabold text-gray-900 mb-2">
+                        {auto_calculated?.clubs_by_plan?.elite || 0}
+                      </div>
+                      <div className="text-sm text-amber-600 mb-2">Elite</div>
+                      <span className="inline-block px-3 py-1 bg-amber-300 text-amber-800 rounded-full text-xs font-semibold">
+                        Target: {targets?.clubs_elite}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* TAB: MONTHLY DATA - 100% AUTOMATICO */}
+          {activeTab === 'monthly' && (
+            <div className="bg-white rounded-2xl border border-gray-200">
+              <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <HiOutlineCalendarDays className="w-5 h-5 text-blue-500" />
+                  <h3 className="font-semibold text-gray-900">Andamento Mensile</h3>
+                  <DataTypeBadge type="auto" />
+                </div>
+                <span className="flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-700 rounded-xl text-sm font-semibold">
+                  <HiOutlineCpuChip className="w-4 h-4" />
+                  Aggregato automaticamente da Lead, Contratti e Fatture
+                </span>
+              </div>
+              <div className="p-6">
+                {/* Month Selector */}
+                <div className="grid grid-cols-12 gap-2 mb-6">
+                  {months.map(m => {
+                    const monthData = monthly_auto_data?.find(d => d.month === m.value);
+                    const hasActivity = monthData && (monthData.contacts > 0 || monthData.demos > 0 || monthData.contracts > 0 || monthData.booking > 0);
+
+                    return (
+                      <button
+                        key={m.value}
+                        onClick={() => setSelectedMonth(m.value)}
+                        className={`relative py-3 px-2 rounded-xl text-xs font-semibold transition-all ${
+                          selectedMonth === m.value
+                            ? 'bg-gray-900 text-white border-2 border-gray-900'
+                            : hasActivity
+                              ? 'bg-emerald-50 text-gray-900 border-2 border-emerald-200 hover:border-emerald-300'
+                              : 'bg-white text-gray-900 border-2 border-gray-200 hover:border-gray-300'
+                        }`}
+                      >
+                        {m.short}
+                        {hasActivity && (
+                          <div className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Month Data View - Automatic */}
+                {(() => {
+                  const monthData = monthly_auto_data?.find(d => d.month === selectedMonth) || {};
+                  const hasAnyData = monthData.contacts > 0 || monthData.demos > 0 || monthData.contracts > 0 || monthData.booking > 0;
 
                   return (
-                    <div key={q} style={{
-                      background: isCurrentQuarter ? 'linear-gradient(135deg, #1A1A1A, #2D2D2D)' : '#FAFAFA',
-                      borderRadius: '16px',
-                      padding: '20px',
-                      border: isCurrentQuarter ? '2px solid #85FF00' : '2px solid #E5E7EB'
-                    }}>
-                      <div style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        marginBottom: '16px'
-                      }}>
-                        <span style={{
-                          fontSize: '18px',
-                          fontWeight: '700',
-                          color: isCurrentQuarter ? 'white' : '#1A1A1A'
-                        }}>
-                          {q}
-                        </span>
-                        {isCurrentQuarter && (
-                          <span style={{
-                            background: '#85FF00',
-                            color: '#1A1A1A',
-                            padding: '4px 8px',
-                            borderRadius: '8px',
-                            fontSize: '10px',
-                            fontWeight: '700'
-                          }}>
-                            ATTUALE
-                          </span>
+                    <div className="bg-gradient-to-br from-gray-50 to-slate-50 rounded-2xl p-6 border-2 border-gray-200">
+                      <div className="flex justify-between items-center mb-6">
+                        <div className="flex items-center gap-3">
+                          <h4 className="text-lg font-bold text-gray-900">
+                            {months.find(m => m.value === selectedMonth)?.label} 2026
+                          </h4>
+                          <DataTypeBadge type="auto" small />
+                        </div>
+                        {!hasAnyData && (
+                          <span className="text-sm text-gray-400 italic">Nessuna attività registrata</span>
                         )}
                       </div>
 
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                        <div>
-                          <div style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            fontSize: '12px',
-                            color: isCurrentQuarter ? '#9CA3AF' : '#6B7280',
-                            marginBottom: '4px'
-                          }}>
-                            <span>Club</span>
-                            <span>{actual?.new_clubs || 0} / {target?.clubs}</span>
+                      {/* Funnel Section */}
+                      <div className="mb-6">
+                        <h5 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3 flex items-center gap-2">
+                          <HiOutlineChartBar className="w-4 h-4" /> Funnel Vendite (da Lead CRM)
+                        </h5>
+                        <div className="grid grid-cols-4 gap-4">
+                          <div className="bg-white p-4 rounded-xl text-center border border-gray-100">
+                            <HiOutlinePhone className="w-5 h-5 mx-auto text-gray-500 mb-2" />
+                            <div className="text-2xl font-extrabold text-gray-900">{monthData.contacts || 0}</div>
+                            <div className="text-xs text-gray-500">Contatti</div>
                           </div>
-                          <div style={{ height: '4px', background: isCurrentQuarter ? '#374151' : '#E5E7EB', borderRadius: '2px' }}>
-                            <div style={{
-                              width: `${Math.min(((actual?.new_clubs || 0) / (target?.clubs || 1)) * 100, 100)}%`,
-                              height: '100%',
-                              background: getProgressColor(actual?.new_clubs, target?.clubs),
-                              borderRadius: '2px'
-                            }} />
+                          <div className="bg-white p-4 rounded-xl text-center border border-gray-100">
+                            <HiOutlineVideoCamera className="w-5 h-5 mx-auto text-blue-500 mb-2" />
+                            <div className="text-2xl font-extrabold text-gray-900">{monthData.demos || 0}</div>
+                            <div className="text-xs text-gray-500">Demo</div>
+                          </div>
+                          <div className="bg-white p-4 rounded-xl text-center border border-gray-100">
+                            <HiOutlineDocumentText className="w-5 h-5 mx-auto text-purple-500 mb-2" />
+                            <div className="text-2xl font-extrabold text-gray-900">{monthData.proposals || 0}</div>
+                            <div className="text-xs text-gray-500">Proposte</div>
+                          </div>
+                          <div className="bg-white p-4 rounded-xl text-center border border-gray-100">
+                            <HiOutlineHandRaised className="w-5 h-5 mx-auto text-green-500 mb-2" />
+                            <div className="text-2xl font-extrabold text-gray-900">{monthData.contracts || 0}</div>
+                            <div className="text-xs text-gray-500">Contratti</div>
                           </div>
                         </div>
+                      </div>
 
-                        <div>
-                          <div style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            fontSize: '12px',
-                            color: isCurrentQuarter ? '#9CA3AF' : '#6B7280',
-                            marginBottom: '4px'
-                          }}>
-                            <span>Demo</span>
-                            <span>{actual?.demos || 0} / {target?.demos}</span>
+                      {/* Revenue Section */}
+                      <div className="mb-6">
+                        <h5 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3 flex items-center gap-2">
+                          <HiOutlineCurrencyEuro className="w-4 h-4" /> Revenue (da Contratti e Fatture)
+                        </h5>
+                        <div className="grid grid-cols-3 gap-4">
+                          <div className="bg-gradient-to-br from-emerald-50 to-green-100 p-4 rounded-xl text-center border border-emerald-200">
+                            <div className="text-xs text-emerald-700 mb-1 font-semibold">Cash-in</div>
+                            <div className="text-xl font-extrabold text-emerald-600">{formatCurrency(monthData.booking || 0)}</div>
+                            <div className="text-[10px] text-emerald-500 mt-1">Fatture pagate</div>
                           </div>
-                          <div style={{ height: '4px', background: isCurrentQuarter ? '#374151' : '#E5E7EB', borderRadius: '2px' }}>
-                            <div style={{
-                              width: `${Math.min(((actual?.demos || 0) / (target?.demos || 1)) * 100, 100)}%`,
-                              height: '100%',
-                              background: getProgressColor(actual?.demos, target?.demos),
-                              borderRadius: '2px'
-                            }} />
+                          <div className="bg-gradient-to-br from-blue-50 to-indigo-100 p-4 rounded-xl text-center border border-blue-200">
+                            <div className="text-xs text-blue-700 mb-1 font-semibold">ARR Nuovo</div>
+                            <div className="text-xl font-extrabold text-blue-600">{formatCurrency(monthData.arr_new || 0)}</div>
+                            <div className="text-[10px] text-blue-500 mt-1">Contratti firmati</div>
+                          </div>
+                          <div className="bg-gradient-to-br from-amber-50 to-yellow-100 p-4 rounded-xl text-center border border-amber-200">
+                            <div className="text-xs text-amber-700 mb-1 font-semibold">Add-on Totale</div>
+                            <div className="text-xl font-extrabold text-amber-600">{formatCurrency(monthData.addon_total || 0)}</div>
+                            <div className="text-[10px] text-amber-500 mt-1">Setup + Training + Custom</div>
                           </div>
                         </div>
+                      </div>
 
-                        <div>
-                          <div style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            fontSize: '12px',
-                            color: isCurrentQuarter ? '#9CA3AF' : '#6B7280',
-                            marginBottom: '4px'
-                          }}>
-                            <span>Contratti</span>
-                            <span>{actual?.contracts || 0} / {target?.contracts}</span>
-                          </div>
-                          <div style={{ height: '4px', background: isCurrentQuarter ? '#374151' : '#E5E7EB', borderRadius: '2px' }}>
-                            <div style={{
-                              width: `${Math.min(((actual?.contracts || 0) / (target?.contracts || 1)) * 100, 100)}%`,
-                              height: '100%',
-                              background: getProgressColor(actual?.contracts, target?.contracts),
-                              borderRadius: '2px'
-                            }} />
+                      {/* Add-on Breakdown */}
+                      {(monthData.addon_setup > 0 || monthData.addon_training > 0 || monthData.addon_custom > 0) && (
+                        <div className="mb-6">
+                          <h5 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3 flex items-center gap-2">
+                            <HiOutlineSparkles className="w-4 h-4" /> Dettaglio Add-on
+                          </h5>
+                          <div className="grid grid-cols-3 gap-4">
+                            <div className="bg-white p-3 rounded-xl text-center border border-gray-100">
+                              <div className="text-xs text-gray-500 mb-1">Setup/Onboarding</div>
+                              <div className="text-lg font-bold text-gray-700">{formatCurrency(monthData.addon_setup || 0)}</div>
+                            </div>
+                            <div className="bg-white p-3 rounded-xl text-center border border-gray-100">
+                              <div className="text-xs text-gray-500 mb-1">Formazione</div>
+                              <div className="text-lg font-bold text-gray-700">{formatCurrency(monthData.addon_training || 0)}</div>
+                            </div>
+                            <div className="bg-white p-3 rounded-xl text-center border border-gray-100">
+                              <div className="text-xs text-gray-500 mb-1">Custom/Integrazioni</div>
+                              <div className="text-lg font-bold text-gray-700">{formatCurrency(monthData.addon_custom || 0)}</div>
+                            </div>
                           </div>
                         </div>
+                      )}
+
+                      {/* New Clubs */}
+                      {(monthData.new_clubs_total > 0) && (
+                        <div>
+                          <h5 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3 flex items-center gap-2">
+                            <HiOutlineUserGroup className="w-4 h-4" /> Nuovi Club Acquisiti
+                          </h5>
+                          <div className="grid grid-cols-4 gap-4">
+                            <div className="bg-gradient-to-br from-gray-900 to-gray-800 p-4 rounded-xl text-center">
+                              <div className="text-xs text-gray-400 mb-1">Totale</div>
+                              <div className="text-2xl font-extrabold text-lime-400">{monthData.new_clubs_total || 0}</div>
+                            </div>
+                            <div className="bg-white p-4 rounded-xl text-center border border-gray-200">
+                              <HiOutlineStar className="w-4 h-4 mx-auto text-gray-400 mb-1" />
+                              <div className="text-lg font-bold text-gray-700">{monthData.new_clubs_basic || 0}</div>
+                              <div className="text-xs text-gray-500">Basic</div>
+                            </div>
+                            <div className="bg-indigo-50 p-4 rounded-xl text-center border border-indigo-200">
+                              <HiOutlineSparkles className="w-4 h-4 mx-auto text-indigo-500 mb-1" />
+                              <div className="text-lg font-bold text-indigo-600">{monthData.new_clubs_premium || 0}</div>
+                              <div className="text-xs text-indigo-500">Premium</div>
+                            </div>
+                            <div className="bg-amber-50 p-4 rounded-xl text-center border border-amber-300">
+                              <HiOutlineBolt className="w-4 h-4 mx-auto text-amber-500 mb-1" />
+                              <div className="text-lg font-bold text-amber-600">{monthData.new_clubs_elite || 0}</div>
+                              <div className="text-xs text-amber-500">Elite</div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Data Source Info */}
+                      <div className="mt-6 pt-4 border-t border-gray-200">
+                        <div className="flex items-center gap-2 text-xs text-gray-400">
+                          <HiOutlineInformationCircle className="w-4 h-4" />
+                          <span>Dati aggregati automaticamente da: <strong>CRMLead</strong> (funnel), <strong>AdminContract</strong> (ARR, club), <strong>AdminInvoice</strong> (cash-in)</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Monthly Summary Table */}
+                <div className="mt-6">
+                  <h5 className="text-sm font-semibold text-gray-700 mb-3">Riepilogo Annuale</h5>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="bg-gray-100">
+                          <th className="px-3 py-2 text-left font-semibold text-gray-600 rounded-l-lg">Mese</th>
+                          <th className="px-3 py-2 text-center font-semibold text-gray-600">Contatti</th>
+                          <th className="px-3 py-2 text-center font-semibold text-gray-600">Demo</th>
+                          <th className="px-3 py-2 text-center font-semibold text-gray-600">Proposte</th>
+                          <th className="px-3 py-2 text-center font-semibold text-gray-600">Contratti</th>
+                          <th className="px-3 py-2 text-center font-semibold text-gray-600">Cash-in</th>
+                          <th className="px-3 py-2 text-center font-semibold text-gray-600">ARR Nuovo</th>
+                          <th className="px-3 py-2 text-center font-semibold text-gray-600 rounded-r-lg">Club</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {monthly_auto_data?.map((m, idx) => {
+                          const hasData = m.contacts > 0 || m.demos > 0 || m.contracts > 0 || m.booking > 0;
+                          return (
+                            <tr
+                              key={m.month}
+                              className={`border-b border-gray-100 ${selectedMonth === m.month ? 'bg-blue-50' : hasData ? 'bg-emerald-50/50' : ''}`}
+                            >
+                              <td className="px-3 py-2 font-medium text-gray-900">{months[idx]?.short}</td>
+                              <td className="px-3 py-2 text-center text-gray-700">{m.contacts || '-'}</td>
+                              <td className="px-3 py-2 text-center text-gray-700">{m.demos || '-'}</td>
+                              <td className="px-3 py-2 text-center text-gray-700">{m.proposals || '-'}</td>
+                              <td className="px-3 py-2 text-center font-semibold text-green-600">{m.contracts || '-'}</td>
+                              <td className="px-3 py-2 text-center text-emerald-600">{m.booking > 0 ? formatCurrency(m.booking) : '-'}</td>
+                              <td className="px-3 py-2 text-center text-blue-600">{m.arr_new > 0 ? formatCurrency(m.arr_new) : '-'}</td>
+                              <td className="px-3 py-2 text-center font-semibold text-gray-900">{m.new_clubs_total || '-'}</td>
+                            </tr>
+                          );
+                        })}
+                        {/* Totals Row */}
+                        <tr className="bg-gray-900 text-white font-semibold">
+                          <td className="px-3 py-3 rounded-l-lg">TOTALE YTD</td>
+                          <td className="px-3 py-3 text-center">{monthly_auto_data?.reduce((sum, m) => sum + (m.contacts || 0), 0)}</td>
+                          <td className="px-3 py-3 text-center">{monthly_auto_data?.reduce((sum, m) => sum + (m.demos || 0), 0)}</td>
+                          <td className="px-3 py-3 text-center">{monthly_auto_data?.reduce((sum, m) => sum + (m.proposals || 0), 0)}</td>
+                          <td className="px-3 py-3 text-center text-lime-400">{monthly_auto_data?.reduce((sum, m) => sum + (m.contracts || 0), 0)}</td>
+                          <td className="px-3 py-3 text-center text-emerald-400">{formatCurrency(monthly_auto_data?.reduce((sum, m) => sum + (m.booking || 0), 0))}</td>
+                          <td className="px-3 py-3 text-center text-blue-400">{formatCurrency(monthly_auto_data?.reduce((sum, m) => sum + (m.arr_new || 0), 0))}</td>
+                          <td className="px-3 py-3 text-center text-lime-400 rounded-r-lg">{monthly_auto_data?.reduce((sum, m) => sum + (m.new_clubs_total || 0), 0)}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB: FUNNEL */}
+          {activeTab === 'funnel' && (
+            <div className="bg-white rounded-2xl border border-gray-200">
+              <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <HiOutlineChartBar className="w-5 h-5 text-indigo-500" />
+                  <h3 className="font-semibold text-gray-900">Funnel Vendite YTD</h3>
+                  <DataTypeBadge type="auto" />
+                </div>
+                <span className="text-sm text-gray-500">Calcolato automaticamente dagli stage dei Lead CRM</span>
+              </div>
+              <div className="p-6">
+                {/* Funnel Visual */}
+                <div className="max-w-xl mx-auto mb-8 space-y-4">
+                  {[
+                    { stage: 'Contatti Qualificati', value: auto_calculated?.funnel?.contacts || ytd_totals?.contacts || 0, target: targets?.contacts, color: 'bg-gray-200', textColor: 'text-gray-900' },
+                    { stage: 'Demo Effettuate', value: auto_calculated?.funnel?.demos || ytd_totals?.demos || 0, target: targets?.demos, color: 'bg-blue-400', textColor: 'text-white', rate: conversion_rates?.contact_to_demo },
+                    { stage: 'Proposte Inviate', value: auto_calculated?.funnel?.proposals || ytd_totals?.proposals || 0, target: targets?.proposals, color: 'bg-indigo-500', textColor: 'text-white', rate: conversion_rates?.demo_to_proposal },
+                    { stage: 'Contratti Chiusi', value: auto_calculated?.funnel?.contracts || ytd_totals?.contracts || 0, target: targets?.contracts, color: 'bg-green-500', textColor: 'text-white', rate: conversion_rates?.proposal_to_contract }
+                  ].map((stage, index) => (
+                    <div key={index} className="relative">
+                      <div
+                        className={`flex items-center justify-between p-5 rounded-xl ${stage.color} ${stage.textColor} transition-all`}
+                        style={{ width: `${100 - (index * 12)}%`, marginLeft: `${index * 6}%` }}
+                      >
+                        <span className="font-semibold">{stage.stage}</span>
+                        <div className="flex items-center gap-4">
+                          <span className="text-2xl font-extrabold">{stage.value}</span>
+                          <span className={`text-sm ${index > 0 ? 'opacity-70' : 'text-gray-500'}`}>/ {stage.target}</span>
+                          {stage.rate !== undefined && (
+                            <span className="text-xs px-2.5 py-1 bg-white/20 rounded-lg">
+                              {stage.rate}% conv.
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      {index < 3 && (
+                        <div className="absolute left-1/2 -bottom-3 transform -translate-x-1/2 z-10">
+                          <HiOutlineArrowTrendingDown className="w-4 h-4 text-gray-400" />
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Conversion Rates */}
+                <div className="bg-gray-50 rounded-2xl p-6">
+                  <div className="grid grid-cols-3 gap-8">
+                    <div className="text-center">
+                      <div className="text-sm text-gray-500 mb-2">Contatto → Demo</div>
+                      <div className={`text-4xl font-extrabold ${conversion_rates?.contact_to_demo >= 37 ? 'text-green-500' : 'text-red-500'}`}>
+                        {conversion_rates?.contact_to_demo || 0}%
+                      </div>
+                      <div className="text-xs text-gray-400 mt-1">Target: 37%</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-sm text-gray-500 mb-2">Demo → Proposta</div>
+                      <div className={`text-4xl font-extrabold ${conversion_rates?.demo_to_proposal >= 67 ? 'text-green-500' : 'text-red-500'}`}>
+                        {conversion_rates?.demo_to_proposal || 0}%
+                      </div>
+                      <div className="text-xs text-gray-400 mt-1">Target: 67%</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-sm text-gray-500 mb-2">Proposta → Chiusura</div>
+                      <div className={`text-4xl font-extrabold ${conversion_rates?.proposal_to_contract >= 50 ? 'text-green-500' : 'text-red-500'}`}>
+                        {conversion_rates?.proposal_to_contract || 0}%
+                      </div>
+                      <div className="text-xs text-gray-400 mt-1">Target: 50%</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB: MILESTONES */}
+          {activeTab === 'milestones' && (
+            <div className="bg-white rounded-2xl border border-gray-200">
+              <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <HiOutlineFlag className="w-5 h-5 text-red-500" />
+                  <h3 className="font-semibold text-gray-900">Milestone 2026</h3>
+                  <DataTypeBadge type="manual" />
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 text-amber-700 rounded-lg text-xs font-semibold">
+                    <HiOutlineCursorArrowRays className="w-3 h-3" />
+                    Clicca per cambiare stato
+                  </span>
+                  <span className={`px-3 py-1.5 rounded-full text-sm font-semibold ${
+                    milestones?.completed === milestones?.total
+                      ? 'bg-green-100 text-green-700'
+                      : 'bg-amber-100 text-amber-700'
+                  }`}>
+                    {milestones?.completed || 0} / {milestones?.total || 0} completate
+                  </span>
+                </div>
+              </div>
+              <div className="p-6 space-y-6">
+                {['Q1', 'Q2', 'Q3', 'Q4'].map(quarter => {
+                  const quarterMilestones = milestones?.items?.filter(m => m.quarter === quarter) || [];
+                  if (quarterMilestones.length === 0) return null;
+
+                  return (
+                    <div key={quarter}>
+                      <div className="flex items-center gap-3 mb-3">
+                        <span className="px-3 py-1 bg-gray-900 text-white rounded-lg text-xs font-bold">
+                          {quarter}
+                        </span>
+                        <span className="text-sm text-gray-500">
+                          {quarterMilestones.filter(m => m.status === 'completed').length} / {quarterMilestones.length}
+                        </span>
+                      </div>
+
+                      <div className="space-y-2">
+                        {quarterMilestones.map(milestone => (
+                          <div
+                            key={milestone.id}
+                            className={`flex items-center justify-between p-4 rounded-xl border-2 transition-all ${
+                              milestone.status === 'completed'
+                                ? 'bg-green-50 border-green-200'
+                                : 'bg-gray-50 border-gray-200'
+                            }`}
+                          >
+                            <div className="flex items-center gap-4">
+                              <button
+                                onClick={() => updateMilestone(milestone.id, {
+                                  status: milestone.status === 'completed' ? 'not_started' : 'completed'
+                                })}
+                                className={`w-7 h-7 rounded-lg border-2 flex items-center justify-center transition-all ${
+                                  milestone.status === 'completed'
+                                    ? 'bg-green-500 border-green-500'
+                                    : 'bg-white border-gray-300 hover:border-gray-400'
+                                }`}
+                                title="Clicca per cambiare stato"
+                              >
+                                {milestone.status === 'completed' && (
+                                  <HiOutlineCheckCircle className="w-4 h-4 text-white" />
+                                )}
+                              </button>
+                              <span className={`text-sm font-medium ${
+                                milestone.status === 'completed'
+                                  ? 'text-green-700 line-through'
+                                  : 'text-gray-900'
+                              }`}>
+                                {milestone.name}
+                              </span>
+                            </div>
+
+                            <div className="flex items-center gap-3">
+                              <select
+                                value={milestone.status}
+                                onChange={(e) => updateMilestone(milestone.id, { status: e.target.value })}
+                                className="px-3 py-1.5 rounded-lg border-2 border-gray-200 text-xs font-semibold bg-white cursor-pointer"
+                                style={{ color: getStatusColor(milestone.status) }}
+                              >
+                                <option value="not_started">Da Iniziare</option>
+                                <option value="in_progress">In Corso</option>
+                                <option value="completed">Completato</option>
+                              </select>
+
+                              {milestone.completion_date && (
+                                <span className="text-xs text-gray-500">
+                                  {new Date(milestone.completion_date).toLocaleDateString('it-IT')}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   );
                 })}
               </div>
             </div>
-          </div>
+          )}
 
-          {/* Club Mix */}
-          <div className="tp-card">
-            <div className="tp-card-header">
-              <h3 className="tp-card-title">
-                <FaCrown /> Distribuzione Club per Piano
-              </h3>
-              <DataTypeBadge type="auto" />
-            </div>
-            <div className="tp-card-body">
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
-                <div style={{
-                  background: '#FAFAFA',
-                  borderRadius: '16px',
-                  padding: '24px',
-                  textAlign: 'center',
-                  border: '2px solid #E5E7EB'
-                }}>
-                  <FaStar size={32} color="#6B7280" />
-                  <div style={{ fontSize: '36px', fontWeight: '800', color: '#1A1A1A', margin: '12px 0' }}>
-                    {auto_calculated?.clubs_by_plan?.basic || 0}
-                  </div>
-                  <div style={{ fontSize: '14px', color: '#6B7280', marginBottom: '8px' }}>Basic / Kickoff</div>
-                  <div style={{
-                    fontSize: '12px',
-                    color: '#9CA3AF',
-                    padding: '6px 12px',
-                    background: '#E5E7EB',
-                    borderRadius: '20px',
-                    display: 'inline-block'
-                  }}>
-                    Target: {targets?.clubs_basic}
-                  </div>
+          {/* TAB: CREDIBILITY */}
+          {activeTab === 'credibility' && (
+            <div className="bg-white rounded-2xl border border-gray-200">
+              <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <HiOutlineTrophy className="w-5 h-5 text-amber-500" />
+                  <h3 className="font-semibold text-gray-900">KPI Credibilità (Investor-Ready)</h3>
+                  <DataTypeBadge type="manual" />
                 </div>
-
-                <div style={{
-                  background: 'linear-gradient(135deg, #EEF2FF, #E0E7FF)',
-                  borderRadius: '16px',
-                  padding: '24px',
-                  textAlign: 'center',
-                  border: '2px solid #C7D2FE'
-                }}>
-                  <FaCrown size={32} color="#6366F1" />
-                  <div style={{ fontSize: '36px', fontWeight: '800', color: '#1A1A1A', margin: '12px 0' }}>
-                    {auto_calculated?.clubs_by_plan?.premium || 0}
-                  </div>
-                  <div style={{ fontSize: '14px', color: '#6366F1', marginBottom: '8px' }}>Premium</div>
-                  <div style={{
-                    fontSize: '12px',
-                    color: '#6366F1',
-                    padding: '6px 12px',
-                    background: '#C7D2FE',
-                    borderRadius: '20px',
-                    display: 'inline-block'
-                  }}>
-                    Target: {targets?.clubs_premium}
-                  </div>
-                </div>
-
-                <div style={{
-                  background: 'linear-gradient(135deg, #FEF3C7, #FDE68A)',
-                  borderRadius: '16px',
-                  padding: '24px',
-                  textAlign: 'center',
-                  border: '2px solid #FCD34D'
-                }}>
-                  <FaGem size={32} color="#F59E0B" />
-                  <div style={{ fontSize: '36px', fontWeight: '800', color: '#1A1A1A', margin: '12px 0' }}>
-                    {auto_calculated?.clubs_by_plan?.elite || 0}
-                  </div>
-                  <div style={{ fontSize: '14px', color: '#B45309', marginBottom: '8px' }}>Elite</div>
-                  <div style={{
-                    fontSize: '12px',
-                    color: '#92400E',
-                    padding: '6px 12px',
-                    background: '#FCD34D',
-                    borderRadius: '20px',
-                    display: 'inline-block'
-                  }}>
-                    Target: {targets?.clubs_elite}
-                  </div>
-                </div>
+                <span className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 text-amber-700 rounded-lg text-xs font-semibold">
+                  <HiOutlineCursorArrowRays className="w-3 h-3" />
+                  Clicca sul valore "Attuale" per modificarlo
+                </span>
               </div>
-            </div>
-          </div>
-        </>
-      )}
-
-      {/* TAB: MONTHLY DATA */}
-      {activeTab === 'monthly' && (
-        <div className="tp-card">
-          <div className="tp-card-header">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <h3 className="tp-card-title">
-                <FaCalendarAlt /> Inserimento Dati Mensili
-              </h3>
-              <DataTypeBadge type="manual" />
-            </div>
-            <div style={{
-              background: '#FEF3C7',
-              color: '#92400E',
-              padding: '8px 16px',
-              borderRadius: '10px',
-              fontSize: '13px',
-              fontWeight: '600',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px'
-            }}>
-              <FaPencilAlt size={12} />
-              Seleziona un mese e clicca "Modifica" per aggiornare i dati
-            </div>
-          </div>
-          <div className="tp-card-body">
-            {/* Month Selector */}
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(12, 1fr)',
-              gap: '8px',
-              marginBottom: '24px'
-            }}>
-              {months.map(m => {
-                const monthData = dashboardData?.monthly_data?.find(d => d.month === m.value);
-                const hasData = monthData && (monthData.contacts > 0 || monthData.demos > 0 || monthData.contracts > 0);
-
-                return (
-                  <button
-                    key={m.value}
-                    onClick={() => setSelectedMonth(m.value)}
-                    style={{
-                      padding: '12px 8px',
-                      borderRadius: '10px',
-                      border: selectedMonth === m.value ? '2px solid #1A1A1A' : '2px solid #E5E7EB',
-                      background: selectedMonth === m.value ? '#1A1A1A' : hasData ? '#F0FDF4' : 'white',
-                      color: selectedMonth === m.value ? 'white' : '#1A1A1A',
-                      fontSize: '12px',
-                      fontWeight: '600',
-                      cursor: 'pointer',
-                      position: 'relative'
-                    }}
+              <div className="p-6 space-y-3">
+                {credibility?.map(kpi => (
+                  <div
+                    key={kpi.id}
+                    className="grid grid-cols-5 items-center gap-4 p-5 bg-gray-50 rounded-xl border-2 border-gray-200"
+                    style={{ gridTemplateColumns: '1fr 120px 140px 140px 100px' }}
                   >
-                    {m.short}
-                    {hasData && (
-                      <div style={{
-                        position: 'absolute',
-                        top: '4px',
-                        right: '4px',
-                        width: '6px',
-                        height: '6px',
-                        borderRadius: '50%',
-                        background: '#10B981'
-                      }} />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Edit Form */}
-            {editingMonth === selectedMonth ? (
-              <div style={{
-                background: 'linear-gradient(135deg, #FFFBEB, #FEF3C7)',
-                borderRadius: '16px',
-                padding: '24px',
-                border: '2px solid #FCD34D'
-              }}>
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  marginBottom: '24px'
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{
-                      width: '40px',
-                      height: '40px',
-                      borderRadius: '10px',
-                      background: '#F59E0B',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}>
-                      <FaPencilAlt size={16} style={{ color: 'white' }} />
-                    </div>
                     <div>
-                      <h4 style={{ fontSize: '18px', fontWeight: '700', color: '#1A1A1A', margin: 0 }}>
-                        Modifica {months.find(m => m.value === selectedMonth)?.label} 2026
-                      </h4>
-                      <span style={{ fontSize: '12px', color: '#92400E' }}>Compila i campi e salva le modifiche</span>
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <button
-                      onClick={() => setEditingMonth(null)}
-                      style={{
-                        padding: '10px 16px',
-                        borderRadius: '10px',
-                        border: '2px solid #E5E7EB',
-                        background: 'white',
-                        color: '#6B7280',
-                        fontSize: '14px',
-                        fontWeight: '600',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px'
-                      }}
-                    >
-                      <FaTimes /> Annulla
-                    </button>
-                    <button
-                      onClick={saveMonthlyData}
-                      disabled={saving}
-                      style={{
-                        padding: '10px 20px',
-                        borderRadius: '10px',
-                        border: 'none',
-                        background: '#10B981',
-                        color: 'white',
-                        fontSize: '14px',
-                        fontWeight: '600',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px'
-                      }}
-                    >
-                      <FaSave /> {saving ? 'Salvataggio...' : 'Salva Modifiche'}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Funnel Section */}
-                <div style={{ marginBottom: '24px' }}>
-                  <h5 style={{ fontSize: '14px', fontWeight: '600', color: '#6B7280', marginBottom: '12px' }}>
-                    <FaChartLine style={{ marginRight: '8px' }} />
-                    Funnel Vendite
-                  </h5>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
-                    {[
-                      { key: 'contacts', label: 'Contatti', icon: FaPhone },
-                      { key: 'demos', label: 'Demo', icon: FaVideo },
-                      { key: 'proposals', label: 'Proposte', icon: FaFileAlt },
-                      { key: 'contracts', label: 'Contratti', icon: FaHandshake }
-                    ].map(field => (
-                      <div key={field.key}>
-                        <label style={{ fontSize: '12px', color: '#6B7280', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <field.icon size={12} /> {field.label}
-                        </label>
-                        <input
-                          type="number"
-                          min="0"
-                          value={monthlyFormData[field.key] || 0}
-                          onChange={(e) => setMonthlyFormData({ ...monthlyFormData, [field.key]: parseInt(e.target.value) || 0 })}
-                          style={{
-                            width: '100%',
-                            padding: '12px 16px',
-                            borderRadius: '10px',
-                            border: '2px solid #E5E7EB',
-                            fontSize: '16px',
-                            fontWeight: '600',
-                            background: 'white'
-                          }}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Revenue Section */}
-                <div style={{ marginBottom: '24px' }}>
-                  <h5 style={{ fontSize: '14px', fontWeight: '600', color: '#6B7280', marginBottom: '12px' }}>
-                    <FaEuroSign style={{ marginRight: '8px' }} />
-                    Revenue
-                  </h5>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
-                    <div>
-                      <label style={{ fontSize: '12px', color: '#6B7280', marginBottom: '6px', display: 'block' }}>
-                        Booking (€)
-                      </label>
-                      <input
-                        type="number"
-                        min="0"
-                        value={monthlyFormData.booking || 0}
-                        onChange={(e) => setMonthlyFormData({ ...monthlyFormData, booking: parseFloat(e.target.value) || 0 })}
-                        style={{
-                          width: '100%',
-                          padding: '12px 16px',
-                          borderRadius: '10px',
-                          border: '2px solid #E5E7EB',
-                          fontSize: '16px',
-                          fontWeight: '600',
-                          background: 'white'
-                        }}
-                      />
-                    </div>
-                    <div>
-                      <label style={{ fontSize: '12px', color: '#6B7280', marginBottom: '6px', display: 'block' }}>
-                        ARR Nuovo (€)
-                      </label>
-                      <input
-                        type="number"
-                        min="0"
-                        value={monthlyFormData.arr_new || 0}
-                        onChange={(e) => setMonthlyFormData({ ...monthlyFormData, arr_new: parseFloat(e.target.value) || 0 })}
-                        style={{
-                          width: '100%',
-                          padding: '12px 16px',
-                          borderRadius: '10px',
-                          border: '2px solid #E5E7EB',
-                          fontSize: '16px',
-                          fontWeight: '600',
-                          background: 'white'
-                        }}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Add-on Section */}
-                <div style={{ marginBottom: '24px' }}>
-                  <h5 style={{ fontSize: '14px', fontWeight: '600', color: '#6B7280', marginBottom: '12px' }}>
-                    <FaCoins style={{ marginRight: '8px' }} />
-                    Add-on Revenue
-                  </h5>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
-                    {[
-                      { key: 'addon_setup', label: 'Setup/Onboarding (€)' },
-                      { key: 'addon_training', label: 'Formazione (€)' },
-                      { key: 'addon_custom', label: 'Custom/Integrazioni (€)' }
-                    ].map(field => (
-                      <div key={field.key}>
-                        <label style={{ fontSize: '12px', color: '#6B7280', marginBottom: '6px', display: 'block' }}>
-                          {field.label}
-                        </label>
-                        <input
-                          type="number"
-                          min="0"
-                          value={monthlyFormData[field.key] || 0}
-                          onChange={(e) => setMonthlyFormData({ ...monthlyFormData, [field.key]: parseFloat(e.target.value) || 0 })}
-                          style={{
-                            width: '100%',
-                            padding: '12px 16px',
-                            borderRadius: '10px',
-                            border: '2px solid #E5E7EB',
-                            fontSize: '16px',
-                            fontWeight: '600',
-                            background: 'white'
-                          }}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* New Clubs Section */}
-                <div style={{ marginBottom: '24px' }}>
-                  <h5 style={{ fontSize: '14px', fontWeight: '600', color: '#6B7280', marginBottom: '12px' }}>
-                    <FaUsers style={{ marginRight: '8px' }} />
-                    Nuovi Club per Piano
-                  </h5>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
-                    {[
-                      { key: 'new_clubs_basic', label: 'Basic', icon: FaStar, color: '#6B7280' },
-                      { key: 'new_clubs_premium', label: 'Premium', icon: FaCrown, color: '#6366F1' },
-                      { key: 'new_clubs_elite', label: 'Elite', icon: FaGem, color: '#F59E0B' }
-                    ].map(field => (
-                      <div key={field.key}>
-                        <label style={{ fontSize: '12px', color: field.color, marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <field.icon size={12} /> {field.label}
-                        </label>
-                        <input
-                          type="number"
-                          min="0"
-                          value={monthlyFormData[field.key] || 0}
-                          onChange={(e) => setMonthlyFormData({ ...monthlyFormData, [field.key]: parseInt(e.target.value) || 0 })}
-                          style={{
-                            width: '100%',
-                            padding: '12px 16px',
-                            borderRadius: '10px',
-                            border: `2px solid ${field.color}40`,
-                            fontSize: '16px',
-                            fontWeight: '600',
-                            background: 'white'
-                          }}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Notes */}
-                <div>
-                  <label style={{ fontSize: '12px', color: '#6B7280', marginBottom: '6px', display: 'block' }}>
-                    Note
-                  </label>
-                  <textarea
-                    value={monthlyFormData.notes || ''}
-                    onChange={(e) => setMonthlyFormData({ ...monthlyFormData, notes: e.target.value })}
-                    rows={3}
-                    style={{
-                      width: '100%',
-                      padding: '12px 16px',
-                      borderRadius: '10px',
-                      border: '2px solid #E5E7EB',
-                      fontSize: '14px',
-                      resize: 'vertical',
-                      background: 'white'
-                    }}
-                    placeholder="Note opzionali per questo mese..."
-                  />
-                </div>
-              </div>
-            ) : (
-              /* View Mode */
-              <div>
-                {(() => {
-                  const monthData = dashboardData?.monthly_data?.find(d => d.month === selectedMonth) || {};
-                  return (
-                    <div style={{
-                      background: '#FAFAFA',
-                      borderRadius: '16px',
-                      padding: '24px',
-                      border: '2px solid #E5E7EB'
-                    }}>
-                      <div style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        marginBottom: '24px'
-                      }}>
-                        <h4 style={{ fontSize: '18px', fontWeight: '700', color: '#1A1A1A' }}>
-                          {months.find(m => m.value === selectedMonth)?.label} 2026
-                        </h4>
-                        <button
-                          onClick={() => startEditMonth(selectedMonth)}
-                          style={{
-                            padding: '12px 24px',
-                            borderRadius: '12px',
-                            border: 'none',
-                            background: 'linear-gradient(135deg, #F59E0B, #D97706)',
-                            color: 'white',
-                            fontSize: '14px',
-                            fontWeight: '700',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            boxShadow: '0 4px 12px rgba(245, 158, 11, 0.3)',
-                            transition: 'all 0.2s'
-                          }}
-                        >
-                          <FaPencilAlt size={14} /> Modifica Dati
-                        </button>
-                      </div>
-
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
-                        <div style={{ background: 'white', padding: '16px', borderRadius: '12px', textAlign: 'center' }}>
-                          <FaPhone size={20} color="#6B7280" />
-                          <div style={{ fontSize: '24px', fontWeight: '800', color: '#1A1A1A', margin: '8px 0' }}>
-                            {monthData.contacts || 0}
-                          </div>
-                          <div style={{ fontSize: '12px', color: '#6B7280' }}>Contatti</div>
-                        </div>
-                        <div style={{ background: 'white', padding: '16px', borderRadius: '12px', textAlign: 'center' }}>
-                          <FaVideo size={20} color="#3B82F6" />
-                          <div style={{ fontSize: '24px', fontWeight: '800', color: '#1A1A1A', margin: '8px 0' }}>
-                            {monthData.demos || 0}
-                          </div>
-                          <div style={{ fontSize: '12px', color: '#6B7280' }}>Demo</div>
-                        </div>
-                        <div style={{ background: 'white', padding: '16px', borderRadius: '12px', textAlign: 'center' }}>
-                          <FaFileAlt size={20} color="#8B5CF6" />
-                          <div style={{ fontSize: '24px', fontWeight: '800', color: '#1A1A1A', margin: '8px 0' }}>
-                            {monthData.proposals || 0}
-                          </div>
-                          <div style={{ fontSize: '12px', color: '#6B7280' }}>Proposte</div>
-                        </div>
-                        <div style={{ background: 'white', padding: '16px', borderRadius: '12px', textAlign: 'center' }}>
-                          <FaHandshake size={20} color="#10B981" />
-                          <div style={{ fontSize: '24px', fontWeight: '800', color: '#1A1A1A', margin: '8px 0' }}>
-                            {monthData.contracts || 0}
-                          </div>
-                          <div style={{ fontSize: '12px', color: '#6B7280' }}>Contratti</div>
-                        </div>
-                      </div>
-
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginTop: '16px' }}>
-                        <div style={{ background: 'linear-gradient(135deg, #ECFDF5, #D1FAE5)', padding: '16px', borderRadius: '12px', textAlign: 'center' }}>
-                          <div style={{ fontSize: '12px', color: '#065F46', marginBottom: '4px' }}>Booking</div>
-                          <div style={{ fontSize: '20px', fontWeight: '800', color: '#047857' }}>
-                            {formatCurrency(monthData.booking || 0)}
-                          </div>
-                        </div>
-                        <div style={{ background: 'linear-gradient(135deg, #EFF6FF, #DBEAFE)', padding: '16px', borderRadius: '12px', textAlign: 'center' }}>
-                          <div style={{ fontSize: '12px', color: '#1E40AF', marginBottom: '4px' }}>ARR Nuovo</div>
-                          <div style={{ fontSize: '20px', fontWeight: '800', color: '#1D4ED8' }}>
-                            {formatCurrency(monthData.arr_new || 0)}
-                          </div>
-                        </div>
-                        <div style={{ background: 'linear-gradient(135deg, #FEF3C7, #FDE68A)', padding: '16px', borderRadius: '12px', textAlign: 'center' }}>
-                          <div style={{ fontSize: '12px', color: '#92400E', marginBottom: '4px' }}>Add-on Totale</div>
-                          <div style={{ fontSize: '20px', fontWeight: '800', color: '#B45309' }}>
-                            {formatCurrency((monthData.addon_setup || 0) + (monthData.addon_training || 0) + (monthData.addon_custom || 0))}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })()}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* TAB: FUNNEL */}
-      {activeTab === 'funnel' && (
-        <div className="tp-card">
-          <div className="tp-card-header">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <h3 className="tp-card-title">
-                <FaChartLine /> Funnel Vendite YTD
-              </h3>
-              <DataTypeBadge type="auto" />
-            </div>
-            <span style={{ fontSize: '13px', color: '#6B7280' }}>
-              Calcolato automaticamente dagli stage dei Lead CRM
-            </span>
-          </div>
-          <div className="tp-card-body">
-            {/* Funnel Visual - DATI AUTOMATICI DA LEAD STAGES */}
-            <div style={{ maxWidth: '600px', margin: '0 auto 32px' }}>
-              {[
-                { stage: 'Contatti Qualificati', value: auto_calculated?.funnel?.contacts || ytd_totals?.contacts || 0, target: targets?.contacts, color: '#E5E7EB' },
-                { stage: 'Demo Effettuate', value: auto_calculated?.funnel?.demos || ytd_totals?.demos || 0, target: targets?.demos, color: '#93C5FD', rate: conversion_rates?.contact_to_demo },
-                { stage: 'Proposte Inviate', value: auto_calculated?.funnel?.proposals || ytd_totals?.proposals || 0, target: targets?.proposals, color: '#6366F1', rate: conversion_rates?.demo_to_proposal },
-                { stage: 'Contratti Chiusi', value: auto_calculated?.funnel?.contracts || ytd_totals?.contracts || 0, target: targets?.contracts, color: '#10B981', rate: conversion_rates?.proposal_to_contract }
-              ].map((stage, index) => (
-                <div key={index} style={{ position: 'relative', marginBottom: '16px' }}>
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '20px 24px',
-                    background: stage.color,
-                    borderRadius: '12px',
-                    width: `${100 - (index * 12)}%`,
-                    marginLeft: `${index * 6}%`,
-                    transition: 'all 0.3s'
-                  }}>
-                    <span style={{ fontWeight: '600', color: index > 0 ? 'white' : '#1A1A1A' }}>
-                      {stage.stage}
-                    </span>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                      <span style={{ fontSize: '24px', fontWeight: '800', color: index > 0 ? 'white' : '#1A1A1A' }}>
-                        {stage.value}
-                      </span>
-                      <span style={{
-                        fontSize: '12px',
-                        color: index > 0 ? 'rgba(255,255,255,0.7)' : '#6B7280'
-                      }}>
-                        / {stage.target}
-                      </span>
-                      {stage.rate !== undefined && (
-                        <span style={{
-                          background: 'rgba(255,255,255,0.2)',
-                          padding: '4px 10px',
-                          borderRadius: '8px',
-                          fontSize: '12px',
-                          color: 'white'
-                        }}>
-                          {stage.rate}% conv.
-                        </span>
+                      <div className="text-sm font-semibold text-gray-900">{kpi.name}</div>
+                      {kpi.notes && (
+                        <div className="text-xs text-gray-500 mt-1">{kpi.notes}</div>
                       )}
                     </div>
-                  </div>
-                  {index < 3 && (
-                    <div style={{
-                      position: 'absolute',
-                      left: '50%',
-                      bottom: '-12px',
-                      transform: 'translateX(-50%)',
-                      zIndex: 1
-                    }}>
-                      <FaArrowDown size={16} color="#9CA3AF" />
+
+                    <div className="text-center">
+                      <div className="text-[10px] text-gray-400 mb-0.5">Target</div>
+                      <div className="text-base font-bold text-gray-900">{kpi.target}</div>
                     </div>
-                  )}
-                </div>
-              ))}
-            </div>
 
-            {/* Conversion Rates */}
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(3, 1fr)',
-              gap: '16px',
-              background: '#FAFAFA',
-              borderRadius: '16px',
-              padding: '24px'
-            }}>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: '14px', color: '#6B7280', marginBottom: '8px' }}>
-                  Contatto → Demo
-                </div>
-                <div style={{
-                  fontSize: '32px',
-                  fontWeight: '800',
-                  color: conversion_rates?.contact_to_demo >= 37 ? '#10B981' : '#EF4444'
-                }}>
-                  {conversion_rates?.contact_to_demo || 0}%
-                </div>
-                <div style={{ fontSize: '12px', color: '#9CA3AF' }}>Target: 37%</div>
-              </div>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: '14px', color: '#6B7280', marginBottom: '8px' }}>
-                  Demo → Proposta
-                </div>
-                <div style={{
-                  fontSize: '32px',
-                  fontWeight: '800',
-                  color: conversion_rates?.demo_to_proposal >= 67 ? '#10B981' : '#EF4444'
-                }}>
-                  {conversion_rates?.demo_to_proposal || 0}%
-                </div>
-                <div style={{ fontSize: '12px', color: '#9CA3AF' }}>Target: 67%</div>
-              </div>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: '14px', color: '#6B7280', marginBottom: '8px' }}>
-                  Proposta → Chiusura
-                </div>
-                <div style={{
-                  fontSize: '32px',
-                  fontWeight: '800',
-                  color: conversion_rates?.proposal_to_contract >= 50 ? '#10B981' : '#EF4444'
-                }}>
-                  {conversion_rates?.proposal_to_contract || 0}%
-                </div>
-                <div style={{ fontSize: '12px', color: '#9CA3AF' }}>Target: 50%</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* TAB: MILESTONES */}
-      {activeTab === 'milestones' && (
-        <div className="tp-card">
-          <div className="tp-card-header">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <h3 className="tp-card-title">
-                <FaFlag /> Milestone 2026
-              </h3>
-              <DataTypeBadge type="manual" />
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <span style={{
-                background: '#FEF3C7',
-                color: '#92400E',
-                padding: '6px 14px',
-                borderRadius: '10px',
-                fontSize: '12px',
-                fontWeight: '600',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px'
-              }}>
-                <FaMousePointer size={10} />
-                Clicca per cambiare stato
-              </span>
-              <span style={{
-                background: milestones?.completed === milestones?.total ? '#D1FAE5' : '#FEF3C7',
-                color: milestones?.completed === milestones?.total ? '#065F46' : '#92400E',
-                padding: '6px 14px',
-                borderRadius: '20px',
-                fontSize: '13px',
-                fontWeight: '600'
-              }}>
-                {milestones?.completed || 0} / {milestones?.total || 0} completate
-              </span>
-            </div>
-          </div>
-          <div className="tp-card-body">
-            {['Q1', 'Q2', 'Q3', 'Q4'].map(quarter => {
-              const quarterMilestones = milestones?.items?.filter(m => m.quarter === quarter) || [];
-              if (quarterMilestones.length === 0) return null;
-
-              return (
-                <div key={quarter} style={{ marginBottom: '24px' }}>
-                  <h4 style={{
-                    fontSize: '16px',
-                    fontWeight: '700',
-                    color: '#1A1A1A',
-                    marginBottom: '12px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px'
-                  }}>
-                    <span style={{
-                      background: '#1A1A1A',
-                      color: 'white',
-                      padding: '4px 12px',
-                      borderRadius: '8px',
-                      fontSize: '12px'
-                    }}>
-                      {quarter}
-                    </span>
-                    <span style={{ color: '#6B7280', fontWeight: '400', fontSize: '14px' }}>
-                      {quarterMilestones.filter(m => m.status === 'completed').length} / {quarterMilestones.length}
-                    </span>
-                  </h4>
-
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    {quarterMilestones.map(milestone => (
-                      <div
-                        key={milestone.id}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          padding: '16px 20px',
-                          background: milestone.status === 'completed' ? '#F0FDF4' : '#FAFAFA',
-                          borderRadius: '12px',
-                          border: `2px solid ${milestone.status === 'completed' ? '#A7F3D0' : '#E5E7EB'}`,
-                          transition: 'all 0.2s'
-                        }}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                          <button
-                            onClick={() => updateMilestone(milestone.id, {
-                              status: milestone.status === 'completed' ? 'not_started' : 'completed'
-                            })}
-                            style={{
-                              width: '28px',
-                              height: '28px',
-                              borderRadius: '8px',
-                              border: `2px solid ${getStatusColor(milestone.status)}`,
-                              background: milestone.status === 'completed' ? '#10B981' : 'white',
-                              cursor: 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              transition: 'all 0.2s'
-                            }}
-                            title="Clicca per cambiare stato"
-                          >
-                            {milestone.status === 'completed' && (
-                              <FaCheckCircle size={14} color="white" />
-                            )}
-                          </button>
-                          <span style={{
-                            fontSize: '14px',
-                            fontWeight: '500',
-                            color: milestone.status === 'completed' ? '#065F46' : '#1A1A1A',
-                            textDecoration: milestone.status === 'completed' ? 'line-through' : 'none'
-                          }}>
-                            {milestone.name}
-                          </span>
-                        </div>
-
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                          <select
-                            value={milestone.status}
-                            onChange={(e) => updateMilestone(milestone.id, { status: e.target.value })}
-                            style={{
-                              padding: '6px 12px',
-                              borderRadius: '8px',
-                              border: '2px solid #E5E7EB',
-                              fontSize: '12px',
-                              fontWeight: '600',
-                              color: getStatusColor(milestone.status),
-                              background: 'white',
-                              cursor: 'pointer'
-                            }}
-                          >
-                            <option value="not_started">Da Iniziare</option>
-                            <option value="in_progress">In Corso</option>
-                            <option value="completed">Completato</option>
-                          </select>
-
-                          {milestone.completion_date && (
-                            <span style={{ fontSize: '12px', color: '#6B7280' }}>
-                              {new Date(milestone.completion_date).toLocaleDateString('it-IT')}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* TAB: CREDIBILITY */}
-      {activeTab === 'credibility' && (
-        <div className="tp-card">
-          <div className="tp-card-header">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <h3 className="tp-card-title">
-                <FaTrophy /> KPI Credibilità (Investor-Ready)
-              </h3>
-              <DataTypeBadge type="manual" />
-            </div>
-            <span style={{
-              background: '#FEF3C7',
-              color: '#92400E',
-              padding: '6px 14px',
-              borderRadius: '10px',
-              fontSize: '12px',
-              fontWeight: '600',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px'
-            }}>
-              <FaMousePointer size={10} />
-              Clicca sul valore "Attuale" per modificarlo
-            </span>
-          </div>
-          <div className="tp-card-body">
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {credibility?.map(kpi => (
-                <div
-                  key={kpi.id}
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: '1fr 120px 140px 140px 100px',
-                    alignItems: 'center',
-                    gap: '16px',
-                    padding: '20px 24px',
-                    background: '#FAFAFA',
-                    borderRadius: '12px',
-                    border: '2px solid #E5E7EB'
-                  }}
-                >
-                  <div>
-                    <div style={{ fontSize: '15px', fontWeight: '600', color: '#1A1A1A' }}>
-                      {kpi.name}
+                    <div className="text-center">
+                      <div className="text-[10px] text-gray-400 mb-0.5">Attuale</div>
+                      {editingCredibility === kpi.id ? (
+                        <input
+                          type="text"
+                          defaultValue={kpi.current_value}
+                          onBlur={(e) => updateCredibility(kpi.id, { current_value: e.target.value })}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') updateCredibility(kpi.id, { current_value: e.target.value });
+                            if (e.key === 'Escape') setEditingCredibility(null);
+                          }}
+                          autoFocus
+                          className="w-24 px-3 py-2 rounded-lg border-2 border-amber-400 text-sm font-semibold text-center bg-amber-50"
+                        />
+                      ) : (
+                        <button
+                          onClick={() => setEditingCredibility(kpi.id)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-50 text-green-600 font-bold text-base rounded-lg border-2 border-dashed border-green-200 hover:border-green-300 transition-all"
+                          title="Clicca per modificare"
+                        >
+                          {kpi.current_value}
+                          <HiOutlinePencilSquare className="w-3 h-3 opacity-50" />
+                        </button>
+                      )}
                     </div>
-                    {kpi.notes && (
-                      <div style={{ fontSize: '12px', color: '#6B7280', marginTop: '4px' }}>
-                        {kpi.notes}
-                      </div>
-                    )}
-                  </div>
 
-                  <div style={{ textAlign: 'center' }}>
-                    <div style={{ fontSize: '11px', color: '#9CA3AF', marginBottom: '2px' }}>Target</div>
-                    <div style={{ fontSize: '16px', fontWeight: '700', color: '#1A1A1A' }}>{kpi.target}</div>
-                  </div>
-
-                  <div style={{ textAlign: 'center' }}>
-                    <div style={{ fontSize: '11px', color: '#9CA3AF', marginBottom: '2px' }}>Attuale</div>
-                    {editingCredibility === kpi.id ? (
-                      <input
-                        type="text"
-                        defaultValue={kpi.current_value}
-                        onBlur={(e) => {
-                          updateCredibility(kpi.id, { current_value: e.target.value });
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            updateCredibility(kpi.id, { current_value: e.target.value });
-                          }
-                          if (e.key === 'Escape') {
-                            setEditingCredibility(null);
-                          }
-                        }}
-                        autoFocus
-                        style={{
-                          width: '100px',
-                          padding: '8px 12px',
-                          borderRadius: '8px',
-                          border: '2px solid #F59E0B',
-                          fontSize: '14px',
-                          fontWeight: '600',
-                          textAlign: 'center',
-                          background: '#FFFBEB'
-                        }}
-                      />
-                    ) : (
-                      <div
-                        onClick={() => setEditingCredibility(kpi.id)}
-                        style={{
-                          fontSize: '16px',
-                          fontWeight: '700',
-                          color: '#10B981',
-                          cursor: 'pointer',
-                          padding: '6px 12px',
-                          borderRadius: '8px',
-                          background: '#F0FDF4',
-                          border: '2px dashed #A7F3D0',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                          transition: 'all 0.2s'
-                        }}
-                        title="Clicca per modificare"
+                    <div className="text-center">
+                      <select
+                        value={kpi.status}
+                        onChange={(e) => updateCredibility(kpi.id, { status: e.target.value })}
+                        className="px-3 py-2 rounded-lg border-2 border-gray-200 text-xs font-semibold bg-white cursor-pointer"
+                        style={{ color: getStatusColor(kpi.status) }}
                       >
-                        {kpi.current_value}
-                        <FaPencilAlt size={10} style={{ opacity: 0.5 }} />
-                      </div>
-                    )}
-                  </div>
+                        <option value="in_progress">In Corso</option>
+                        <option value="completed">Completato</option>
+                        <option value="at_risk">A Rischio</option>
+                      </select>
+                    </div>
 
-                  <div style={{ textAlign: 'center' }}>
-                    <select
-                      value={kpi.status}
-                      onChange={(e) => updateCredibility(kpi.id, { status: e.target.value })}
-                      style={{
-                        padding: '8px 12px',
-                        borderRadius: '8px',
-                        border: '2px solid #E5E7EB',
-                        fontSize: '12px',
-                        fontWeight: '600',
-                        color: getStatusColor(kpi.status),
-                        background: 'white',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      <option value="in_progress">In Corso</option>
-                      <option value="completed">Completato</option>
-                      <option value="at_risk">A Rischio</option>
-                    </select>
+                    <div className="text-center">
+                      <span className="inline-block px-3 py-1.5 bg-gray-200 text-gray-600 rounded-full text-[11px] font-semibold">
+                        {kpi.deadline}
+                      </span>
+                    </div>
                   </div>
-
-                  <div style={{ textAlign: 'center' }}>
-                    <span style={{
-                      background: '#E5E7EB',
-                      color: '#374151',
-                      padding: '6px 12px',
-                      borderRadius: '20px',
-                      fontSize: '11px',
-                      fontWeight: '600'
-                    }}>
-                      {kpi.deadline}
-                    </span>
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </div>
-      )}
-
-      {/* CSS for spinning animation */}
-      <style>{`
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-        .spinning {
-          animation: spin 1s linear infinite;
-        }
-      `}</style>
+      </div>
     </div>
   );
 }

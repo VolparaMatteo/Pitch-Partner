@@ -201,14 +201,9 @@ function AdminObiettivi2026() {
         <div className="p-8">
           {/* Header */}
           <div className="flex justify-between items-start mb-8">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 bg-gradient-to-br from-gray-900 to-gray-700 rounded-2xl flex items-center justify-center">
-                <HiOutlineFlag className="w-7 h-7 text-lime-400" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">Obiettivi 2026</h1>
-                <p className="text-gray-500 mt-1">KPI & Target strategici per la validazione di mercato</p>
-              </div>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Obiettivi 2026</h1>
+              <p className="text-gray-500 mt-1">KPI & Target strategici per la validazione di mercato</p>
             </div>
             <div className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-xl text-sm">
               <HiOutlineCalendarDays className="w-4 h-4" />
@@ -221,7 +216,7 @@ function AdminObiettivi2026() {
             <div className="absolute top-0 right-0 w-64 h-64 bg-lime-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
             <div className="relative">
               <div className="flex items-center gap-3 mb-3">
-                <span className="px-3 py-1 bg-lime-400 text-gray-900 rounded-full text-xs font-bold uppercase tracking-wide">
+                <span className="px-3 py-1 bg-white text-gray-900 rounded-full text-xs font-bold uppercase tracking-wide">
                   Fase Pre-Revenue
                 </span>
               </div>
