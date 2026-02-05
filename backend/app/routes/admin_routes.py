@@ -5,7 +5,7 @@ from app.models import (
     Admin, Club, Pagamento, Fattura, Sponsor, Proposal,
     SubscriptionPlan, Subscription, SubscriptionEvent,
     CRMLead, CRMLeadActivity, AuditLog, AdminEmailTemplate, EmailLog, PlatformMetrics,
-    ClubInvoice, ClubActivity, AdminContract
+    ClubInvoice, ClubActivity, AdminContract, AdminInvoice
 )
 from datetime import datetime, timedelta
 from sqlalchemy import func, and_, or_
@@ -2260,19 +2260,20 @@ def update_club_subscription(club_id):
 @admin_bp.route('/clubs/<int:club_id>/invoices', methods=['GET'])
 @jwt_required()
 def get_club_invoices(club_id):
-    """Ottieni fatture di un club"""
+    """Ottieni fatture di un club (usa AdminInvoice)"""
     if not verify_admin():
         return jsonify({'error': 'Accesso non autorizzato'}), 403
 
     Club.query.get_or_404(club_id)
 
-    invoices = ClubInvoice.query.filter_by(club_id=club_id).order_by(
-        ClubInvoice.issue_date.desc()
+    # Usa AdminInvoice invece di ClubInvoice
+    invoices = AdminInvoice.query.filter_by(club_id=club_id).order_by(
+        AdminInvoice.issue_date.desc()
     ).all()
 
     # Calcola totali
-    total_paid = sum(i.total for i in invoices if i.status == 'paid')
-    total_pending = sum(i.total for i in invoices if i.status in ['sent', 'overdue'])
+    total_paid = sum(i.total_amount for i in invoices if i.status == 'paid')
+    total_pending = sum(i.total_amount for i in invoices if i.status in ['pending', 'overdue'])
 
     return jsonify({
         'invoices': [i.to_dict() for i in invoices],
@@ -2281,7 +2282,7 @@ def get_club_invoices(club_id):
             'total_paid': round(total_paid, 2),
             'total_pending': round(total_pending, 2),
             'paid_count': len([i for i in invoices if i.status == 'paid']),
-            'pending_count': len([i for i in invoices if i.status in ['sent', 'overdue']])
+            'pending_count': len([i for i in invoices if i.status in ['pending', 'overdue']])
         }
     }), 200
 

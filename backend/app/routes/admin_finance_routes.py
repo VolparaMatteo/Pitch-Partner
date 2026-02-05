@@ -66,6 +66,10 @@ def get_invoices():
 
     invoices = query.order_by(AdminInvoice.issue_date.desc()).all()
 
+    print(f"[DEBUG] Found {len(invoices)} invoices")
+    for inv in invoices:
+        print(f"[DEBUG] Invoice: {inv.id} - {inv.invoice_number} - {inv.club_id}")
+
     return jsonify({
         'invoices': [inv.to_dict() for inv in invoices],
         'total': len(invoices)
@@ -290,15 +294,20 @@ def get_finance_dashboard():
     current_month = today.month
     cash_in_this_month = cash_in_by_month.get(current_month, 0)
 
-    # === FATTURE IN ATTESA ===
-    pending_invoices = AdminInvoice.query.filter(
-        AdminInvoice.status == 'pending'
-    ).all()
-    total_pending = sum(inv.total_amount for inv in pending_invoices)
+    # === DA INCASSARE (basato sui contratti, non solo fatture) ===
+    # Totale pagato da tutti i contratti attivi
+    total_paid_from_contracts = 0
+    for contract in active_contracts:
+        contract_invoices = AdminInvoice.query.filter_by(contract_id=contract.id, status='paid').all()
+        total_paid_from_contracts += sum(inv.total_amount for inv in contract_invoices)
 
-    # Fatture scadute
+    # Da incassare = valore totale contratti - già pagato
+    total_pending = total_arr - total_paid_from_contracts
+    pending_count = len(active_contracts)  # Numero di contratti attivi
+
+    # Fatture scadute (queste rimangono basate sulle fatture emesse)
     overdue_invoices = AdminInvoice.query.filter(
-        AdminInvoice.status == 'pending',
+        AdminInvoice.status.in_(['pending', 'overdue']),
         AdminInvoice.due_date < today
     ).all()
     total_overdue = sum(inv.total_amount for inv in overdue_invoices)
@@ -323,18 +332,21 @@ def get_finance_dashboard():
     club_stats = []
     for contract in active_contracts:
         club = contract.club
-        club_invoices = AdminInvoice.query.filter_by(club_id=club.id).all()
-        paid = sum(inv.total_amount for inv in club_invoices if inv.status == 'paid')
-        pending = sum(inv.total_amount for inv in club_invoices if inv.status in ['pending', 'overdue'])
+        # Get all invoices for this specific contract
+        contract_invoices = AdminInvoice.query.filter_by(contract_id=contract.id).all()
+        paid = sum(inv.total_amount for inv in contract_invoices if inv.status == 'paid')
+        # "Da Pagare" = contract value - what has been paid
+        pending = contract.total_value - paid
 
         club_stats.append({
             'club_id': club.id,
             'club_name': club.nome,
+            'club_logo_url': club.logo_url,
             'plan': contract.plan_type,
             'contract_value': contract.total_value,
             'paid': paid,
-            'pending': pending,
-            'balance': contract.total_value - paid
+            'pending': max(0, pending),  # Ensure non-negative
+            'balance': max(0, pending)
         })
 
     return jsonify({
@@ -351,10 +363,10 @@ def get_finance_dashboard():
             'this_month': cash_in_this_month,
             'by_month': cash_in_by_month
         },
-        # Fatture pendenti
+        # Da incassare (basato su contratti attivi)
         'pending': {
-            'total': total_pending,
-            'count': len(pending_invoices),
+            'total': max(0, total_pending),
+            'count': pending_count,
             'overdue_total': total_overdue,
             'overdue_count': len(overdue_invoices)
         },

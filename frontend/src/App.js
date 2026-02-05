@@ -13,6 +13,7 @@ import AdminContracts from './pages/AdminContracts';
 import AdminContractDetail from './pages/AdminContractDetail';
 import AdminContractForm from './pages/AdminContractForm';
 import AdminFinance from './pages/AdminFinance';
+import AdminInvoiceForm from './pages/AdminInvoiceForm';
 import AdminGuide from './pages/AdminGuide';
 import ClubLogin from './pages/ClubLogin';
 import ClubDashboard from './pages/ClubDashboard';
@@ -160,6 +161,8 @@ function App() {
                                         <Route path="/admin/contratti/:contractId" element={<AdminContractDetail />} />
                                         <Route path="/admin/contratti/:contractId/edit" element={<AdminContractForm />} />
                                         <Route path="/admin/finanze" element={<AdminFinance />} />
+                                        <Route path="/admin/fatture/new" element={<AdminInvoiceForm />} />
+                                        <Route path="/admin/fatture/:invoiceId/edit" element={<AdminInvoiceForm />} />
                                         <Route path="/admin/guida" element={<AdminGuide />} />
 
                                         {/* Club Routes */}

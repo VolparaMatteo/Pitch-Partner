@@ -1,82 +1,88 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { getAuth } from '../utils/auth';
-import Sidebar from '../components/Sidebar';
+import { getImageUrl } from '../utils/imageUtils';
 import {
-  HiOutlineCurrencyEuro,
-  HiOutlineDocumentText,
-  HiOutlinePlus,
-  HiOutlineCheckCircle,
-  HiOutlineClock,
-  HiOutlineExclamationCircle,
-  HiOutlineX,
-  HiOutlineTrendingUp,
-  HiOutlineCalendar,
-  HiOutlineRefresh,
-  HiOutlineDownload,
-  HiOutlineEye,
-  HiOutlinePencil,
-  HiOutlineTrash
-} from 'react-icons/hi';
+  FaEuroSign,
+  FaFileInvoiceDollar,
+  FaPlus,
+  FaCheckCircle,
+  FaClock,
+  FaExclamationCircle,
+  FaTimes,
+  FaChartLine,
+  FaEye,
+  FaTrash,
+  FaChevronDown,
+  FaBuilding,
+  FaCrown,
+  FaChevronLeft,
+  FaChevronRight,
+  FaInbox
+} from 'react-icons/fa';
+import '../styles/template-style.css';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5003';
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5003/api';
 
 const STATUS_CONFIG = {
-  draft: { label: 'Bozza', color: 'bg-gray-100 text-gray-800', icon: HiOutlineClock },
-  pending: { label: 'In Attesa', color: 'bg-yellow-100 text-yellow-800', icon: HiOutlineClock },
-  paid: { label: 'Pagata', color: 'bg-green-100 text-green-800', icon: HiOutlineCheckCircle },
-  overdue: { label: 'Scaduta', color: 'bg-red-100 text-red-800', icon: HiOutlineExclamationCircle },
-  cancelled: { label: 'Annullata', color: 'bg-gray-100 text-gray-800', icon: HiOutlineX }
+  draft: { label: 'Bozza', color: '#6B7280', bg: '#F3F4F6', icon: FaClock },
+  pending: { label: 'In Attesa', color: '#F59E0B', bg: '#FFFBEB', icon: FaClock },
+  paid: { label: 'Pagata', color: '#059669', bg: '#ECFDF5', icon: FaCheckCircle },
+  overdue: { label: 'Scaduta', color: '#DC2626', bg: '#FEF2F2', icon: FaExclamationCircle },
+  cancelled: { label: 'Annullata', color: '#6B7280', bg: '#F3F4F6', icon: FaTimes }
 };
 
 const MONTHS = ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
 
 const AdminFinance = () => {
+  const navigate = useNavigate();
   const authData = useMemo(() => getAuth(), []);
   const { user, token } = authData;
-  const hasFetched = useRef(false);
 
   const [dashboard, setDashboard] = useState(null);
   const [invoices, setInvoices] = useState([]);
-  const [contracts, setContracts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
 
-  // Modal states
-  const [showModal, setShowModal] = useState(false);
+  // Detail modal
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
-  const [formData, setFormData] = useState({
-    contract_id: '',
-    amount: '',
-    vat_rate: 22,
-    issue_date: new Date().toISOString().split('T')[0],
-    due_date: new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString().split('T')[0],
-    period_start: new Date().toISOString().split('T')[0],
-    period_end: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0],
-    notes: ''
-  });
 
   // Filter states
-  const [filterStatus, setFilterStatus] = useState('');
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
+  const statusDropdownRef = useRef(null);
+
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 15;
 
   useEffect(() => {
-    if (token && !hasFetched.current) {
-      hasFetched.current = true;
+    if (token) {
       fetchData();
     }
-  }, [token]);
+  }, [token, selectedYear]);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (statusDropdownRef.current && !statusDropdownRef.current.contains(e.target)) {
+        setStatusDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const fetchData = async () => {
     try {
       setLoading(true);
       const headers = { 'Authorization': `Bearer ${token}` };
 
-      const [dashboardRes, invoicesRes, contractsRes] = await Promise.all([
+      const [dashboardRes, invoicesRes] = await Promise.all([
         fetch(`${API_URL}/admin/finance/dashboard?year=${selectedYear}`, { headers }),
-        fetch(`${API_URL}/admin/invoices`, { headers }),
-        fetch(`${API_URL}/admin/contracts?status=active`, { headers })
+        fetch(`${API_URL}/admin/invoices`, { headers })
       ]);
 
       if (dashboardRes.ok) {
@@ -88,41 +94,11 @@ const AdminFinance = () => {
         const data = await invoicesRes.json();
         setInvoices(data.invoices || []);
       }
-
-      if (contractsRes.ok) {
-        const data = await contractsRes.json();
-        setContracts(data.contracts || []);
-      }
     } catch (err) {
       setError('Errore nel caricamento dei dati');
       console.error(err);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleCreateInvoice = async () => {
-    try {
-      const response = await fetch(`${API_URL}/admin/invoices`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(formData)
-      });
-
-      if (response.ok) {
-        setShowModal(false);
-        resetForm();
-        fetchData();
-      } else {
-        const data = await response.json();
-        alert(data.error || 'Errore nella creazione della fattura');
-      }
-    } catch (err) {
-      console.error(err);
-      alert('Errore nella creazione della fattura');
     }
   };
 
@@ -168,247 +144,248 @@ const AdminFinance = () => {
     }
   };
 
-  const handleGenerateInvoices = async () => {
-    if (!window.confirm('Generare fatture automatiche per tutti i contratti attivi?')) return;
-
-    try {
-      const response = await fetch(`${API_URL}/admin/finance/generate-invoices`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          year: new Date().getFullYear(),
-          month: new Date().getMonth() + 1
-        })
-      });
-
-      const data = await response.json();
-      if (response.ok) {
-        alert(`Generate ${data.generated?.length || 0} fatture`);
-        fetchData();
-      } else {
-        alert(data.error || 'Errore nella generazione');
-      }
-    } catch (err) {
-      console.error(err);
-      alert('Errore nella generazione delle fatture');
-    }
-  };
-
-  const resetForm = () => {
-    setFormData({
-      contract_id: '',
-      amount: '',
-      vat_rate: 22,
-      issue_date: new Date().toISOString().split('T')[0],
-      due_date: new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString().split('T')[0],
-      period_start: new Date().toISOString().split('T')[0],
-      period_end: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0],
-      notes: ''
-    });
-  };
-
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(value || 0);
   };
 
   const formatDate = (dateStr) => {
     if (!dateStr) return '-';
-    return new Date(dateStr).toLocaleDateString('it-IT');
-  };
-
-  const calculateTotal = () => {
-    const amount = parseFloat(formData.amount) || 0;
-    const vatRate = parseFloat(formData.vat_rate) || 22;
-    const vat = amount * (vatRate / 100);
-    return amount + vat;
+    return new Date(dateStr).toLocaleDateString('it-IT', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    });
   };
 
   const filteredInvoices = invoices.filter(inv => {
-    if (filterStatus && inv.status !== filterStatus) return false;
+    if (filterStatus !== 'all' && inv.status !== filterStatus) return false;
     return true;
   });
+
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredInvoices.length / itemsPerPage);
+  const paginatedInvoices = filteredInvoices.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterStatus]);
 
   const getMaxCashIn = () => {
     if (!dashboard?.cash_in?.by_month) return 1;
     return Math.max(...Object.values(dashboard.cash_in.by_month), 1);
   };
 
+  const getStatusLabel = () => {
+    if (filterStatus === 'all') return 'Tutti gli stati';
+    return STATUS_CONFIG[filterStatus]?.label || 'Tutti gli stati';
+  };
+
+  const tabs = [
+    { id: 'dashboard', label: 'Dashboard', icon: FaChartLine },
+    { id: 'invoices', label: 'Fatture', icon: FaFileInvoiceDollar }
+  ];
+
   if (!user || user.role !== 'admin') {
     return (
-      <div className="flex h-screen">
-        <Sidebar />
-        <div className="flex-1 p-8 flex items-center justify-center">
-          <p className="text-red-500">Accesso non autorizzato</p>
+      <div className="tp-page-container">
+        <div className="tp-loading-container">
+          <p style={{ color: '#DC2626' }}>Accesso non autorizzato</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="tp-page-container">
+        <div className="tp-loading-container">
+          <div className="tp-loading-spinner"></div>
+          <p className="tp-loading-text">Caricamento Finanze...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      <Sidebar />
-      <div className="flex-1 overflow-auto">
-        <div className="p-8">
-          {/* Header */}
-          <div className="flex justify-between items-center mb-8">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Finanze & Fatturazione</h1>
-              <p className="text-gray-600 mt-1">Gestisci ARR, fatture e incassi</p>
+    <div className="tp-page-container">
+      {/* Page Header */}
+      <div className="tp-page-header">
+        <div>
+          <h1 className="tp-page-title">Finanze & Fatturazione</h1>
+          <p style={{ color: '#6B7280', fontSize: '14px', marginTop: '4px' }}>
+            Gestisci ARR, fatture e incassi
+          </p>
+        </div>
+        <div className="tp-page-actions">
+          <button
+            className="tp-btn tp-btn-primary"
+            onClick={() => navigate('/admin/fatture/new')}
+          >
+            <FaPlus /> Nuova Fattura
+          </button>
+        </div>
+      </div>
+
+      {/* KPI Stats */}
+      {dashboard && (
+        <div className="tp-stats-row" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
+          <div className="tp-stat-card-dark">
+            <div className="tp-stat-icon" style={{ background: '#FFFFFF' }}>
+              <FaChartLine style={{ color: '#1F2937' }} />
             </div>
-            <div className="flex gap-3">
-              <button
-                onClick={handleGenerateInvoices}
-                className="flex items-center gap-2 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors"
-              >
-                <HiOutlineRefresh className="w-5 h-5" />
-                Genera Fatture
-              </button>
-              <button
-                onClick={() => { resetForm(); setShowModal(true); }}
-                className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                <HiOutlinePlus className="w-5 h-5" />
-                Nuova Fattura
-              </button>
+            <div className="tp-stat-content">
+              <div className="tp-stat-value">{formatCurrency(dashboard.arr?.total)}</div>
+              <div className="tp-stat-label">ARR (MRR: {formatCurrency(dashboard.arr?.mrr)})</div>
             </div>
           </div>
 
-          {/* Tabs */}
-          <div className="flex gap-4 mb-6 border-b border-gray-200">
-            <button
-              onClick={() => setActiveTab('dashboard')}
-              className={`pb-3 px-1 border-b-2 font-medium transition-colors ${
-                activeTab === 'dashboard'
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              Dashboard
-            </button>
-            <button
-              onClick={() => setActiveTab('invoices')}
-              className={`pb-3 px-1 border-b-2 font-medium transition-colors ${
-                activeTab === 'invoices'
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              Fatture
-            </button>
+          <div className="tp-stat-card-dark">
+            <div className="tp-stat-icon" style={{ background: '#FFFFFF' }}>
+              <FaEuroSign style={{ color: '#1F2937' }} />
+            </div>
+            <div className="tp-stat-content">
+              <div className="tp-stat-value">{formatCurrency(dashboard.cash_in?.year_total)}</div>
+              <div className="tp-stat-label">Cash-in {selectedYear}</div>
+            </div>
           </div>
 
-          {loading ? (
-            <div className="flex justify-center items-center h-64">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <div className="tp-stat-card-dark">
+            <div className="tp-stat-icon" style={{ background: '#FFFFFF' }}>
+              <FaClock style={{ color: '#1F2937' }} />
             </div>
-          ) : error ? (
-            <div className="text-center text-red-500 py-8">{error}</div>
+            <div className="tp-stat-content">
+              <div className="tp-stat-value">{formatCurrency(dashboard.pending?.total)}</div>
+              <div className="tp-stat-label">Da Incassare ({dashboard.pending?.count || 0})</div>
+            </div>
+          </div>
+
+          <div className="tp-stat-card-dark">
+            <div className="tp-stat-icon" style={{ background: '#FFFFFF' }}>
+              <FaExclamationCircle style={{ color: '#1F2937' }} />
+            </div>
+            <div className="tp-stat-content">
+              <div className="tp-stat-value" style={{ color: dashboard.pending?.overdue_total > 0 ? '#FCA5A5' : undefined }}>
+                {formatCurrency(dashboard.pending?.overdue_total)}
+              </div>
+              <div className="tp-stat-label">Scadute ({dashboard.pending?.overdue_count || 0})</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Main Card */}
+      <div className="tp-card">
+        {/* Tabs */}
+        <div style={{ display: 'flex', gap: '8px', padding: '16px 24px', borderBottom: '1px solid #E5E7EB', background: '#FAFAFA' }}>
+          {tabs.map(tab => {
+            const Icon = tab.icon;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '10px 20px',
+                  borderRadius: '8px',
+                  border: 'none',
+                  background: activeTab === tab.id ? '#1A1A1A' : 'transparent',
+                  color: activeTab === tab.id ? '#FFFFFF' : '#6B7280',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+              >
+                <Icon size={14} />
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="tp-card-body">
+          {error ? (
+            <div style={{ textAlign: 'center', padding: '40px', color: '#DC2626' }}>{error}</div>
           ) : activeTab === 'dashboard' ? (
             <>
-              {/* KPI Cards */}
-              {dashboard && (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                  {/* ARR */}
-                  <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-gray-500">ARR</p>
-                        <p className="text-2xl font-bold text-gray-900 mt-1">{formatCurrency(dashboard.arr?.total)}</p>
-                      </div>
-                      <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                        <HiOutlineTrendingUp className="w-6 h-6 text-green-600" />
-                      </div>
-                    </div>
-                    <p className="text-xs text-gray-500 mt-2">MRR: {formatCurrency(dashboard.arr?.mrr)}</p>
-                  </div>
-
-                  {/* Cash-in YTD */}
-                  <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-gray-500">Cash-in {selectedYear}</p>
-                        <p className="text-2xl font-bold text-gray-900 mt-1">{formatCurrency(dashboard.cash_in?.year_total)}</p>
-                      </div>
-                      <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                        <HiOutlineCurrencyEuro className="w-6 h-6 text-blue-600" />
-                      </div>
-                    </div>
-                    <p className="text-xs text-gray-500 mt-2">Questo mese: {formatCurrency(dashboard.cash_in?.this_month)}</p>
-                  </div>
-
-                  {/* Pending */}
-                  <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-gray-500">Da Incassare</p>
-                        <p className="text-2xl font-bold text-gray-900 mt-1">{formatCurrency(dashboard.pending?.total)}</p>
-                      </div>
-                      <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
-                        <HiOutlineClock className="w-6 h-6 text-yellow-600" />
-                      </div>
-                    </div>
-                    <p className="text-xs text-gray-500 mt-2">{dashboard.pending?.count} fatture in attesa</p>
-                  </div>
-
-                  {/* Overdue */}
-                  <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-gray-500">Scadute</p>
-                        <p className="text-2xl font-bold text-red-600 mt-1">{formatCurrency(dashboard.pending?.overdue_total)}</p>
-                      </div>
-                      <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
-                        <HiOutlineExclamationCircle className="w-6 h-6 text-red-600" />
-                      </div>
-                    </div>
-                    <p className="text-xs text-gray-500 mt-2">{dashboard.pending?.overdue_count} fatture scadute</p>
-                  </div>
-                </div>
-              )}
-
               {/* ARR by Plan */}
               {dashboard?.arr?.by_plan && (
-                <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 mb-8">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">ARR per Piano</h3>
-                  <div className="grid grid-cols-3 gap-4">
-                    <div className="text-center p-4 bg-gray-50 rounded-lg">
-                      <span className="inline-block px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800 mb-2">Basic</span>
-                      <p className="text-xl font-bold text-gray-900">{formatCurrency(dashboard.arr.by_plan.basic)}</p>
-                    </div>
-                    <div className="text-center p-4 bg-blue-50 rounded-lg">
-                      <span className="inline-block px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 mb-2">Premium</span>
-                      <p className="text-xl font-bold text-gray-900">{formatCurrency(dashboard.arr.by_plan.premium)}</p>
-                    </div>
-                    <div className="text-center p-4 bg-purple-50 rounded-lg">
-                      <span className="inline-block px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800 mb-2">Elite</span>
-                      <p className="text-xl font-bold text-gray-900">{formatCurrency(dashboard.arr.by_plan.elite)}</p>
-                    </div>
+                <div style={{ marginBottom: '24px' }}>
+                  <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#1A1A1A', marginBottom: '16px' }}>ARR per Piano</h3>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+                    {[
+                      { key: 'basic', label: 'Basic', color: '#6B7280', bg: '#F9FAFB' },
+                      { key: 'premium', label: 'Premium', color: '#3B82F6', bg: '#EFF6FF' },
+                      { key: 'elite', label: 'Elite', color: '#F59E0B', bg: '#FFFBEB' }
+                    ].map(plan => (
+                      <div key={plan.key} style={{
+                        background: plan.bg,
+                        borderRadius: '12px',
+                        padding: '20px',
+                        textAlign: 'center'
+                      }}>
+                        <span style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          padding: '4px 12px',
+                          borderRadius: '6px',
+                          background: 'white',
+                          fontSize: '12px',
+                          fontWeight: 600,
+                          color: plan.color,
+                          marginBottom: '12px'
+                        }}>
+                          <FaCrown size={10} color={plan.color} />
+                          {plan.label}
+                        </span>
+                        <p style={{ fontSize: '24px', fontWeight: 700, color: '#1A1A1A', margin: '8px 0 0' }}>
+                          {formatCurrency(dashboard.arr.by_plan[plan.key])}
+                        </p>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}
 
               {/* Monthly Cash-in Chart */}
               {dashboard?.cash_in?.by_month && (
-                <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 mb-8">
-                  <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-lg font-semibold text-gray-900">Cash-in Mensile</h3>
+                <div style={{ marginBottom: '24px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                    <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#1A1A1A' }}>Cash-in Mensile</h3>
                     <select
                       value={selectedYear}
                       onChange={(e) => {
                         setSelectedYear(parseInt(e.target.value));
-                        hasFetched.current = false;
                       }}
-                      className="px-3 py-1 border border-gray-300 rounded-lg text-sm"
+                      style={{
+                        padding: '8px 12px',
+                        border: '2px solid #E5E7EB',
+                        borderRadius: '8px',
+                        fontSize: '14px',
+                        fontWeight: 500,
+                        cursor: 'pointer'
+                      }}
                     >
                       <option value={2024}>2024</option>
                       <option value={2025}>2025</option>
                       <option value={2026}>2026</option>
                     </select>
                   </div>
-                  <div className="flex items-end gap-2 h-48">
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'flex-end',
+                    gap: '8px',
+                    height: '200px',
+                    padding: '20px',
+                    background: '#FAFAFA',
+                    borderRadius: '12px'
+                  }}>
                     {MONTHS.map((month, idx) => {
                       const value = dashboard.cash_in.by_month[idx + 1] || 0;
                       const maxValue = getMaxCashIn();
@@ -418,16 +395,28 @@ const AdminFinance = () => {
                       const isCurrent = idx === currentMonth;
 
                       return (
-                        <div key={month} className="flex-1 flex flex-col items-center">
-                          <div className="text-xs text-gray-500 mb-1">{value > 0 ? formatCurrency(value).replace('EUR', '').trim() : ''}</div>
+                        <div key={month} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                          <div style={{ fontSize: '10px', color: '#6B7280', marginBottom: '4px', height: '16px' }}>
+                            {value > 0 ? `€${(value / 1000).toFixed(0)}k` : ''}
+                          </div>
                           <div
-                            className={`w-full rounded-t transition-all ${
-                              isCurrent ? 'bg-blue-600' : isPast ? 'bg-green-500' : 'bg-gray-200'
-                            }`}
-                            style={{ height: `${Math.max(height, 4)}%` }}
+                            style={{
+                              width: '100%',
+                              height: `${Math.max(height, 4)}%`,
+                              borderRadius: '4px 4px 0 0',
+                              background: isCurrent ? '#85FF00' : isPast ? '#059669' : '#E5E7EB',
+                              transition: 'all 0.3s'
+                            }}
                             title={`${month}: ${formatCurrency(value)}`}
                           />
-                          <div className={`text-xs mt-2 ${isCurrent ? 'font-bold text-blue-600' : 'text-gray-500'}`}>{month}</div>
+                          <div style={{
+                            fontSize: '11px',
+                            marginTop: '8px',
+                            fontWeight: isCurrent ? 700 : 500,
+                            color: isCurrent ? '#1A1A1A' : '#6B7280'
+                          }}>
+                            {month}
+                          </div>
                         </div>
                       );
                     })}
@@ -437,119 +426,298 @@ const AdminFinance = () => {
 
               {/* Club Balance Table */}
               {dashboard?.by_club?.length > 0 && (
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                  <div className="p-6 border-b border-gray-200">
-                    <h3 className="text-lg font-semibold text-gray-900">Situazione per Club</h3>
-                  </div>
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Club</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Piano</th>
-                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Valore Contratto</th>
-                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Pagato</th>
-                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Da Pagare</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200">
-                      {dashboard.by_club.map((club, idx) => (
-                        <tr key={idx} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 font-medium text-gray-900">{club.club_name}</td>
-                          <td className="px-6 py-4">
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                              club.plan === 'elite' ? 'bg-purple-100 text-purple-800' :
-                              club.plan === 'premium' ? 'bg-blue-100 text-blue-800' :
-                              'bg-gray-100 text-gray-800'
-                            }`}>
-                              {club.plan?.charAt(0).toUpperCase() + club.plan?.slice(1)}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 text-right">{formatCurrency(club.contract_value)}</td>
-                          <td className="px-6 py-4 text-right text-green-600">{formatCurrency(club.paid)}</td>
-                          <td className="px-6 py-4 text-right text-yellow-600">{formatCurrency(club.pending)}</td>
+                <div>
+                  <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#1A1A1A', marginBottom: '16px' }}>
+                    Situazione per Club
+                  </h3>
+                  <div className="tp-table-container">
+                    <table className="tp-table">
+                      <thead>
+                        <tr>
+                          <th>Club</th>
+                          <th>Piano</th>
+                          <th style={{ textAlign: 'right' }}>Valore Contratto</th>
+                          <th style={{ textAlign: 'right' }}>Pagato</th>
+                          <th style={{ textAlign: 'right' }}>Da Pagare</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {dashboard.by_club.map((club, idx) => {
+                          const planColors = {
+                            basic: { bg: '#F9FAFB', color: '#6B7280' },
+                            premium: { bg: '#EFF6FF', color: '#3B82F6' },
+                            elite: { bg: '#FFFBEB', color: '#F59E0B' }
+                          };
+                          const colors = planColors[club.plan?.toLowerCase()] || planColors.basic;
+
+                          return (
+                            <tr key={idx}>
+                              <td>
+                                <div className="tp-table-user">
+                                  <div className="tp-table-avatar" style={{ borderRadius: '50%', overflow: 'hidden' }}>
+                                    {club.club_logo_url ? (
+                                      <img
+                                        src={getImageUrl(club.club_logo_url)}
+                                        alt={club.club_name}
+                                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                      />
+                                    ) : (
+                                      <FaBuilding size={16} color="#9CA3AF" />
+                                    )}
+                                  </div>
+                                  <span className="tp-table-name">{club.club_name}</span>
+                                </div>
+                              </td>
+                              <td>
+                                <span style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '6px',
+                                  padding: '4px 10px',
+                                  borderRadius: '6px',
+                                  background: colors.bg,
+                                  fontSize: '12px',
+                                  fontWeight: 500,
+                                  color: colors.color
+                                }}>
+                                  <FaCrown size={10} color={colors.color} />
+                                  {club.plan?.charAt(0).toUpperCase() + club.plan?.slice(1)}
+                                </span>
+                              </td>
+                              <td style={{ textAlign: 'right', fontWeight: 600 }}>{formatCurrency(club.contract_value)}</td>
+                              <td style={{ textAlign: 'right', color: '#059669', fontWeight: 600 }}>{formatCurrency(club.paid)}</td>
+                              <td style={{ textAlign: 'right', color: '#F59E0B', fontWeight: 600 }}>{formatCurrency(club.pending)}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               )}
             </>
           ) : (
             <>
               {/* Invoice Filters */}
-              <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-100 mb-6">
-                <div className="flex gap-4">
-                  <select
-                    value={filterStatus}
-                    onChange={(e) => setFilterStatus(e.target.value)}
-                    className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              <div style={{ marginBottom: '20px' }}>
+                <div ref={statusDropdownRef} style={{ position: 'relative', display: 'inline-block' }}>
+                  <button
+                    type="button"
+                    onClick={() => setStatusDropdownOpen(!statusDropdownOpen)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      padding: '10px 14px',
+                      border: filterStatus !== 'all' ? '2px solid #85FF00' : '2px solid #E5E7EB',
+                      borderRadius: '8px',
+                      background: filterStatus !== 'all' ? 'rgba(133, 255, 0, 0.08)' : 'white',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      minWidth: '180px'
+                    }}
                   >
-                    <option value="">Tutti gli stati</option>
-                    {Object.entries(STATUS_CONFIG).map(([key, config]) => (
-                      <option key={key} value={key}>{config.label}</option>
-                    ))}
-                  </select>
+                    <div style={{
+                      width: '24px',
+                      height: '24px',
+                      borderRadius: '6px',
+                      background: filterStatus === 'all' ? '#6B7280' : STATUS_CONFIG[filterStatus]?.color,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: 'white',
+                      fontSize: '12px'
+                    }}>
+                      {filterStatus === 'all' ? <FaFileInvoiceDollar size={12} /> : (() => {
+                        const Icon = STATUS_CONFIG[filterStatus]?.icon;
+                        return Icon ? <Icon size={12} /> : null;
+                      })()}
+                    </div>
+                    <span style={{ flex: 1, textAlign: 'left', fontSize: '14px', fontWeight: 500, color: '#1A1A1A' }}>
+                      {getStatusLabel()}
+                    </span>
+                    <FaChevronDown
+                      size={12}
+                      color="#6B7280"
+                      style={{
+                        transition: 'transform 0.2s',
+                        transform: statusDropdownOpen ? 'rotate(180deg)' : 'rotate(0)'
+                      }}
+                    />
+                  </button>
+                  {statusDropdownOpen && (
+                    <div style={{
+                      position: 'absolute',
+                      top: '100%',
+                      left: 0,
+                      marginTop: '4px',
+                      background: 'white',
+                      border: '1px solid #E5E7EB',
+                      borderRadius: '12px',
+                      boxShadow: '0 10px 40px rgba(0,0,0,0.12)',
+                      zIndex: 100,
+                      minWidth: '200px',
+                      overflow: 'hidden'
+                    }}>
+                      <div
+                        onClick={() => { setFilterStatus('all'); setStatusDropdownOpen(false); }}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '12px',
+                          padding: '12px 16px',
+                          cursor: 'pointer',
+                          background: filterStatus === 'all' ? 'rgba(133, 255, 0, 0.1)' : 'transparent',
+                          borderLeft: filterStatus === 'all' ? '3px solid #85FF00' : '3px solid transparent'
+                        }}
+                      >
+                        <div style={{
+                          width: '28px',
+                          height: '28px',
+                          borderRadius: '6px',
+                          background: '#6B7280',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: 'white'
+                        }}>
+                          <FaFileInvoiceDollar size={14} />
+                        </div>
+                        <span style={{ flex: 1, fontSize: '14px', fontWeight: 500, color: '#1A1A1A' }}>
+                          Tutti gli stati
+                        </span>
+                        {filterStatus === 'all' && <FaCheckCircle size={12} color="#85FF00" />}
+                      </div>
+                      {Object.entries(STATUS_CONFIG).map(([key, config]) => {
+                        const isSelected = filterStatus === key;
+                        const Icon = config.icon;
+                        return (
+                          <div
+                            key={key}
+                            onClick={() => { setFilterStatus(key); setStatusDropdownOpen(false); }}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '12px',
+                              padding: '12px 16px',
+                              cursor: 'pointer',
+                              background: isSelected ? 'rgba(133, 255, 0, 0.1)' : 'transparent',
+                              borderLeft: isSelected ? '3px solid #85FF00' : '3px solid transparent'
+                            }}
+                          >
+                            <div style={{
+                              width: '28px',
+                              height: '28px',
+                              borderRadius: '6px',
+                              background: config.color,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              color: 'white'
+                            }}>
+                              <Icon size={14} />
+                            </div>
+                            <span style={{ flex: 1, fontSize: '14px', fontWeight: 500, color: '#1A1A1A' }}>
+                              {config.label}
+                            </span>
+                            {isSelected && <FaCheckCircle size={12} color="#85FF00" />}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               </div>
 
               {/* Invoices Table */}
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                {filteredInvoices.length === 0 ? (
-                  <div className="p-8 text-center text-gray-500">Nessuna fattura trovata</div>
+              <div className="tp-table-container">
+                {paginatedInvoices.length === 0 ? (
+                  <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '60px',
+                    color: '#6B7280'
+                  }}>
+                    <FaInbox size={48} style={{ marginBottom: '16px', opacity: 0.5 }} />
+                    <p>Nessuna fattura trovata</p>
+                  </div>
                 ) : (
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
+                  <table className="tp-table">
+                    <thead>
                       <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">N. Fattura</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Club</th>
-                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Importo</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Emissione</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Scadenza</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Stato</th>
-                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Azioni</th>
+                        <th>N. Fattura</th>
+                        <th>Club</th>
+                        <th style={{ textAlign: 'right' }}>Importo</th>
+                        <th>Emissione</th>
+                        <th>Scadenza</th>
+                        <th>Stato</th>
+                        <th style={{ textAlign: 'right' }}>Azioni</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-200">
-                      {filteredInvoices.map((invoice) => {
-                        const StatusIcon = STATUS_CONFIG[invoice.status]?.icon || HiOutlineClock;
+                    <tbody>
+                      {paginatedInvoices.map((invoice) => {
+                        const StatusIcon = STATUS_CONFIG[invoice.status]?.icon || FaClock;
+                        const statusConfig = STATUS_CONFIG[invoice.status] || STATUS_CONFIG.pending;
+
                         return (
-                          <tr key={invoice.id} className="hover:bg-gray-50">
-                            <td className="px-6 py-4 font-medium text-gray-900">{invoice.invoice_number}</td>
-                            <td className="px-6 py-4">{invoice.club_name}</td>
-                            <td className="px-6 py-4 text-right font-semibold">{formatCurrency(invoice.total_amount)}</td>
-                            <td className="px-6 py-4 text-sm">{formatDate(invoice.issue_date)}</td>
-                            <td className="px-6 py-4 text-sm">{formatDate(invoice.due_date)}</td>
-                            <td className="px-6 py-4">
-                              <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${STATUS_CONFIG[invoice.status]?.color}`}>
-                                <StatusIcon className="w-3 h-3" />
-                                {STATUS_CONFIG[invoice.status]?.label}
+                          <tr key={invoice.id}>
+                            <td style={{ fontWeight: 600 }}>{invoice.invoice_number}</td>
+                            <td>
+                              <div className="tp-table-user">
+                                <div className="tp-table-avatar" style={{ borderRadius: '50%' }}>
+                                  <FaBuilding size={14} color="#9CA3AF" />
+                                </div>
+                                <span className="tp-table-name">{invoice.club_name}</span>
+                              </div>
+                            </td>
+                            <td style={{ textAlign: 'right', fontWeight: 600 }}>{formatCurrency(invoice.total_amount)}</td>
+                            <td>{formatDate(invoice.issue_date)}</td>
+                            <td>{formatDate(invoice.due_date)}</td>
+                            <td>
+                              <span style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                padding: '4px 10px',
+                                borderRadius: '20px',
+                                background: statusConfig.bg,
+                                color: statusConfig.color,
+                                fontSize: '12px',
+                                fontWeight: 500
+                              }}>
+                                <StatusIcon size={10} />
+                                {statusConfig.label}
                               </span>
                             </td>
-                            <td className="px-6 py-4">
-                              <div className="flex justify-end gap-2">
+                            <td>
+                              <div className="tp-table-actions">
                                 {invoice.status === 'pending' && (
                                   <button
+                                    className="tp-btn-icon"
                                     onClick={() => handleMarkPaid(invoice.id)}
-                                    className="p-2 text-gray-400 hover:text-green-600 transition-colors"
                                     title="Segna come pagata"
+                                    style={{ color: '#059669' }}
                                   >
-                                    <HiOutlineCheckCircle className="w-5 h-5" />
+                                    <FaCheckCircle />
                                   </button>
                                 )}
                                 <button
+                                  className="tp-btn-icon tp-btn-icon-view"
                                   onClick={() => { setSelectedInvoice(invoice); setShowDetailModal(true); }}
-                                  className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
                                   title="Visualizza"
                                 >
-                                  <HiOutlineEye className="w-5 h-5" />
+                                  <FaEye />
                                 </button>
                                 {invoice.status !== 'paid' && (
                                   <button
+                                    className="tp-btn-icon"
                                     onClick={() => handleDeleteInvoice(invoice.id)}
-                                    className="p-2 text-gray-400 hover:text-red-600 transition-colors"
                                     title="Elimina"
+                                    style={{ color: '#DC2626' }}
                                   >
-                                    <HiOutlineTrash className="w-5 h-5" />
+                                    <FaTrash />
                                   </button>
                                 )}
                               </div>
@@ -561,225 +729,172 @@ const AdminFinance = () => {
                   </table>
                 )}
               </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="tp-pagination">
+                  <button
+                    className="tp-pagination-btn"
+                    onClick={() => setCurrentPage(currentPage - 1)}
+                    disabled={currentPage === 1}
+                  >
+                    <FaChevronLeft />
+                  </button>
+                  <span className="tp-pagination-info">
+                    Pagina {currentPage} di {totalPages}
+                  </span>
+                  <button
+                    className="tp-pagination-btn"
+                    onClick={() => setCurrentPage(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                  >
+                    <FaChevronRight />
+                  </button>
+                </div>
+              )}
             </>
           )}
         </div>
       </div>
 
-      {/* Create Invoice Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex justify-between items-center">
-                <h2 className="text-xl font-bold text-gray-900">Nuova Fattura</h2>
-                <button onClick={() => { setShowModal(false); resetForm(); }} className="text-gray-400 hover:text-gray-600">
-                  <HiOutlineX className="w-6 h-6" />
-                </button>
-              </div>
-            </div>
-
-            <div className="p-6 space-y-6">
-              {/* Contract Selection */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Contratto</label>
-                <select
-                  value={formData.contract_id}
-                  onChange={(e) => {
-                    const contract = contracts.find(c => c.id === parseInt(e.target.value));
-                    setFormData({
-                      ...formData,
-                      contract_id: e.target.value,
-                      amount: contract ? contract.total_value : ''
-                    });
-                  }}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  required
-                >
-                  <option value="">Seleziona un contratto...</option>
-                  {contracts.map(contract => (
-                    <option key={contract.id} value={contract.id}>
-                      {contract.club_name} - {contract.plan_type} ({formatCurrency(contract.total_value)})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Amount */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Importo Netto</label>
-                  <input
-                    type="number"
-                    value={formData.amount}
-                    onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    placeholder="0.00"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">IVA %</label>
-                  <input
-                    type="number"
-                    value={formData.vat_rate}
-                    onChange={(e) => setFormData({ ...formData, vat_rate: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
-
-              {/* Total Preview */}
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-700">Totale (IVA inclusa)</span>
-                  <span className="text-xl font-bold text-green-600">{formatCurrency(calculateTotal())}</span>
-                </div>
-              </div>
-
-              {/* Dates */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Data Emissione</label>
-                  <input
-                    type="date"
-                    value={formData.issue_date}
-                    onChange={(e) => setFormData({ ...formData, issue_date: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Data Scadenza</label>
-                  <input
-                    type="date"
-                    value={formData.due_date}
-                    onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
-
-              {/* Period */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Periodo Da</label>
-                  <input
-                    type="date"
-                    value={formData.period_start}
-                    onChange={(e) => setFormData({ ...formData, period_start: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Periodo A</label>
-                  <input
-                    type="date"
-                    value={formData.period_end}
-                    onChange={(e) => setFormData({ ...formData, period_end: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
-
-              {/* Notes */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Note</label>
-                <textarea
-                  value={formData.notes}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  rows={2}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-            </div>
-
-            <div className="p-6 border-t border-gray-200 flex justify-end gap-3">
-              <button
-                onClick={() => { setShowModal(false); resetForm(); }}
-                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
-              >
-                Annulla
-              </button>
-              <button
-                onClick={handleCreateInvoice}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-              >
-                Crea Fattura
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Detail Modal */}
       {showDetailModal && selectedInvoice && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-lg w-full">
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex justify-between items-center">
-                <h2 className="text-xl font-bold text-gray-900">Fattura {selectedInvoice.invoice_number}</h2>
-                <button onClick={() => { setShowDetailModal(false); setSelectedInvoice(null); }} className="text-gray-400 hover:text-gray-600">
-                  <HiOutlineX className="w-6 h-6" />
-                </button>
-              </div>
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: '20px'
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: '16px',
+            maxWidth: '500px',
+            width: '100%'
+          }}>
+            <div style={{
+              padding: '20px 24px',
+              borderBottom: '1px solid #E5E7EB',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center'
+            }}>
+              <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#1A1A1A', margin: 0 }}>
+                Fattura {selectedInvoice.invoice_number}
+              </h2>
+              <button
+                onClick={() => { setShowDetailModal(false); setSelectedInvoice(null); }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: '8px',
+                  color: '#6B7280'
+                }}
+              >
+                <FaTimes size={20} />
+              </button>
             </div>
 
-            <div className="p-6 space-y-4">
-              <div className="flex justify-between">
-                <span className="text-gray-500">Club</span>
-                <span className="font-semibold">{selectedInvoice.club_name}</span>
+            <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ color: '#6B7280' }}>Club</span>
+                <span style={{ fontWeight: 600 }}>{selectedInvoice.club_name}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500">Importo Netto</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ color: '#6B7280' }}>Importo Netto</span>
                 <span>{formatCurrency(selectedInvoice.amount)}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500">IVA ({selectedInvoice.vat_rate}%)</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ color: '#6B7280' }}>IVA ({selectedInvoice.vat_rate}%)</span>
                 <span>{formatCurrency(selectedInvoice.vat_amount)}</span>
               </div>
-              <div className="border-t pt-4 flex justify-between">
-                <span className="font-medium">Totale</span>
-                <span className="text-xl font-bold text-green-600">{formatCurrency(selectedInvoice.total_amount)}</span>
+              <div style={{
+                borderTop: '1px solid #E5E7EB',
+                paddingTop: '16px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
+              }}>
+                <span style={{ fontWeight: 600 }}>Totale</span>
+                <span style={{ fontSize: '20px', fontWeight: 700, color: '#059669' }}>
+                  {formatCurrency(selectedInvoice.total_amount)}
+                </span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500">Emissione</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ color: '#6B7280' }}>Emissione</span>
                 <span>{formatDate(selectedInvoice.issue_date)}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500">Scadenza</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ color: '#6B7280' }}>Scadenza</span>
                 <span>{formatDate(selectedInvoice.due_date)}</span>
               </div>
               {selectedInvoice.payment_date && (
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Pagamento</span>
-                  <span className="text-green-600">{formatDate(selectedInvoice.payment_date)}</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ color: '#6B7280' }}>Pagamento</span>
+                  <span style={{ color: '#059669' }}>{formatDate(selectedInvoice.payment_date)}</span>
                 </div>
               )}
-              <div className="flex justify-between">
-                <span className="text-gray-500">Stato</span>
-                <span className={`px-2 py-1 rounded-full text-sm ${STATUS_CONFIG[selectedInvoice.status]?.color}`}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ color: '#6B7280' }}>Stato</span>
+                <span style={{
+                  padding: '4px 10px',
+                  borderRadius: '20px',
+                  background: STATUS_CONFIG[selectedInvoice.status]?.bg,
+                  color: STATUS_CONFIG[selectedInvoice.status]?.color,
+                  fontSize: '12px',
+                  fontWeight: 500
+                }}>
                   {STATUS_CONFIG[selectedInvoice.status]?.label}
                 </span>
               </div>
               {selectedInvoice.notes && (
                 <div>
-                  <span className="text-gray-500">Note</span>
-                  <p className="mt-1 text-sm">{selectedInvoice.notes}</p>
+                  <span style={{ color: '#6B7280' }}>Note</span>
+                  <p style={{ marginTop: '8px', fontSize: '14px' }}>{selectedInvoice.notes}</p>
                 </div>
               )}
             </div>
 
-            <div className="p-6 border-t border-gray-200 flex justify-end gap-3">
+            <div style={{
+              padding: '16px 24px',
+              borderTop: '1px solid #E5E7EB',
+              display: 'flex',
+              justifyContent: 'flex-end',
+              gap: '12px'
+            }}>
               {selectedInvoice.status === 'pending' && (
                 <button
                   onClick={() => { handleMarkPaid(selectedInvoice.id); setShowDetailModal(false); }}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                  style={{
+                    padding: '10px 20px',
+                    background: '#059669',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    fontWeight: 600,
+                    cursor: 'pointer'
+                  }}
                 >
                   Segna come Pagata
                 </button>
               )}
               <button
                 onClick={() => { setShowDetailModal(false); setSelectedInvoice(null); }}
-                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
+                style={{
+                  padding: '10px 20px',
+                  background: '#F3F4F6',
+                  color: '#374151',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  cursor: 'pointer'
+                }}
               >
                 Chiudi
               </button>
