@@ -617,7 +617,7 @@ function AdminClubListPage() {
                             <td>
                               {club.costo_abbonamento ? (
                                 <span style={{ fontWeight: 600, color: '#059669' }}>
-                                  €{club.costo_abbonamento.toLocaleString()}
+                                  €{Math.round(club.costo_abbonamento / 12).toLocaleString()}
                                   <span style={{ fontWeight: 400, color: '#6B7280', fontSize: '12px' }}>/mese</span>
                                 </span>
                               ) : (
@@ -795,7 +795,7 @@ function AdminClubListPage() {
                             MRR
                           </span>
                           <p style={{ margin: '4px 0 0', fontSize: '14px', fontWeight: 600, color: '#059669' }}>
-                            {club.costo_abbonamento ? `€${club.costo_abbonamento}` : '-'}
+                            {club.costo_abbonamento ? `€${Math.round(club.costo_abbonamento / 12).toLocaleString()}` : '-'}
                           </p>
                         </div>
                       </div>

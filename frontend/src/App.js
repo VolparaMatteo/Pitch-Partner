@@ -10,6 +10,8 @@ import AdminClubForm from './pages/AdminClubForm';
 import AdminObiettivi2026 from './pages/AdminObiettivi2026';
 import AdminAndamento from './pages/AdminAndamento';
 import AdminContracts from './pages/AdminContracts';
+import AdminContractDetail from './pages/AdminContractDetail';
+import AdminContractForm from './pages/AdminContractForm';
 import AdminFinance from './pages/AdminFinance';
 import AdminGuide from './pages/AdminGuide';
 import ClubLogin from './pages/ClubLogin';
@@ -154,6 +156,9 @@ function App() {
                                         <Route path="/admin/obiettivi-2026" element={<AdminObiettivi2026 />} />
                                         <Route path="/admin/andamento" element={<AdminAndamento />} />
                                         <Route path="/admin/contratti" element={<AdminContracts />} />
+                                        <Route path="/admin/contratti/new" element={<AdminContractForm />} />
+                                        <Route path="/admin/contratti/:contractId" element={<AdminContractDetail />} />
+                                        <Route path="/admin/contratti/:contractId/edit" element={<AdminContractForm />} />
                                         <Route path="/admin/finanze" element={<AdminFinance />} />
                                         <Route path="/admin/guida" element={<AdminGuide />} />
 

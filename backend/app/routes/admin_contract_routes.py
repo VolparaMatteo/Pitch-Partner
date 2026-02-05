@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from app import db
-from app.models import AdminContract, AdminInvoice, Club
+from app.models import AdminContract, AdminInvoice, Club, ClubActivity, Admin
 from datetime import datetime, date
 from sqlalchemy import func
 
@@ -140,6 +140,21 @@ def create_contract():
     club.nome_abbonamento = plan_type.capitalize()
     club.costo_abbonamento = plan_price
 
+    db.session.commit()
+
+    # Registra attività di creazione contratto
+    admin_id = get_jwt_identity()
+    admin = Admin.query.get(admin_id)
+    admin_name = admin.email if admin else 'admin'
+
+    activity = ClubActivity(
+        club_id=club.id,
+        tipo='altro',
+        descrizione=f'Contratto "{plan_type.capitalize()}" creato da {admin_name} - Valore: €{total_value:,.0f}',
+        esito='positivo',
+        created_by=admin_name
+    )
+    db.session.add(activity)
     db.session.commit()
 
     return jsonify({

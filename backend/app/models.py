@@ -6464,6 +6464,7 @@ class AdminContract(db.Model):
             'id': self.id,
             'club_id': self.club_id,
             'club_name': self.club.nome if self.club else None,
+            'club_logo_url': self.club.logo_url if self.club else None,
             'plan_type': self.plan_type,
             'plan_price': self.plan_price,
             'addons': self.addons or [],

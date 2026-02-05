@@ -12,7 +12,7 @@ import {
   FaTimes, FaPause, FaPlay, FaRocket,
   FaBuilding, FaUserTie,
   FaInbox, FaDownload, FaCopy, FaRedo, FaLink,
-  FaFileContract, FaEye
+  FaFileContract, FaEye, FaFilePdf, FaExternalLinkAlt
 } from 'react-icons/fa';
 import '../styles/sponsor-detail.css';
 import '../styles/template-style.css';
@@ -370,48 +370,6 @@ function AdminClubDetail() {
               )}
             </div>
 
-            <div className="sd-profile-section">
-              <h3 className="sd-section-title">Abbonamento</h3>
-              {contracts.filter(c => c.status === 'active').length === 0 ? (
-                <div style={{ background: '#FEF3C7', borderRadius: '12px', padding: '16px', textAlign: 'center' }}>
-                  <FaCrown style={{ color: '#D97706', marginBottom: '8px' }} size={24} />
-                  <div style={{ fontWeight: 600, color: '#92400E', marginBottom: '4px' }}>Nessun piano attivo</div>
-                  <div style={{ fontSize: '12px', color: '#B45309' }}>Gestisci dai Contratti</div>
-                </div>
-              ) : (
-                <div style={{ background: '#F9FAFB', borderRadius: '12px', padding: '16px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                    <FaCrown style={{ color: '#F59E0B' }} />
-                    <span style={{ fontWeight: 600, color: '#1A1A1A' }}>
-                      {(() => {
-                        const activeContract = contracts.find(c => c.status === 'active');
-                        const planConfig = CONTRACT_PLAN_CONFIG[activeContract?.plan_type];
-                        return planConfig?.name || activeContract?.plan_type || 'Piano Attivo';
-                      })()}
-                    </span>
-                  </div>
-                  {(() => {
-                    const activeContract = contracts.find(c => c.status === 'active');
-                    const monthlyPrice = activeContract?.payment_terms === 'annual'
-                      ? Math.round((activeContract?.total_value || 0) / 12)
-                      : activeContract?.payment_terms === 'semi_annual'
-                      ? Math.round((activeContract?.total_value || 0) / 6)
-                      : activeContract?.payment_terms === 'quarterly'
-                      ? Math.round((activeContract?.total_value || 0) / 3)
-                      : (activeContract?.total_value || 0);
-                    return (
-                      <div style={{ fontSize: '24px', fontWeight: 700, color: '#059669', marginBottom: '8px' }}>
-                        €{monthlyPrice.toLocaleString()}<span style={{ fontSize: '14px', fontWeight: 400, color: '#6B7280' }}>/mese</span>
-                      </div>
-                    );
-                  })()}
-                  <div style={{ fontSize: '13px', color: '#6B7280' }}>
-                    Scade: {formatDate(contracts.find(c => c.status === 'active')?.end_date)}
-                  </div>
-                </div>
-              )}
-            </div>
-
             {/* Sezione Attivazione Account */}
             <div className="sd-profile-section">
               <h3 className="sd-section-title">Attivazione Account</h3>
@@ -563,24 +521,23 @@ function AdminClubDetail() {
           <div className="sd-tab-content">
             {/* SUBSCRIPTION TAB */}
             {activeTab === 'subscription' && (
-              <div style={{ padding: '24px' }}>
-                {/* Header */}
-                <div style={{ marginBottom: '24px' }}>
-                  <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 600, color: '#1A1A1A', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <FaCrown style={{ color: '#F59E0B' }} /> Abbonamento Corrente
-                  </h3>
+              <div className="sd-tab-grid">
+                <div className="sd-tab-header">
+                  <h3 className="sd-tab-title"><FaCrown style={{ color: '#F59E0B' }} /> Abbonamento</h3>
+                  {contracts.filter(c => c.status === 'active').length > 0 && (
+                    <button
+                      className="tp-btn tp-btn-outline"
+                      onClick={() => setActiveTab('contracts')}
+                    >
+                      <FaFileContract /> Gestisci Contratti
+                    </button>
+                  )}
                 </div>
 
                 {/* Check if there's an active contract */}
                 {contracts.filter(c => c.status === 'active').length === 0 ? (
                   /* No active contract - show simple message */
-                  <div style={{
-                    background: '#F9FAFB',
-                    borderRadius: '16px',
-                    border: '1px solid #E5E7EB',
-                    padding: '48px',
-                    textAlign: 'center'
-                  }}>
+                  <div style={{ textAlign: 'center', padding: '60px', color: '#6B7280', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                     <div style={{
                       width: '80px',
                       height: '80px',
@@ -589,280 +546,206 @@ function AdminClubDetail() {
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      margin: '0 auto 24px'
+                      marginBottom: '24px'
                     }}>
                       <FaCrown size={36} color="#D97706" />
                     </div>
-                    <h3 style={{ margin: '0 0 12px 0', fontSize: '20px', fontWeight: 600, color: '#1A1A1A' }}>
-                      Nessun piano attivo
-                    </h3>
-                    <p style={{ margin: '0 0 24px 0', fontSize: '14px', color: '#6B7280', maxWidth: '400px', marginLeft: 'auto', marginRight: 'auto' }}>
-                      Questo club non ha un contratto attivo. Per attivare un piano, crea un nuovo contratto dalla sezione Contratti.
+                    <h4 style={{ margin: '0 0 8px 0', fontSize: '18px', color: '#1A1A1A' }}>Nessun piano attivo</h4>
+                    <p style={{ margin: '0 0 24px 0', fontSize: '14px', maxWidth: '400px' }}>
+                      Questo club non ha un contratto attivo. Crea un nuovo contratto per attivare un piano.
                     </p>
                     <button
                       className="tp-btn tp-btn-primary"
-                      onClick={() => setActiveTab('contracts')}
-                      style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+                      onClick={() => window.location.href = `/admin/contratti/new?club_id=${clubId}`}
                     >
-                      <FaFileContract /> Vai ai Contratti
+                      <FaPlus /> Crea Contratto
                     </button>
                   </div>
                 ) : (
-                  /* Has active contract - show full details */
+                  /* Has active contract - show details */
                   <>
-                    <p style={{ margin: '-16px 0 24px', fontSize: '13px', color: '#6B7280' }}>
-                      Per modificare l'abbonamento vai alla sezione <button onClick={() => setActiveTab('contracts')} style={{ color: '#3B82F6', textDecoration: 'none', background: 'none', border: 'none', cursor: 'pointer', padding: 0, font: 'inherit' }}>Contratti</button>
-                    </p>
+                    {(() => {
+                      const activeContract = contracts.find(c => c.status === 'active');
+                      const planConfig = CONTRACT_PLAN_CONFIG[activeContract?.plan_type] || CONTRACT_PLAN_CONFIG.basic;
+                      const annualValue = activeContract?.total_value || 0;
+                      const monthlyValue = Math.round(annualValue / 12);
 
-                    {/* Card Abbonamento */}
-                    <div style={{
-                      background: 'white',
-                      borderRadius: '16px',
-                      border: '1px solid #E5E7EB',
-                      overflow: 'hidden'
-                    }}>
-                      {/* Header con gradient */}
-                      <div style={{
-                        background: 'linear-gradient(135deg, #1A1A1A 0%, #374151 100%)',
-                        padding: '32px',
-                        position: 'relative'
-                      }}>
-                        {/* Badge stato */}
-                        <span style={{
-                          position: 'absolute',
-                          top: '20px',
-                          right: '20px',
-                          background: statusBadge.bg,
-                          color: statusBadge.color,
-                          padding: '6px 14px',
-                          borderRadius: '20px',
-                          fontSize: '12px',
-                          fontWeight: 600,
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '6px'
-                        }}>
-                          {statusBadge.icon} {statusBadge.label}
-                        </span>
+                      return (
+                        <>
+                          {/* Summary Cards */}
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}>
+                            <div style={{ background: '#ECFDF5', borderRadius: '12px', padding: '16px', textAlign: 'center' }}>
+                              <div style={{ fontSize: '24px', fontWeight: 700, color: '#059669' }}>
+                                €{monthlyValue.toLocaleString()}
+                              </div>
+                              <div style={{ fontSize: '13px', color: '#065F46' }}>MRR</div>
+                            </div>
+                            <div style={{ background: '#EFF6FF', borderRadius: '12px', padding: '16px', textAlign: 'center' }}>
+                              <div style={{ fontSize: '24px', fontWeight: 700, color: '#3B82F6' }}>
+                                €{annualValue.toLocaleString()}
+                              </div>
+                              <div style={{ fontSize: '13px', color: '#1E40AF' }}>Valore Annuo</div>
+                            </div>
+                            <div style={{ background: '#FEF3C7', borderRadius: '12px', padding: '16px', textAlign: 'center' }}>
+                              <div style={{ fontSize: '24px', fontWeight: 700, color: '#D97706' }}>
+                                {formatDate(activeContract?.end_date)}
+                              </div>
+                              <div style={{ fontSize: '13px', color: '#92400E' }}>Scadenza</div>
+                            </div>
+                            <div style={{ background: planConfig.bg, borderRadius: '12px', padding: '16px', textAlign: 'center' }}>
+                              <div style={{ fontSize: '24px', fontWeight: 700, color: planConfig.color }}>
+                                {planConfig.name}
+                              </div>
+                              <div style={{ fontSize: '13px', color: '#6B7280' }}>Piano</div>
+                            </div>
+                          </div>
 
-                        <div style={{ display: 'flex', alignItems: 'flex-end', gap: '16px' }}>
+                          {/* Contract Card */}
                           <div style={{
-                            width: '64px',
-                            height: '64px',
-                            borderRadius: '16px',
-                            background: 'linear-gradient(135deg, #85FF00 0%, #65D000 100%)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
+                            background: '#FAFAFA',
+                            borderRadius: '12px',
+                            border: '1px solid #E5E7EB',
+                            overflow: 'hidden'
                           }}>
-                            <FaCrown size={28} color="#1A1A1A" />
-                          </div>
-                          <div>
-                            <p style={{ margin: '0 0 4px 0', color: '#9CA3AF', fontSize: '13px' }}>Piano attivo</p>
-                            <h2 style={{ margin: 0, color: 'white', fontSize: '28px', fontWeight: 700 }}>
-                              {(() => {
-                                const activeContract = contracts.find(c => c.status === 'active');
-                                const planConfig = CONTRACT_PLAN_CONFIG[activeContract?.plan_type];
-                                return planConfig?.name || activeContract?.plan_type || 'Piano Attivo';
-                              })()}
-                            </h2>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Body */}
-                      <div style={{ padding: '24px' }}>
-                        {/* Prezzo in evidenza */}
-                        <div style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          padding: '24px',
-                          background: '#F9FAFB',
-                          borderRadius: '12px',
-                          marginBottom: '24px'
-                        }}>
-                          <div style={{ textAlign: 'center' }}>
-                            {(() => {
-                              const activeContract = contracts.find(c => c.status === 'active');
-                              const monthlyPrice = activeContract?.payment_terms === 'annual'
-                                ? Math.round((activeContract?.total_value || 0) / 12)
-                                : activeContract?.payment_terms === 'semi_annual'
-                                ? Math.round((activeContract?.total_value || 0) / 6)
-                                : activeContract?.payment_terms === 'quarterly'
-                                ? Math.round((activeContract?.total_value || 0) / 3)
-                                : (activeContract?.total_value || 0);
-                              return (
-                                <>
-                                  <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: '4px' }}>
-                                    <span style={{ fontSize: '14px', color: '#6B7280', fontWeight: 500 }}>€</span>
-                                    <span style={{ fontSize: '48px', fontWeight: 700, color: '#1A1A1A' }}>
-                                      {monthlyPrice.toLocaleString()}
+                            {/* Contract Header */}
+                            <div style={{
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'center',
+                              padding: '20px 24px',
+                              borderBottom: '1px solid #E5E7EB',
+                              background: 'white'
+                            }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                                <div style={{
+                                  width: '48px',
+                                  height: '48px',
+                                  borderRadius: '12px',
+                                  background: 'linear-gradient(135deg, #85FF00 0%, #65D000 100%)',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center'
+                                }}>
+                                  <FaCrown size={22} color="#1A1A1A" />
+                                </div>
+                                <div>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                    <span style={{ fontWeight: 700, color: '#1A1A1A', fontSize: '18px' }}>
+                                      Piano {planConfig.name}
                                     </span>
-                                    <span style={{ fontSize: '16px', color: '#6B7280', fontWeight: 500 }}>/mese</span>
+                                    <span style={{
+                                      padding: '4px 10px',
+                                      borderRadius: '12px',
+                                      background: '#ECFDF5',
+                                      color: '#059669',
+                                      fontSize: '12px',
+                                      fontWeight: 600
+                                    }}>
+                                      Attivo
+                                    </span>
                                   </div>
-                                  <p style={{ margin: '8px 0 0 0', color: '#6B7280', fontSize: '14px' }}>
-                                    €{(activeContract?.total_value || 0).toLocaleString()} {
-                                      activeContract?.payment_terms === 'annual' ? 'fatturati annualmente' :
-                                      activeContract?.payment_terms === 'semi_annual' ? 'fatturati semestralmente' :
-                                      activeContract?.payment_terms === 'quarterly' ? 'fatturati trimestralmente' :
-                                      'fatturati mensilmente'
-                                    }
-                                  </p>
-                                </>
-                              );
-                            })()}
-                          </div>
-                        </div>
-
-                        {/* Dettagli in griglia */}
-                        <div style={{
-                          display: 'grid',
-                          gridTemplateColumns: 'repeat(2, 1fr)',
-                          gap: '16px'
-                        }}>
-                          <div style={{
-                            padding: '20px',
-                            background: '#FAFAFA',
-                            borderRadius: '12px',
-                            border: '1px solid #F0F0F0'
-                          }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-                              <div style={{
-                                width: '32px',
-                                height: '32px',
-                                borderRadius: '8px',
-                                background: '#EFF6FF',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center'
-                              }}>
-                                <FaCalendarAlt size={14} color="#3B82F6" />
-                              </div>
-                              <span style={{ fontSize: '13px', color: '#6B7280', fontWeight: 500 }}>Data Inizio</span>
-                            </div>
-                            <p style={{ margin: 0, fontSize: '16px', fontWeight: 600, color: '#1A1A1A' }}>
-                              {formatDate(contracts.find(c => c.status === 'active')?.start_date)}
-                            </p>
-                          </div>
-
-                          <div style={{
-                            padding: '20px',
-                            background: '#FAFAFA',
-                            borderRadius: '12px',
-                            border: '1px solid #F0F0F0'
-                          }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-                              <div style={{
-                                width: '32px',
-                                height: '32px',
-                                borderRadius: '8px',
-                                background: '#FEF3C7',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center'
-                              }}>
-                                <FaCalendarAlt size={14} color="#D97706" />
-                              </div>
-                              <span style={{ fontSize: '13px', color: '#6B7280', fontWeight: 500 }}>Scadenza</span>
-                            </div>
-                            <p style={{ margin: 0, fontSize: '16px', fontWeight: 600, color: '#1A1A1A' }}>
-                              {formatDate(contracts.find(c => c.status === 'active')?.end_date)}
-                            </p>
-                          </div>
-
-                          <div style={{
-                            padding: '20px',
-                            background: '#FAFAFA',
-                            borderRadius: '12px',
-                            border: '1px solid #F0F0F0'
-                          }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-                              <div style={{
-                                width: '32px',
-                                height: '32px',
-                                borderRadius: '8px',
-                                background: '#ECFDF5',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center'
-                              }}>
-                                <FaRedo size={14} color="#059669" />
-                              </div>
-                              <span style={{ fontSize: '13px', color: '#6B7280', fontWeight: 500 }}>Rinnovo</span>
-                            </div>
-                            <p style={{ margin: 0, fontSize: '16px', fontWeight: 600, color: '#1A1A1A' }}>
-                              {contracts.find(c => c.status === 'active')?.auto_renew ? 'Automatico' : 'Manuale'}
-                            </p>
-                          </div>
-
-                          <div style={{
-                            padding: '20px',
-                            background: '#FAFAFA',
-                            borderRadius: '12px',
-                            border: '1px solid #F0F0F0'
-                          }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-                              <div style={{
-                                width: '32px',
-                                height: '32px',
-                                borderRadius: '8px',
-                                background: '#F3E8FF',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center'
-                              }}>
-                                <FaFileInvoice size={14} color="#8B5CF6" />
-                              </div>
-                              <span style={{ fontSize: '13px', color: '#6B7280', fontWeight: 500 }}>Fatturazione</span>
-                            </div>
-                            <p style={{ margin: 0, fontSize: '16px', fontWeight: 600, color: '#1A1A1A' }}>
-                              {(() => {
-                                const pt = contracts.find(c => c.status === 'active')?.payment_terms;
-                                return pt === 'annual' ? 'Annuale' :
-                                       pt === 'semi_annual' ? 'Semestrale' :
-                                       pt === 'quarterly' ? 'Trimestrale' :
-                                       pt === 'monthly' ? 'Mensile' : '-';
-                              })()}
-                            </p>
-                          </div>
-                        </div>
-
-                        {/* MRR / ARR */}
-                        <div style={{
-                          marginTop: '24px',
-                          padding: '20px',
-                          background: 'linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%)',
-                          borderRadius: '12px',
-                          display: 'flex',
-                          justifyContent: 'space-around',
-                          alignItems: 'center'
-                        }}>
-                          {(() => {
-                            const activeContract = contracts.find(c => c.status === 'active');
-                            const annualValue = activeContract?.total_value || 0;
-                            const monthlyValue = Math.round(annualValue / 12);
-                            return (
-                              <>
-                                <div style={{ textAlign: 'center' }}>
-                                  <p style={{ margin: '0 0 4px 0', fontSize: '12px', color: '#065F46', fontWeight: 500 }}>MRR</p>
-                                  <p style={{ margin: 0, fontSize: '24px', fontWeight: 700, color: '#059669' }}>
-                                    €{monthlyValue.toLocaleString()}
-                                  </p>
+                                  <div style={{ fontSize: '14px', color: '#6B7280', marginTop: '4px' }}>
+                                    {formatDate(activeContract?.start_date)} → {formatDate(activeContract?.end_date)}
+                                  </div>
                                 </div>
-                                <div style={{ width: '1px', height: '40px', background: '#A7F3D0' }} />
-                                <div style={{ textAlign: 'center' }}>
-                                  <p style={{ margin: '0 0 4px 0', fontSize: '12px', color: '#065F46', fontWeight: 500 }}>ARR</p>
-                                  <p style={{ margin: 0, fontSize: '24px', fontWeight: 700, color: '#059669' }}>
-                                    €{annualValue.toLocaleString()}
-                                  </p>
+                              </div>
+                              <div style={{ textAlign: 'right' }}>
+                                <div style={{ fontSize: '28px', fontWeight: 700, color: '#059669' }}>
+                                  €{monthlyValue.toLocaleString()}
+                                  <span style={{ fontSize: '14px', fontWeight: 500, color: '#6B7280' }}>/mese</span>
                                 </div>
-                              </>
-                            );
-                          })()}
-                        </div>
-                      </div>
-                    </div>
+                              </div>
+                            </div>
+
+                            {/* Contract Details */}
+                            <div style={{ padding: '24px' }}>
+                              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px' }}>
+                                <div>
+                                  <div style={{ fontSize: '12px', color: '#9CA3AF', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Prezzo Piano</div>
+                                  <div style={{ fontSize: '15px', fontWeight: 600, color: '#1A1A1A' }}>
+                                    €{(activeContract?.plan_price || 0).toLocaleString()}
+                                  </div>
+                                </div>
+                                <div>
+                                  <div style={{ fontSize: '12px', color: '#9CA3AF', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Add-ons</div>
+                                  <div style={{ fontSize: '15px', fontWeight: 600, color: '#1A1A1A' }}>
+                                    {activeContract?.addons?.length > 0 ? `${activeContract.addons.length} inclusi` : 'Nessuno'}
+                                  </div>
+                                </div>
+                                <div>
+                                  <div style={{ fontSize: '12px', color: '#9CA3AF', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Fatturazione</div>
+                                  <div style={{ fontSize: '15px', fontWeight: 600, color: '#1A1A1A' }}>
+                                    {activeContract?.payment_terms === 'annual' ? 'Annuale' :
+                                     activeContract?.payment_terms === 'semi_annual' ? 'Semestrale' :
+                                     activeContract?.payment_terms === 'quarterly' ? 'Trimestrale' :
+                                     activeContract?.payment_terms === 'monthly' ? 'Mensile' : '-'}
+                                  </div>
+                                </div>
+                                <div>
+                                  <div style={{ fontSize: '12px', color: '#9CA3AF', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Firmato</div>
+                                  <div style={{ fontSize: '15px', fontWeight: 600, color: '#1A1A1A' }}>
+                                    {activeContract?.signed_by || 'Non firmato'}
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Add-ons list if present */}
+                              {activeContract?.addons?.length > 0 && (
+                                <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px solid #E5E7EB' }}>
+                                  <div style={{ fontSize: '12px', color: '#9CA3AF', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Add-ons inclusi</div>
+                                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                                    {activeContract.addons.map((addon, idx) => (
+                                      <span
+                                        key={idx}
+                                        style={{
+                                          padding: '6px 12px',
+                                          borderRadius: '8px',
+                                          background: '#EFF6FF',
+                                          color: '#3B82F6',
+                                          fontSize: '13px',
+                                          fontWeight: 500
+                                        }}
+                                      >
+                                        {addon.name} (€{(addon.price || 0).toLocaleString()})
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* PDF Document if present */}
+                              {activeContract?.contract_document_url && (
+                                <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px solid #E5E7EB' }}>
+                                  <div style={{ fontSize: '12px', color: '#9CA3AF', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Documento</div>
+                                  <a
+                                    href={getImageUrl(activeContract.contract_document_url)}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    style={{
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '8px',
+                                      padding: '10px 16px',
+                                      background: '#FEF2F2',
+                                      border: '1px solid #FECACA',
+                                      borderRadius: '8px',
+                                      color: '#DC2626',
+                                      textDecoration: 'none',
+                                      fontSize: '14px',
+                                      fontWeight: 500
+                                    }}
+                                  >
+                                    <FaFilePdf size={16} />
+                                    Visualizza PDF
+                                    <FaExternalLinkAlt size={12} />
+                                  </a>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </>
+                      );
+                    })()}
                   </>
                 )}
               </div>
@@ -1044,6 +927,38 @@ function AdminClubDetail() {
                                 <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #E5E7EB' }}>
                                   <div style={{ fontSize: '12px', color: '#9CA3AF', marginBottom: '4px' }}>Note:</div>
                                   <div style={{ fontSize: '14px', color: '#4B5563' }}>{contract.notes}</div>
+                                </div>
+                              )}
+
+                              {/* PDF Document if present */}
+                              {contract.contract_document_url && (
+                                <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #E5E7EB' }}>
+                                  <div style={{ fontSize: '12px', color: '#9CA3AF', marginBottom: '8px' }}>Documento Contratto:</div>
+                                  <a
+                                    href={getImageUrl(contract.contract_document_url)}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    style={{
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '8px',
+                                      padding: '10px 16px',
+                                      background: '#FEF2F2',
+                                      border: '1px solid #FECACA',
+                                      borderRadius: '8px',
+                                      color: '#DC2626',
+                                      textDecoration: 'none',
+                                      fontSize: '14px',
+                                      fontWeight: 500,
+                                      transition: 'all 0.2s'
+                                    }}
+                                    onMouseEnter={(e) => { e.currentTarget.style.background = '#FEE2E2'; }}
+                                    onMouseLeave={(e) => { e.currentTarget.style.background = '#FEF2F2'; }}
+                                  >
+                                    <FaFilePdf size={16} />
+                                    Visualizza PDF
+                                    <FaExternalLinkAlt size={12} />
+                                  </a>
                                 </div>
                               )}
 

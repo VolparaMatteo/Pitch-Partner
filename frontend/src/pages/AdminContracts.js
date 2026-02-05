@@ -1,98 +1,104 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { getAuth } from '../utils/auth';
-import Sidebar from '../components/Sidebar';
+import { getImageUrl } from '../utils/imageUtils';
+import Toast from '../components/Toast';
 import {
-  HiOutlineDocumentText,
-  HiOutlinePlus,
-  HiOutlinePencil,
-  HiOutlineTrash,
-  HiOutlineEye,
-  HiOutlineCalendar,
-  HiOutlineCurrencyEuro,
-  HiOutlineCheckCircle,
-  HiOutlineClock,
-  HiOutlineExclamationCircle,
-  HiOutlineX,
-  HiOutlineRefresh
-} from 'react-icons/hi';
+  FaSearch, FaList, FaTh, FaEye, FaPlus, FaTrash,
+  FaFileContract, FaCheck, FaTimes, FaClock,
+  FaInbox, FaEuroSign, FaChevronDown,
+  FaFilter, FaCrown, FaRedo,
+  FaChevronLeft, FaChevronRight,
+  FaCalendarAlt, FaExclamationTriangle, FaBuilding
+} from 'react-icons/fa';
+import '../styles/template-style.css';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5003';
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5003/api';
 
-// Plan configuration - allineato con Obiettivi 2026
-const PLAN_CONFIG = {
-  basic: { name: 'Basic', price: 10000, color: 'bg-gray-100 text-gray-800' },
-  Basic: { name: 'Basic', price: 10000, color: 'bg-gray-100 text-gray-800' },
-  premium: { name: 'Premium', price: 15000, color: 'bg-blue-100 text-blue-800' },
-  Premium: { name: 'Premium', price: 15000, color: 'bg-blue-100 text-blue-800' },
-  elite: { name: 'Elite', price: 25000, color: 'bg-yellow-100 text-yellow-800' },
-  Elite: { name: 'Elite', price: 25000, color: 'bg-yellow-100 text-yellow-800' }
-};
-
-const ADDON_OPTIONS = [
-  { id: 'setup', name: 'Setup & Onboarding', price: 2500 },
-  { id: 'training', name: 'Training Avanzato', price: 2000 },
-  { id: 'custom', name: 'Sviluppo Custom', price: 5000 },
-  { id: 'support_premium', name: 'Supporto Premium', price: 3000 },
-  { id: 'integration', name: 'Integrazioni API', price: 4000 }
+// Stati contratto
+const CONTRACT_STATUS = [
+  { id: 'all', label: 'Tutti', icon: <FaFilter />, color: '#6B7280', bg: '#F3F4F6' },
+  { id: 'active', label: 'Attivo', icon: <FaCheck />, color: '#059669', bg: '#ECFDF5' },
+  { id: 'draft', label: 'Bozza', icon: <FaClock />, color: '#6B7280', bg: '#F3F4F6' },
+  { id: 'expired', label: 'Scaduto', icon: <FaTimes />, color: '#DC2626', bg: '#FEF2F2' },
+  { id: 'renewed', label: 'Rinnovato', icon: <FaRedo />, color: '#3B82F6', bg: '#EFF6FF' }
 ];
 
-const STATUS_CONFIG = {
-  draft: { label: 'Bozza', color: 'bg-gray-100 text-gray-800', icon: HiOutlineClock },
-  active: { label: 'Attivo', color: 'bg-green-100 text-green-800', icon: HiOutlineCheckCircle },
-  expired: { label: 'Scaduto', color: 'bg-red-100 text-red-800', icon: HiOutlineExclamationCircle },
-  cancelled: { label: 'Annullato', color: 'bg-red-100 text-red-800', icon: HiOutlineX },
-  renewed: { label: 'Rinnovato', color: 'bg-blue-100 text-blue-800', icon: HiOutlineRefresh }
+// Piani
+const PLANS = [
+  { id: 'all', label: 'Tutti i piani', color: '#6B7280' },
+  { id: 'Basic', label: 'Basic', color: '#6B7280' },
+  { id: 'Premium', label: 'Premium', color: '#3B82F6' },
+  { id: 'Elite', label: 'Elite', color: '#F59E0B' }
+];
+
+const PLAN_COLORS = {
+  basic: { bg: '#F9FAFB', color: '#6B7280' },
+  Basic: { bg: '#F9FAFB', color: '#6B7280' },
+  premium: { bg: '#EFF6FF', color: '#3B82F6' },
+  Premium: { bg: '#EFF6FF', color: '#3B82F6' },
+  elite: { bg: '#FFFBEB', color: '#F59E0B' },
+  Elite: { bg: '#FFFBEB', color: '#F59E0B' }
 };
 
-const AdminContracts = () => {
-  const authData = useMemo(() => getAuth(), []);
-  const { user, token } = authData;
-  const hasFetched = useRef(false);
-
+function AdminContracts() {
   const [contracts, setContracts] = useState([]);
   const [stats, setStats] = useState(null);
-  const [clubs, setClubs] = useState([]);
+  const [clubsWithoutContract, setClubsWithoutContract] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filters, setFilters] = useState({ status: 'all', plan: 'all' });
+  const [toast, setToast] = useState(null);
+  const [viewMode, setViewMode] = useState('list');
 
-  // Modal states
-  const [showModal, setShowModal] = useState(false);
-  const [showDetailModal, setShowDetailModal] = useState(false);
-  const [selectedContract, setSelectedContract] = useState(null);
-  const [formData, setFormData] = useState({
-    club_id: '',
-    plan_type: 'Premium',
-    plan_price: 15000,
-    addons: [],
-    start_date: new Date().toISOString().split('T')[0],
-    end_date: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0],
-    payment_terms: 'annual',
-    payment_method: 'bank_transfer',
-    notes: '',
-    signed_by: '',
-    signed_date: ''
-  });
+  // Custom dropdown states
+  const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
+  const [planDropdownOpen, setPlanDropdownOpen] = useState(false);
 
-  // Filter states
-  const [filterStatus, setFilterStatus] = useState('');
-  const [filterPlan, setFilterPlan] = useState('');
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 15;
+
+  // Refs
+  const statusDropdownRef = useRef(null);
+  const planDropdownRef = useRef(null);
+  const listRef = useRef(null);
+
+  const navigate = useNavigate();
+  const { user, token } = getAuth();
 
   useEffect(() => {
-    if (token && !hasFetched.current) {
-      hasFetched.current = true;
-      fetchData();
+    if (!user || user.role !== 'admin') {
+      navigate('/admin/login');
+      return;
     }
-  }, [token]);
+    fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Click outside handler for dropdowns
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (statusDropdownRef.current && !statusDropdownRef.current.contains(e.target)) {
+        setStatusDropdownOpen(false);
+      }
+      if (planDropdownRef.current && !planDropdownRef.current.contains(e.target)) {
+        setPlanDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const fetchData = async () => {
     try {
       setLoading(true);
-      const headers = { 'Authorization': `Bearer ${token}` };
+      const headers = { Authorization: `Bearer ${token}` };
 
       const [contractsRes, statsRes, clubsRes] = await Promise.all([
         fetch(`${API_URL}/admin/contracts`, { headers }),
-        fetch(`${API_URL}/admin/contracts/stats`, { headers }),
-        fetch(`${API_URL}/admin/contracts/clubs-without-contract`, { headers })
+        fetch(`${API_URL}/admin/contracts/stats`, { headers }).catch(() => ({ ok: false })),
+        fetch(`${API_URL}/admin/contracts/clubs-without-contract`, { headers }).catch(() => ({ ok: false }))
       ]);
 
       if (contractsRes.ok) {
@@ -107,698 +113,788 @@ const AdminContracts = () => {
 
       if (clubsRes.ok) {
         const data = await clubsRes.json();
-        setClubs(data.clubs || []);
+        setClubsWithoutContract(data.clubs || []);
       }
-    } catch (err) {
-      setError('Errore nel caricamento dei dati');
-      console.error(err);
+
+    } catch (error) {
+      console.error('Errore:', error);
+      setContracts([]);
+      setToast({ message: 'Errore nel caricamento dei contratti', type: 'error' });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleCreateContract = async () => {
-    try {
-      const response = await fetch(`${API_URL}/admin/contracts`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(formData)
-      });
-
-      if (response.ok) {
-        setShowModal(false);
-        resetForm();
-        fetchData();
-      } else {
-        const data = await response.json();
-        alert(data.error || 'Errore nella creazione del contratto');
-      }
-    } catch (err) {
-      console.error(err);
-      alert('Errore nella creazione del contratto');
-    }
-  };
-
-  const handleUpdateContract = async () => {
-    try {
-      const response = await fetch(`${API_URL}/admin/contracts/${selectedContract.id}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(formData)
-      });
-
-      if (response.ok) {
-        setShowModal(false);
-        setSelectedContract(null);
-        resetForm();
-        fetchData();
-      } else {
-        const data = await response.json();
-        alert(data.error || 'Errore nell\'aggiornamento del contratto');
-      }
-    } catch (err) {
-      console.error(err);
-      alert('Errore nell\'aggiornamento del contratto');
-    }
-  };
-
-  const handleDeleteContract = async (contractId) => {
+  const handleDeleteContract = async (contractId, e) => {
+    e.stopPropagation();
     if (!window.confirm('Sei sicuro di voler eliminare questo contratto?')) return;
 
     try {
       const response = await fetch(`${API_URL}/admin/contracts/${contractId}`, {
         method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` }
       });
 
       if (response.ok) {
+        setToast({ message: 'Contratto eliminato', type: 'success' });
         fetchData();
       } else {
         const data = await response.json();
-        alert(data.error || 'Errore nell\'eliminazione del contratto');
+        setToast({ message: data.error || 'Errore nell\'eliminazione', type: 'error' });
       }
     } catch (err) {
-      console.error(err);
-      alert('Errore nell\'eliminazione del contratto');
+      setToast({ message: 'Errore nell\'eliminazione', type: 'error' });
     }
   };
 
-  const resetForm = () => {
-    setFormData({
-      club_id: '',
-      plan_type: 'premium',
-      plan_price: 15000,
-      addons: [],
-      start_date: new Date().toISOString().split('T')[0],
-      end_date: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0],
-      payment_terms: 'annual',
-      payment_method: 'bank_transfer',
-      notes: '',
-      signed_by: '',
-      signed_date: ''
+  const getFilteredContracts = () => {
+    return contracts.filter(contract => {
+      // Search
+      if (searchTerm) {
+        const s = searchTerm.toLowerCase();
+        if (!contract.club_name?.toLowerCase().includes(s) &&
+            !contract.plan_type?.toLowerCase().includes(s)) return false;
+      }
+
+      // Status filter
+      if (filters.status !== 'all' && contract.status !== filters.status) return false;
+
+      // Plan filter
+      if (filters.plan !== 'all' && contract.plan_type !== filters.plan) return false;
+
+      return true;
     });
   };
 
-  const openEditModal = (contract) => {
-    setSelectedContract(contract);
-    setFormData({
-      club_id: contract.club_id,
-      plan_type: contract.plan_type,
-      plan_price: contract.plan_price,
-      addons: contract.addons || [],
-      start_date: contract.start_date,
-      end_date: contract.end_date,
-      renewal_date: contract.renewal_date || '',
-      payment_terms: contract.payment_terms,
-      payment_method: contract.payment_method || '',
-      notes: contract.notes || '',
-      signed_by: contract.signed_by || '',
-      signed_date: contract.signed_date || '',
-      status: contract.status
-    });
-    setShowModal(true);
+  const clearFilters = () => {
+    setFilters({ status: 'all', plan: 'all' });
+    setSearchTerm('');
   };
 
-  const handlePlanChange = (planType) => {
-    setFormData({
-      ...formData,
-      plan_type: planType,
-      plan_price: PLAN_CONFIG[planType]?.price || 10000
-    });
+  const getActiveFiltersCount = () => {
+    let count = 0;
+    if (filters.status !== 'all') count++;
+    if (filters.plan !== 'all') count++;
+    return count;
   };
 
-  const toggleAddon = (addon) => {
-    // Usa l'ID per match coerente con backend
-    const exists = formData.addons.find(a => a.id === addon.id || a.name === addon.name);
-    if (exists) {
-      setFormData({
-        ...formData,
-        addons: formData.addons.filter(a => a.id !== addon.id && a.name !== addon.name)
-      });
-    } else {
-      setFormData({
-        ...formData,
-        addons: [...formData.addons, { id: addon.id, name: addon.name, price: addon.price }]
-      });
+  // Pagination handlers
+  const handlePageChange = (newPage) => {
+    setCurrentPage(newPage);
+    if (listRef.current) {
+      listRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   };
 
-  const calculateTotal = () => {
-    const planPrice = formData.plan_price || 0;
-    const addonsTotal = formData.addons.reduce((sum, a) => sum + (a.price || 0), 0);
-    return planPrice + addonsTotal;
-  };
+  const filteredContracts = getFilteredContracts();
+  const activeFiltersCount = getActiveFiltersCount();
 
-  const filteredContracts = contracts.filter(c => {
-    if (filterStatus && c.status !== filterStatus) return false;
-    if (filterPlan && c.plan_type !== filterPlan) return false;
-    return true;
-  });
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredContracts.length / itemsPerPage);
+  const paginatedContracts = filteredContracts.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
-  const formatCurrency = (value) => {
-    return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(value || 0);
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filters, searchTerm]);
+
+  const getSelectedStatus = () => CONTRACT_STATUS.find(s => s.id === filters.status) || CONTRACT_STATUS[0];
+  const getSelectedPlan = () => PLANS.find(p => p.id === filters.plan) || PLANS[0];
+
+  const getStatusBadge = (status) => {
+    const statusConfig = CONTRACT_STATUS.find(s => s.id === status);
+    if (statusConfig) {
+      return { label: statusConfig.label, color: statusConfig.color, bg: statusConfig.bg, icon: statusConfig.icon };
+    }
+    return { label: status, color: '#6B7280', bg: '#F3F4F6', icon: <FaClock /> };
   };
 
   const formatDate = (dateStr) => {
     if (!dateStr) return '-';
-    return new Date(dateStr).toLocaleDateString('it-IT');
+    return new Date(dateStr).toLocaleDateString('it-IT', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    });
   };
 
-  if (!user || user.role !== 'admin') {
+  const formatCurrency = (value) => {
+    return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(value || 0);
+  };
+
+  if (loading) {
     return (
-      <div className="flex h-screen">
-        <Sidebar />
-        <div className="flex-1 p-8 flex items-center justify-center">
-          <p className="text-red-500">Accesso non autorizzato</p>
+      <div className="tp-page-container">
+        <div className="tp-loading-container">
+          <div className="tp-loading-spinner"></div>
+          <p className="tp-loading-text">Caricamento Contratti...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      <Sidebar />
-      <div className="flex-1 overflow-auto">
-        <div className="p-8">
-          {/* Header */}
-          <div className="flex justify-between items-center mb-8">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Gestione Contratti</h1>
-              <p className="text-gray-600 mt-1">Gestisci i contratti con i Club</p>
+    <div className="tp-page-container">
+      {/* Page Header */}
+      <div className="tp-page-header">
+        <h1 className="tp-page-title">Gestione Contratti</h1>
+        <div className="tp-page-actions">
+          <button
+            className="tp-btn tp-btn-primary"
+            onClick={() => navigate('/admin/contratti/new')}
+          >
+            <FaPlus /> Nuovo Contratto
+          </button>
+        </div>
+      </div>
+
+      {/* KPI Stats */}
+      {stats && (
+        <div className="tp-stats-row" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
+          <div className="tp-stat-card-dark">
+            <div className="tp-stat-icon" style={{ background: '#FFFFFF' }}>
+              <FaFileContract style={{ color: '#1F2937' }} />
             </div>
-            <button
-              onClick={() => { resetForm(); setSelectedContract(null); setShowModal(true); }}
-              className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              <HiOutlinePlus className="w-5 h-5" />
-              Nuovo Contratto
-            </button>
-          </div>
-
-          {/* Stats Cards */}
-          {stats && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">ARR Totale</p>
-                    <p className="text-2xl font-bold text-gray-900 mt-1">{formatCurrency(stats.total_arr)}</p>
-                  </div>
-                  <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                    <HiOutlineCurrencyEuro className="w-6 h-6 text-green-600" />
-                  </div>
-                </div>
-                <p className="text-xs text-gray-500 mt-2">MRR: {formatCurrency(stats.mrr)}</p>
-              </div>
-
-              <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">Contratti Attivi</p>
-                    <p className="text-2xl font-bold text-gray-900 mt-1">{stats.active_contracts}</p>
-                  </div>
-                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                    <HiOutlineDocumentText className="w-6 h-6 text-blue-600" />
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">Valore Medio</p>
-                    <p className="text-2xl font-bold text-gray-900 mt-1">{formatCurrency(stats.avg_contract_value)}</p>
-                  </div>
-                  <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                    <HiOutlineCalendar className="w-6 h-6 text-purple-600" />
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">In Scadenza</p>
-                    <p className="text-2xl font-bold text-gray-900 mt-1">{stats.expiring_soon}</p>
-                  </div>
-                  <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
-                    <HiOutlineExclamationCircle className="w-6 h-6 text-yellow-600" />
-                  </div>
-                </div>
-                <p className="text-xs text-gray-500 mt-2">Prossimi 90 giorni</p>
-              </div>
-            </div>
-          )}
-
-          {/* ARR by Plan */}
-          {stats && stats.arr_by_plan && (
-            <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 mb-8">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">ARR per Piano</h3>
-              <div className="grid grid-cols-3 gap-4">
-                {Object.entries(stats.arr_by_plan).map(([plan, arr]) => (
-                  <div key={plan} className="text-center p-4 bg-gray-50 rounded-lg">
-                    <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${PLAN_CONFIG[plan]?.color || 'bg-gray-100'} mb-2`}>
-                      {PLAN_CONFIG[plan]?.name || plan}
-                    </span>
-                    <p className="text-xl font-bold text-gray-900">{formatCurrency(arr)}</p>
-                    <p className="text-sm text-gray-500">{stats.contracts_by_plan?.[plan] || 0} contratti</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Filters */}
-          <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-100 mb-6">
-            <div className="flex gap-4">
-              <select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="">Tutti gli stati</option>
-                {Object.entries(STATUS_CONFIG).map(([key, config]) => (
-                  <option key={key} value={key}>{config.label}</option>
-                ))}
-              </select>
-
-              <select
-                value={filterPlan}
-                onChange={(e) => setFilterPlan(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="">Tutti i piani</option>
-                {Object.entries(PLAN_CONFIG).map(([key, config]) => (
-                  <option key={key} value={key}>{config.name}</option>
-                ))}
-              </select>
+            <div className="tp-stat-content">
+              <div className="tp-stat-value">{stats.active_contracts || 0}</div>
+              <div className="tp-stat-label">Contratti Attivi</div>
             </div>
           </div>
 
-          {/* Contracts Table */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-            {loading ? (
-              <div className="p-8 text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                <p className="mt-2 text-gray-500">Caricamento...</p>
-              </div>
-            ) : error ? (
-              <div className="p-8 text-center text-red-500">{error}</div>
-            ) : filteredContracts.length === 0 ? (
-              <div className="p-8 text-center text-gray-500">Nessun contratto trovato</div>
-            ) : (
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Club</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Piano</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Valore</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Periodo</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stato</th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Azioni</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredContracts.map((contract) => {
-                    const StatusIcon = STATUS_CONFIG[contract.status]?.icon || HiOutlineClock;
+          <div className="tp-stat-card-dark">
+            <div className="tp-stat-icon" style={{ background: '#FFFFFF' }}>
+              <FaEuroSign style={{ color: '#1F2937' }} />
+            </div>
+            <div className="tp-stat-content">
+              <div className="tp-stat-value">{formatCurrency(stats.total_arr)}</div>
+              <div className="tp-stat-label">ARR Totale</div>
+            </div>
+          </div>
+
+          <div className="tp-stat-card-dark">
+            <div className="tp-stat-icon" style={{ background: '#FFFFFF' }}>
+              <FaEuroSign style={{ color: '#1F2937' }} />
+            </div>
+            <div className="tp-stat-content">
+              <div className="tp-stat-value">{formatCurrency(stats.mrr)}</div>
+              <div className="tp-stat-label">MRR</div>
+            </div>
+          </div>
+
+          <div className="tp-stat-card-dark">
+            <div className="tp-stat-icon" style={{ background: '#FFFFFF' }}>
+              <FaExclamationTriangle style={{ color: '#1F2937' }} />
+            </div>
+            <div className="tp-stat-content">
+              <div className="tp-stat-value">{stats.expiring_soon || 0}</div>
+              <div className="tp-stat-label">In Scadenza (90gg)</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Clubs without contract alert */}
+      {clubsWithoutContract.length > 0 && (
+        <div style={{
+          background: '#FEF3C7',
+          border: '1px solid #F59E0B',
+          borderRadius: '12px',
+          padding: '16px 20px',
+          marginBottom: '24px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px'
+        }}>
+          <FaExclamationTriangle color="#D97706" />
+          <div style={{ flex: 1 }}>
+            <span style={{ fontWeight: 600, color: '#92400E' }}>
+              {clubsWithoutContract.length} club senza contratto attivo:
+            </span>
+            <span style={{ color: '#B45309', marginLeft: '8px' }}>
+              {clubsWithoutContract.map(c => c.nome).join(', ')}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Main Card with Filters */}
+      <div className="tp-card">
+        <div className="tp-card-header">
+          <div className="tp-card-header-left">
+            {/* Search */}
+            <div className="tp-search-wrapper">
+              <input
+                type="text"
+                className="tp-search-input"
+                placeholder="Cerca contratto..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+              <span className="tp-search-icon"><FaSearch /></span>
+            </div>
+
+            {/* Status Dropdown */}
+            <div ref={statusDropdownRef} style={{ position: 'relative' }}>
+              <button
+                type="button"
+                onClick={() => {
+                  setStatusDropdownOpen(!statusDropdownOpen);
+                  setPlanDropdownOpen(false);
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  padding: '10px 14px',
+                  border: filters.status !== 'all' ? '2px solid #85FF00' : '2px solid #E5E7EB',
+                  borderRadius: '8px',
+                  background: filters.status !== 'all' ? 'rgba(133, 255, 0, 0.08)' : 'white',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  minWidth: '150px'
+                }}
+              >
+                {(() => {
+                  const selected = getSelectedStatus();
+                  return (
+                    <>
+                      <div style={{
+                        width: '24px', height: '24px', borderRadius: '6px',
+                        background: selected.color,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        color: 'white', fontSize: '12px'
+                      }}>
+                        {selected.icon}
+                      </div>
+                      <span style={{ flex: 1, textAlign: 'left', fontSize: '14px', fontWeight: 500, color: '#1A1A1A' }}>
+                        {selected.label}
+                      </span>
+                      <FaChevronDown
+                        size={12}
+                        color="#6B7280"
+                        style={{
+                          transition: 'transform 0.2s',
+                          transform: statusDropdownOpen ? 'rotate(180deg)' : 'rotate(0)'
+                        }}
+                      />
+                    </>
+                  );
+                })()}
+              </button>
+              {statusDropdownOpen && (
+                <div style={{
+                  position: 'absolute', top: '100%', left: 0, marginTop: '4px',
+                  background: 'white', border: '1px solid #E5E7EB', borderRadius: '12px',
+                  boxShadow: '0 10px 40px rgba(0,0,0,0.12)', zIndex: 100,
+                  minWidth: '200px', overflow: 'hidden'
+                }}>
+                  {CONTRACT_STATUS.map(option => {
+                    const isSelected = filters.status === option.id;
                     return (
-                      <tr key={contract.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="font-medium text-gray-900">{contract.club_name}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${PLAN_CONFIG[contract.plan_type]?.color || 'bg-gray-100'}`}>
-                            {PLAN_CONFIG[contract.plan_type]?.name || contract.plan_type}
-                          </span>
-                          {contract.addons?.length > 0 && (
-                            <span className="ml-2 text-xs text-gray-500">+{contract.addons.length} addon</span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">{formatCurrency(contract.total_value)}</div>
-                          <div className="text-xs text-gray-500">/anno</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">{formatDate(contract.start_date)}</div>
-                          <div className="text-xs text-gray-500">→ {formatDate(contract.end_date)}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${STATUS_CONFIG[contract.status]?.color || 'bg-gray-100'}`}>
-                            <StatusIcon className="w-3 h-3" />
-                            {STATUS_CONFIG[contract.status]?.label || contract.status}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right">
-                          <div className="flex justify-end gap-2">
-                            <button
-                              onClick={() => { setSelectedContract(contract); setShowDetailModal(true); }}
-                              className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
-                              title="Visualizza"
-                            >
-                              <HiOutlineEye className="w-5 h-5" />
-                            </button>
-                            <button
-                              onClick={() => openEditModal(contract)}
-                              className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
-                              title="Modifica"
-                            >
-                              <HiOutlinePencil className="w-5 h-5" />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteContract(contract.id)}
-                              className="p-2 text-gray-400 hover:text-red-600 transition-colors"
-                              title="Elimina"
-                            >
-                              <HiOutlineTrash className="w-5 h-5" />
-                            </button>
+                      <div
+                        key={option.id}
+                        onClick={() => {
+                          setFilters({ ...filters, status: option.id });
+                          setStatusDropdownOpen(false);
+                        }}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: '12px',
+                          padding: '12px 16px', cursor: 'pointer',
+                          background: isSelected ? 'rgba(133, 255, 0, 0.1)' : 'transparent',
+                          borderLeft: isSelected ? '3px solid #85FF00' : '3px solid transparent'
+                        }}
+                        onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = '#F9FAFB'; }}
+                        onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = 'transparent'; }}
+                      >
+                        <div style={{
+                          width: '28px', height: '28px', borderRadius: '6px',
+                          background: option.color,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          color: 'white', fontSize: '14px'
+                        }}>
+                          {option.icon}
+                        </div>
+                        <span style={{ flex: 1, fontSize: '14px', fontWeight: 500, color: '#1A1A1A' }}>
+                          {option.label}
+                        </span>
+                        {isSelected && <FaCheck size={12} color="#85FF00" />}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Plan Dropdown */}
+            <div ref={planDropdownRef} style={{ position: 'relative' }}>
+              <button
+                type="button"
+                onClick={() => {
+                  setPlanDropdownOpen(!planDropdownOpen);
+                  setStatusDropdownOpen(false);
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  padding: '10px 14px',
+                  border: filters.plan !== 'all' ? '2px solid #85FF00' : '2px solid #E5E7EB',
+                  borderRadius: '8px',
+                  background: filters.plan !== 'all' ? 'rgba(133, 255, 0, 0.08)' : 'white',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  minWidth: '150px'
+                }}
+              >
+                {(() => {
+                  const selected = getSelectedPlan();
+                  return (
+                    <>
+                      <div style={{
+                        width: '24px', height: '24px', borderRadius: '6px',
+                        background: selected.color,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center'
+                      }}>
+                        <FaCrown size={12} color="white" />
+                      </div>
+                      <span style={{ flex: 1, textAlign: 'left', fontSize: '14px', fontWeight: 500, color: '#1A1A1A' }}>
+                        {selected.label}
+                      </span>
+                      <FaChevronDown
+                        size={12}
+                        color="#6B7280"
+                        style={{
+                          transition: 'transform 0.2s',
+                          transform: planDropdownOpen ? 'rotate(180deg)' : 'rotate(0)'
+                        }}
+                      />
+                    </>
+                  );
+                })()}
+              </button>
+              {planDropdownOpen && (
+                <div style={{
+                  position: 'absolute', top: '100%', left: 0, marginTop: '4px',
+                  background: 'white', border: '1px solid #E5E7EB', borderRadius: '12px',
+                  boxShadow: '0 10px 40px rgba(0,0,0,0.12)', zIndex: 100,
+                  minWidth: '200px', overflow: 'hidden'
+                }}>
+                  {PLANS.map(option => {
+                    const isSelected = filters.plan === option.id;
+                    return (
+                      <div
+                        key={option.id}
+                        onClick={() => {
+                          setFilters({ ...filters, plan: option.id });
+                          setPlanDropdownOpen(false);
+                        }}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: '12px',
+                          padding: '12px 16px', cursor: 'pointer',
+                          background: isSelected ? 'rgba(133, 255, 0, 0.1)' : 'transparent',
+                          borderLeft: isSelected ? '3px solid #85FF00' : '3px solid transparent'
+                        }}
+                        onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = '#F9FAFB'; }}
+                        onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = 'transparent'; }}
+                      >
+                        <div style={{
+                          width: '28px', height: '28px', borderRadius: '6px',
+                          background: option.color,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center'
+                        }}>
+                          <FaCrown size={14} color="white" />
+                        </div>
+                        <span style={{ flex: 1, fontSize: '14px', fontWeight: 500, color: '#1A1A1A' }}>
+                          {option.label}
+                        </span>
+                        {isSelected && <FaCheck size={12} color="#85FF00" />}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="tp-card-header-right">
+            {/* View Toggle */}
+            <div className="tp-view-toggle">
+              <button
+                className={`tp-view-toggle-btn ${viewMode === 'list' ? 'active' : ''}`}
+                onClick={() => setViewMode('list')}
+                title="Lista"
+              >
+                <FaList />
+              </button>
+              <button
+                className={`tp-view-toggle-btn ${viewMode === 'cards' ? 'active' : ''}`}
+                onClick={() => setViewMode('cards')}
+                title="Cards"
+              >
+                <FaTh />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="tp-card-body">
+          {/* Active Filters Badge */}
+          {(activeFiltersCount > 0 || searchTerm) && (
+            <div className="tp-active-filters">
+              <span className="tp-active-filters-text">
+                {filteredContracts.length} contratti trovati
+                {activeFiltersCount > 0 && ` (${activeFiltersCount} filtri attivi)`}
+              </span>
+              <button className="tp-clear-filters-btn" onClick={clearFilters}>
+                Rimuovi filtri
+              </button>
+            </div>
+          )}
+
+          {/* LIST VIEW */}
+          {viewMode === 'list' && (
+            <>
+              <div className="tp-table-container" ref={listRef}>
+                <table className="tp-table">
+                  <thead>
+                    <tr>
+                      <th>Club</th>
+                      <th>Piano</th>
+                      <th>Valore</th>
+                      <th>Periodo</th>
+                      <th>Stato</th>
+                      <th>Azioni</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {paginatedContracts.length === 0 ? (
+                      <tr>
+                        <td colSpan="6" style={{ textAlign: 'center', padding: '40px', color: '#6B7280' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                            <FaInbox size={32} style={{ marginBottom: '12px', opacity: 0.5 }} />
+                            <p>Nessun contratto trovato</p>
                           </div>
                         </td>
                       </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            )}
-          </div>
-
-          {/* Club senza contratto */}
-          {clubs.length > 0 && (
-            <div className="mt-8 bg-yellow-50 border border-yellow-200 rounded-xl p-6">
-              <h3 className="text-lg font-semibold text-yellow-800 mb-2">Club senza contratto attivo</h3>
-              <div className="flex flex-wrap gap-2">
-                {clubs.map(club => (
-                  <span key={club.id} className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm">
-                    {club.nome}
-                  </span>
-                ))}
+                    ) : (
+                      paginatedContracts.map(contract => {
+                        const statusBadge = getStatusBadge(contract.status);
+                        const planColors = PLAN_COLORS[contract.plan_type] || PLAN_COLORS.Basic;
+                        return (
+                          <tr key={contract.id} onClick={() => navigate(`/admin/contratti/${contract.id}`)} style={{ cursor: 'pointer' }}>
+                            <td>
+                              <div className="tp-table-user">
+                                <div className="tp-table-avatar" style={{ borderRadius: '10px', background: contract.club_logo_url ? 'white' : '#F3F4F6', overflow: 'hidden' }}>
+                                  {contract.club_logo_url ? (
+                                    <img
+                                      src={getImageUrl(contract.club_logo_url)}
+                                      alt={contract.club_name}
+                                      style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                                    />
+                                  ) : (
+                                    <FaBuilding size={18} color="#6B7280" />
+                                  )}
+                                </div>
+                                <div className="tp-table-user-info">
+                                  <span className="tp-table-name">{contract.club_name}</span>
+                                </div>
+                              </div>
+                            </td>
+                            <td>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                <span style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '6px',
+                                  padding: '4px 10px',
+                                  borderRadius: '6px',
+                                  background: planColors.bg,
+                                  fontSize: '12px',
+                                  fontWeight: 500,
+                                  color: planColors.color,
+                                  width: 'fit-content'
+                                }}>
+                                  <FaCrown size={10} />
+                                  {contract.plan_type}
+                                </span>
+                                <span style={{ fontSize: '12px', color: '#6B7280' }}>
+                                  {contract.addons?.length > 0 ? `+${contract.addons.length} addon` : 'Nessun addon'}
+                                </span>
+                              </div>
+                            </td>
+                            <td>
+                              <span style={{ fontWeight: 600, color: '#059669' }}>
+                                {formatCurrency(contract.total_value)}
+                              </span>
+                              <span style={{ fontWeight: 400, color: '#6B7280', fontSize: '12px' }}>/anno</span>
+                            </td>
+                            <td>
+                              <div className="tp-table-user-info">
+                                <span style={{ fontSize: '14px', color: '#1f2937' }}>
+                                  {formatDate(contract.start_date)}
+                                </span>
+                                <span style={{ fontSize: '12px', color: '#6b7280' }}>
+                                  → {formatDate(contract.end_date)}
+                                </span>
+                              </div>
+                            </td>
+                            <td>
+                              <span style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                padding: '4px 10px',
+                                borderRadius: '20px',
+                                background: statusBadge.bg,
+                                color: statusBadge.color,
+                                fontSize: '12px',
+                                fontWeight: 500
+                              }}>
+                                {statusBadge.icon}
+                                {statusBadge.label}
+                              </span>
+                            </td>
+                            <td onClick={(e) => e.stopPropagation()}>
+                              <div className="tp-table-actions">
+                                <button
+                                  className="tp-btn-icon tp-btn-icon-view"
+                                  onClick={() => navigate(`/admin/contratti/${contract.id}`)}
+                                  title="Visualizza"
+                                >
+                                  <FaEye />
+                                </button>
+                                <button
+                                  className="tp-btn-icon"
+                                  onClick={(e) => handleDeleteContract(contract.id, e)}
+                                  title="Elimina"
+                                  style={{ color: '#DC2626' }}
+                                >
+                                  <FaTrash />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
               </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="tp-pagination">
+                  <button
+                    className="tp-pagination-btn"
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                  >
+                    <FaChevronLeft />
+                  </button>
+                  <span className="tp-pagination-info">
+                    Pagina {currentPage} di {totalPages}
+                  </span>
+                  <button
+                    className="tp-pagination-btn"
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                  >
+                    <FaChevronRight />
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* CARDS VIEW */}
+          {viewMode === 'cards' && (
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+              gap: '20px',
+              padding: '20px 0'
+            }}>
+              {paginatedContracts.length === 0 ? (
+                <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '60px', color: '#6B7280' }}>
+                  <FaInbox size={48} style={{ marginBottom: '16px', opacity: 0.5 }} />
+                  <p>Nessun contratto trovato</p>
+                </div>
+              ) : (
+                paginatedContracts.map(contract => {
+                  const statusBadge = getStatusBadge(contract.status);
+                  const planColors = PLAN_COLORS[contract.plan_type] || PLAN_COLORS.Basic;
+                  return (
+                    <div
+                      key={contract.id}
+                      onClick={() => navigate(`/admin/contratti/${contract.id}`)}
+                      style={{
+                        background: 'white',
+                        borderRadius: '16px',
+                        border: '1px solid #E5E7EB',
+                        padding: '20px',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = 'translateY(-2px)';
+                        e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.08)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'translateY(0)';
+                        e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.04)';
+                      }}
+                    >
+                      {/* Header */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                        <div style={{
+                          width: '56px',
+                          height: '56px',
+                          borderRadius: '12px',
+                          background: contract.club_logo_url ? 'white' : '#F3F4F6',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          overflow: 'hidden',
+                          border: '1px solid #E5E7EB'
+                        }}>
+                          {contract.club_logo_url ? (
+                            <img
+                              src={getImageUrl(contract.club_logo_url)}
+                              alt={contract.club_name}
+                              style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '4px' }}
+                            />
+                          ) : (
+                            <FaBuilding size={24} color="#6B7280" />
+                          )}
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 600, color: '#1A1A1A' }}>
+                            {contract.club_name}
+                          </h3>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
+                            <span style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              padding: '2px 8px',
+                              borderRadius: '4px',
+                              background: planColors.bg,
+                              fontSize: '11px',
+                              fontWeight: 500,
+                              color: planColors.color
+                            }}>
+                              <FaCrown size={8} />
+                              {contract.plan_type}
+                            </span>
+                            {contract.addons?.length > 0 && (
+                              <span style={{ fontSize: '11px', color: '#6B7280' }}>
+                                +{contract.addons.length} addon
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <span style={{
+                          padding: '4px 10px',
+                          borderRadius: '20px',
+                          background: statusBadge.bg,
+                          color: statusBadge.color,
+                          fontSize: '11px',
+                          fontWeight: 600
+                        }}>
+                          {statusBadge.label}
+                        </span>
+                      </div>
+
+                      {/* Value */}
+                      <div style={{
+                        padding: '16px',
+                        background: '#ECFDF5',
+                        borderRadius: '12px',
+                        textAlign: 'center',
+                        marginBottom: '16px'
+                      }}>
+                        <div style={{ fontSize: '24px', fontWeight: 700, color: '#059669' }}>
+                          {formatCurrency(contract.total_value)}
+                        </div>
+                        <div style={{ fontSize: '12px', color: '#065F46' }}>/anno</div>
+                      </div>
+
+                      {/* Info */}
+                      <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: '1fr 1fr',
+                        gap: '12px',
+                        padding: '16px 0',
+                        borderTop: '1px solid #F3F4F6'
+                      }}>
+                        <div>
+                          <span style={{ fontSize: '11px', color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                            Inizio
+                          </span>
+                          <p style={{ margin: '4px 0 0', fontSize: '14px', fontWeight: 500, color: '#1A1A1A' }}>
+                            {formatDate(contract.start_date)}
+                          </p>
+                        </div>
+                        <div>
+                          <span style={{ fontSize: '11px', color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                            Scadenza
+                          </span>
+                          <p style={{ margin: '4px 0 0', fontSize: '14px', fontWeight: 500, color: '#1A1A1A' }}>
+                            {formatDate(contract.end_date)}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Footer */}
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '12px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#6B7280' }}>
+                          <FaCalendarAlt size={10} />
+                          {formatDate(contract.start_date)} → {formatDate(contract.end_date)}
+                        </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/admin/contratti/${contract.id}`);
+                          }}
+                          style={{
+                            background: '#F3F4F6',
+                            border: 'none',
+                            borderRadius: '6px',
+                            padding: '6px 12px',
+                            fontSize: '12px',
+                            fontWeight: 500,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}
+                        >
+                          <FaEye size={10} /> Dettagli
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
             </div>
           )}
         </div>
       </div>
 
-      {/* Create/Edit Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex justify-between items-center">
-                <h2 className="text-xl font-bold text-gray-900">
-                  {selectedContract ? 'Modifica Contratto' : 'Nuovo Contratto'}
-                </h2>
-                <button onClick={() => { setShowModal(false); setSelectedContract(null); resetForm(); }} className="text-gray-400 hover:text-gray-600">
-                  <HiOutlineX className="w-6 h-6" />
-                </button>
-              </div>
-            </div>
-
-            <div className="p-6 space-y-6">
-              {/* Club Selection */}
-              {!selectedContract && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Club</label>
-                  <select
-                    value={formData.club_id}
-                    onChange={(e) => setFormData({ ...formData, club_id: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    required
-                  >
-                    <option value="">Seleziona un club...</option>
-                    {clubs.map(club => (
-                      <option key={club.id} value={club.id}>{club.nome}</option>
-                    ))}
-                  </select>
-                </div>
-              )}
-
-              {/* Plan Selection */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Piano</label>
-                <div className="grid grid-cols-3 gap-4">
-                  {['Basic', 'Premium', 'Elite'].map(plan => (
-                    <button
-                      key={plan}
-                      type="button"
-                      onClick={() => handlePlanChange(plan)}
-                      className={`p-4 rounded-lg border-2 transition-all ${
-                        formData.plan_type === plan
-                          ? 'border-blue-500 bg-blue-50'
-                          : 'border-gray-200 hover:border-gray-300'
-                      }`}
-                    >
-                      <div className="font-semibold text-gray-900">{PLAN_CONFIG[plan].name}</div>
-                      <div className="text-lg font-bold text-blue-600">{formatCurrency(PLAN_CONFIG[plan].price)}</div>
-                      <div className="text-xs text-gray-500">/anno</div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Addons */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Add-ons</label>
-                <div className="space-y-2">
-                  {ADDON_OPTIONS.map(addon => (
-                    <label
-                      key={addon.id}
-                      className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all ${
-                        formData.addons.find(a => a.id === addon.id || a.name === addon.name)
-                          ? 'border-blue-500 bg-blue-50'
-                          : 'border-gray-200 hover:border-gray-300'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <input
-                          type="checkbox"
-                          checked={!!formData.addons.find(a => a.id === addon.id || a.name === addon.name)}
-                          onChange={() => toggleAddon(addon)}
-                          className="w-4 h-4 text-blue-600 rounded"
-                        />
-                        <span className="font-medium text-gray-900">{addon.name}</span>
-                      </div>
-                      <span className="text-blue-600 font-semibold">{formatCurrency(addon.price)}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              {/* Total */}
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <div className="flex justify-between items-center">
-                  <span className="text-lg font-medium text-gray-700">Valore Totale Contratto</span>
-                  <span className="text-2xl font-bold text-green-600">{formatCurrency(calculateTotal())}</span>
-                </div>
-              </div>
-
-              {/* Dates */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Data Inizio</label>
-                  <input
-                    type="date"
-                    value={formData.start_date}
-                    onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Data Fine</label>
-                  <input
-                    type="date"
-                    value={formData.end_date}
-                    onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
-              </div>
-
-              {/* Payment Terms */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Termini di Pagamento</label>
-                  <select
-                    value={formData.payment_terms}
-                    onChange={(e) => setFormData({ ...formData, payment_terms: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="annual">Annuale</option>
-                    <option value="semi_annual">Semestrale</option>
-                    <option value="quarterly">Trimestrale</option>
-                    <option value="monthly">Mensile</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Metodo di Pagamento</label>
-                  <select
-                    value={formData.payment_method}
-                    onChange={(e) => setFormData({ ...formData, payment_method: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="bank_transfer">Bonifico Bancario</option>
-                    <option value="credit_card">Carta di Credito</option>
-                    <option value="sepa">SEPA</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Signature */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Firmato da</label>
-                  <input
-                    type="text"
-                    value={formData.signed_by}
-                    onChange={(e) => setFormData({ ...formData, signed_by: e.target.value })}
-                    placeholder="Nome del firmatario"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Data Firma</label>
-                  <input
-                    type="date"
-                    value={formData.signed_date}
-                    onChange={(e) => setFormData({ ...formData, signed_date: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
-              </div>
-
-              {/* Status (only for edit) */}
-              {selectedContract && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Stato</label>
-                  <select
-                    value={formData.status}
-                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    {Object.entries(STATUS_CONFIG).map(([key, config]) => (
-                      <option key={key} value={key}>{config.label}</option>
-                    ))}
-                  </select>
-                </div>
-              )}
-
-              {/* Notes */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Note</label>
-                <textarea
-                  value={formData.notes}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  rows={3}
-                  placeholder="Note aggiuntive..."
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-            </div>
-
-            <div className="p-6 border-t border-gray-200 flex justify-end gap-3">
-              <button
-                onClick={() => { setShowModal(false); setSelectedContract(null); resetForm(); }}
-                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-              >
-                Annulla
-              </button>
-              <button
-                onClick={selectedContract ? handleUpdateContract : handleCreateContract}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                {selectedContract ? 'Aggiorna' : 'Crea Contratto'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Detail Modal */}
-      {showDetailModal && selectedContract && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-lg w-full">
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex justify-between items-center">
-                <h2 className="text-xl font-bold text-gray-900">Dettaglio Contratto</h2>
-                <button onClick={() => { setShowDetailModal(false); setSelectedContract(null); }} className="text-gray-400 hover:text-gray-600">
-                  <HiOutlineX className="w-6 h-6" />
-                </button>
-              </div>
-            </div>
-
-            <div className="p-6 space-y-4">
-              <div className="flex justify-between">
-                <span className="text-gray-500">Club</span>
-                <span className="font-semibold">{selectedContract.club_name}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500">Piano</span>
-                <span className={`px-2 py-1 rounded-full text-sm ${PLAN_CONFIG[selectedContract.plan_type]?.color}`}>
-                  {PLAN_CONFIG[selectedContract.plan_type]?.name}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500">Prezzo Piano</span>
-                <span className="font-semibold">{formatCurrency(selectedContract.plan_price)}</span>
-              </div>
-              {selectedContract.addons?.length > 0 && (
-                <div>
-                  <span className="text-gray-500">Add-ons</span>
-                  <div className="mt-2 space-y-1">
-                    {selectedContract.addons.map((addon, idx) => (
-                      <div key={idx} className="flex justify-between text-sm">
-                        <span>{addon.name}</span>
-                        <span>{formatCurrency(addon.price)}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-              <div className="border-t pt-4 flex justify-between">
-                <span className="text-gray-700 font-medium">Valore Totale</span>
-                <span className="text-xl font-bold text-green-600">{formatCurrency(selectedContract.total_value)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500">Periodo</span>
-                <span>{formatDate(selectedContract.start_date)} → {formatDate(selectedContract.end_date)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500">Stato</span>
-                <span className={`px-2 py-1 rounded-full text-sm ${STATUS_CONFIG[selectedContract.status]?.color}`}>
-                  {STATUS_CONFIG[selectedContract.status]?.label}
-                </span>
-              </div>
-              {selectedContract.signed_by && (
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Firmato da</span>
-                  <span>{selectedContract.signed_by} ({formatDate(selectedContract.signed_date)})</span>
-                </div>
-              )}
-              {selectedContract.notes && (
-                <div>
-                  <span className="text-gray-500">Note</span>
-                  <p className="mt-1 text-sm text-gray-700">{selectedContract.notes}</p>
-                </div>
-              )}
-            </div>
-
-            <div className="p-6 border-t border-gray-200 flex justify-end">
-              <button
-                onClick={() => { setShowDetailModal(false); setSelectedContract(null); }}
-                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-              >
-                Chiudi
-              </button>
-            </div>
-          </div>
-        </div>
+      {/* Toast */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
       )}
     </div>
   );
-};
+}
 
 export default AdminContracts;

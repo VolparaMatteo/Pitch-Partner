@@ -5,7 +5,7 @@ from app.models import (
     Admin, Club, Pagamento, Fattura, Sponsor, Proposal,
     SubscriptionPlan, Subscription, SubscriptionEvent,
     CRMLead, CRMLeadActivity, AuditLog, AdminEmailTemplate, EmailLog, PlatformMetrics,
-    ClubInvoice, ClubActivity
+    ClubInvoice, ClubActivity, AdminContract
 )
 from datetime import datetime, timedelta
 from sqlalchemy import func, and_, or_
@@ -211,20 +211,42 @@ def get_clubs():
             return jsonify({'error': 'Accesso non autorizzato'}), 403
 
         clubs = Club.query.all()
-        return jsonify([{
-            'id': club.id,
-            'nome': club.nome,
-            'tipologia': club.tipologia,
-            'logo_url': club.logo_url,
-            'email': club.email,
-            'telefono': club.telefono,
-            'nome_abbonamento': club.nome_abbonamento,
-            'costo_abbonamento': club.costo_abbonamento,
-            'data_scadenza_licenza': club.data_scadenza_licenza.isoformat() if club.data_scadenza_licenza else None,
-            'account_attivo': club.account_attivo,
-            'licenza_valida': club.is_licenza_valida(),
-            'created_at': club.created_at.isoformat()
-        } for club in clubs]), 200
+        now = datetime.utcnow().date()
+
+        result = []
+        for club in clubs:
+            # Trova il contratto attivo per questo club
+            active_contract = AdminContract.query.filter(
+                AdminContract.club_id == club.id,
+                AdminContract.status == 'active'
+            ).order_by(AdminContract.end_date.desc()).first()
+
+            # Determina scadenza contratto
+            contract_end_date = None
+            contract_expired = False
+            if active_contract:
+                contract_end_date = active_contract.end_date.isoformat() if active_contract.end_date else None
+                contract_expired = active_contract.end_date < now if active_contract.end_date else False
+
+            result.append({
+                'id': club.id,
+                'nome': club.nome,
+                'tipologia': club.tipologia,
+                'logo_url': club.logo_url,
+                'email': club.email,
+                'telefono': club.telefono,
+                'nome_abbonamento': active_contract.plan_type.capitalize() if active_contract else club.nome_abbonamento,
+                'costo_abbonamento': active_contract.total_value if active_contract else club.costo_abbonamento,
+                'data_scadenza_licenza': contract_end_date,
+                'contract_end_date': contract_end_date,
+                'contract_expired': contract_expired,
+                'has_active_contract': active_contract is not None,
+                'account_attivo': club.account_attivo,
+                'licenza_valida': not contract_expired if active_contract else False,
+                'created_at': club.created_at.isoformat()
+            })
+
+        return jsonify(result), 200
     except Exception as e:
         print(f"Error in get_clubs: {str(e)}")
         import traceback
@@ -1977,30 +1999,34 @@ def get_clubs_stats():
         # Club attivi (account_attivo = True)
         active_clubs = Club.query.filter_by(account_attivo=True).count()
 
-        # Club con abbonamento attivo
-        now = datetime.utcnow()
-        subscriptions = Subscription.query.all()
+        # Contratti attivi
+        now = datetime.utcnow().date()
+        active_contracts = AdminContract.query.filter(
+            AdminContract.status == 'active',
+            AdminContract.end_date >= now
+        ).all()
 
-        trial_count = 0
-        active_sub_count = 0
-        expired_count = 0
+        # Contratti scaduti
+        expired_contracts = AdminContract.query.filter(
+            or_(
+                AdminContract.status == 'expired',
+                and_(AdminContract.status == 'active', AdminContract.end_date < now)
+            )
+        ).count()
+
+        # Calcola MRR dai contratti attivi (valore annuale / 12)
         mrr = 0
-
-        for sub in subscriptions:
-            if sub.status == 'trial' and sub.trial_ends_at and sub.trial_ends_at > now:
-                trial_count += 1
-            elif sub.status == 'active' and sub.is_active():
-                active_sub_count += 1
-                # Calcola MRR
-                if sub.prezzo_concordato:
-                    if sub.billing_cycle == 'monthly':
-                        mrr += sub.prezzo_concordato
-                    elif sub.billing_cycle == 'quarterly':
-                        mrr += sub.prezzo_concordato / 3
-                    elif sub.billing_cycle == 'annual':
-                        mrr += sub.prezzo_concordato / 12
-            elif sub.status in ['expired', 'cancelled'] or (sub.data_fine and sub.data_fine < now):
-                expired_count += 1
+        for contract in active_contracts:
+            if contract.total_value:
+                # Assumiamo contratti annuali, dividiamo per 12
+                if contract.payment_terms == 'monthly':
+                    mrr += contract.total_value
+                elif contract.payment_terms == 'quarterly':
+                    mrr += contract.total_value / 3
+                elif contract.payment_terms == 'semi_annual':
+                    mrr += contract.total_value / 6
+                else:  # annual o default
+                    mrr += contract.total_value / 12
 
         # Fatture non pagate
         unpaid_invoices = ClubInvoice.query.filter(
@@ -2014,9 +2040,9 @@ def get_clubs_stats():
         return jsonify({
             'total_clubs': total_clubs,
             'active_clubs': active_clubs,
-            'trial_clubs': trial_count,
-            'active_subscriptions': active_sub_count,
-            'expired_subscriptions': expired_count,
+            'trial_clubs': 0,
+            'active_subscriptions': len(active_contracts),
+            'expired_subscriptions': expired_contracts,
             'mrr': round(mrr, 2),
             'unpaid_invoices': unpaid_invoices,
             'unpaid_amount': round(unpaid_amount, 2)

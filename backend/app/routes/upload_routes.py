@@ -10,9 +10,10 @@ LOGO_FOLDER = os.path.join(BASE_UPLOAD_FOLDER, 'logos')
 DOCUMENTS_FOLDER = os.path.join(BASE_UPLOAD_FOLDER, 'documents')
 MEDIA_FOLDER = os.path.join(BASE_UPLOAD_FOLDER, 'media')
 FATTURE_FOLDER = os.path.join(BASE_UPLOAD_FOLDER, 'fatture')
+CONTRACTS_FOLDER = os.path.join(BASE_UPLOAD_FOLDER, 'contracts')
 
 # Crea cartelle se non esistono
-for folder in [LOGO_FOLDER, DOCUMENTS_FOLDER, MEDIA_FOLDER, FATTURE_FOLDER]:
+for folder in [LOGO_FOLDER, DOCUMENTS_FOLDER, MEDIA_FOLDER, FATTURE_FOLDER, CONTRACTS_FOLDER]:
     os.makedirs(folder, exist_ok=True)
 
 ALLOWED_IMAGES = {'png', 'jpg', 'jpeg', 'gif', 'svg', 'webp'}
@@ -179,3 +180,37 @@ def upload_fattura():
 @upload_bp.route('/uploads/fatture/<filename>')
 def serve_fattura(filename):
     return send_from_directory(FATTURE_FOLDER, filename)
+
+@upload_bp.route('/upload/contract', methods=['POST'])
+def upload_contract():
+    if 'file' not in request.files:
+        return jsonify({'error': 'Nessun file caricato'}), 400
+
+    file = request.files['file']
+
+    if file.filename == '':
+        return jsonify({'error': 'Nessun file selezionato'}), 400
+
+    if not allowed_file(file.filename, {'pdf'}):
+        return jsonify({'error': 'Solo file PDF sono accettati per i contratti'}), 400
+
+    # Genera nome file unico
+    filename = f"{uuid.uuid4()}.pdf"
+
+    # Salva file
+    filepath = os.path.join(CONTRACTS_FOLDER, filename)
+    file_size = get_file_size(file)
+    file.save(filepath)
+
+    # Ritorna URL del file
+    file_url = f"/api/uploads/contracts/{filename}"
+
+    return jsonify({
+        'message': 'Contratto caricato con successo',
+        'file_url': file_url,
+        'file_size': file_size
+    }), 200
+
+@upload_bp.route('/uploads/contracts/<filename>')
+def serve_contract(filename):
+    return send_from_directory(CONTRACTS_FOLDER, filename)
