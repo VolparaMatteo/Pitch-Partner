@@ -260,13 +260,13 @@ function AdminInvoiceForm() {
           headers: { Authorization: `Bearer ${token}` }
         });
         setToast({ message: 'Fattura aggiornata con successo!', type: 'success' });
-        setTimeout(() => navigate('/admin/finanze'), 1500);
+        setTimeout(() => navigate('/admin/finanze?tab=invoices'), 1500);
       } else {
         await axios.post(`${API_URL}/admin/invoices`, payload, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setToast({ message: 'Fattura creata con successo!', type: 'success' });
-        setTimeout(() => navigate('/admin/finanze'), 1500);
+        setTimeout(() => navigate('/admin/finanze?tab=invoices'), 1500);
       }
     } catch (error) {
       console.error('Errore salvataggio:', error);

@@ -139,7 +139,8 @@ function AdminContractDetail() {
 
   const planConfig = PLAN_CONFIG[contract.plan_type] || PLAN_CONFIG.basic;
   const statusConfig = STATUS_CONFIG[contract.status] || STATUS_CONFIG.draft;
-  const monthlyValue = Math.round((contract.total_value || 0) / 12);
+  const contractTotalWithVat = contract.total_value_with_vat || contract.total_value || 0;
+  const monthlyValue = Math.round(contractTotalWithVat / 12);
 
   const tabs = [
     { id: 'details', label: 'Dettagli', icon: <FaFileContract size={14} /> },
@@ -183,9 +184,10 @@ function AdminContractDetail() {
               <h3 className="sd-section-title">Valore Contratto</h3>
               <div style={{ background: '#ECFDF5', borderRadius: '12px', padding: '20px', textAlign: 'center' }}>
                 <div style={{ fontSize: '32px', fontWeight: 700, color: '#059669' }}>
-                  {formatCurrency(contract.total_value)}
+                  {formatCurrency(contractTotalWithVat)}
                 </div>
-                <div style={{ fontSize: '13px', color: '#065F46', marginTop: '4px' }}>/anno</div>
+                <div style={{ fontSize: '13px', color: '#065F46', marginTop: '4px' }}>/anno (IVA incl.)</div>
+                <div style={{ fontSize: '11px', color: '#065F46', marginTop: '2px' }}>Netto: {formatCurrency(contract.total_value)}</div>
                 <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #A7F3D0', display: 'flex', justifyContent: 'center', gap: '24px' }}>
                   <div>
                     <div style={{ fontSize: '18px', fontWeight: 600, color: '#059669' }}>{formatCurrency(monthlyValue)}</div>
@@ -322,9 +324,9 @@ function AdminContractDetail() {
                   </div>
                   <div style={{ background: '#EFF6FF', borderRadius: '12px', padding: '16px', textAlign: 'center' }}>
                     <div style={{ fontSize: '24px', fontWeight: 700, color: '#3B82F6' }}>
-                      {formatCurrency(contract.total_value)}
+                      {formatCurrency(contractTotalWithVat)}
                     </div>
-                    <div style={{ fontSize: '13px', color: '#1E40AF' }}>Valore Annuo</div>
+                    <div style={{ fontSize: '13px', color: '#1E40AF' }}>Valore Annuo (IVA incl.)</div>
                   </div>
                   <div style={{ background: '#FEF3C7', borderRadius: '12px', padding: '16px', textAlign: 'center' }}>
                     <div style={{ fontSize: '20px', fontWeight: 700, color: '#D97706' }}>
@@ -526,7 +528,7 @@ function AdminContractDetail() {
                           </div>
                         </div>
                         <div style={{ textAlign: 'right' }}>
-                          <div style={{ fontWeight: 600, color: '#059669' }}>{formatCurrency(invoice.total)}</div>
+                          <div style={{ fontWeight: 600, color: '#059669' }}>{formatCurrency(invoice.total_amount)}</div>
                           <span style={{
                             padding: '2px 8px',
                             borderRadius: '10px',

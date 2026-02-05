@@ -72,6 +72,7 @@ function AdminContractForm() {
     plan_type: 'Premium',
     plan_price: 0,
     addons: [],
+    vat_rate: 22,
     start_date: new Date().toISOString().split('T')[0],
     end_date: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0],
     payment_terms: 'annual',
@@ -127,6 +128,7 @@ function AdminContractForm() {
         plan_type: contract.plan_type || 'Premium',
         plan_price: contract.plan_price || 0,
         addons: contract.addons || [],
+        vat_rate: contract.vat_rate ?? 22,
         start_date: contract.start_date || '',
         end_date: contract.end_date || '',
         payment_terms: contract.payment_terms || 'annual',
@@ -189,6 +191,14 @@ function AdminContractForm() {
     const planPrice = formData.plan_price || 0;
     const addonsTotal = formData.addons.reduce((sum, a) => sum + (a.price || 0), 0);
     return planPrice + addonsTotal;
+  };
+
+  const calculateVat = () => {
+    return calculateTotal() * ((parseFloat(formData.vat_rate) || 22) / 100);
+  };
+
+  const calculateTotalWithVat = () => {
+    return calculateTotal() + calculateVat();
   };
 
   const formatCurrency = (value) => {
@@ -589,18 +599,36 @@ function AdminContractForm() {
                     </div>
                   </div>
 
-                  {/* Total */}
+                  {/* IVA */}
+                  <div className="form-group" style={{ marginTop: '20px' }}>
+                    <label>Aliquota IVA (%)</label>
+                    <input
+                      type="number"
+                      value={formData.vat_rate}
+                      onChange={(e) => setFormData({ ...formData, vat_rate: e.target.value })}
+                      style={{ maxWidth: '120px' }}
+                    />
+                  </div>
+
+                  {/* Total with VAT */}
                   <div style={{
                     marginTop: '24px',
                     padding: '20px',
                     background: 'linear-gradient(135deg, #1A1A1A 0%, #374151 100%)',
-                    borderRadius: '12px',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center'
+                    borderRadius: '12px'
                   }}>
-                    <span style={{ color: 'white', fontSize: '16px', fontWeight: 500 }}>Valore Totale Contratto</span>
-                    <span style={{ color: '#85FF00', fontSize: '28px', fontWeight: 700 }}>{formatCurrency(calculateTotal())}</span>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
+                      <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: '14px' }}>Imponibile</span>
+                      <span style={{ color: 'white', fontSize: '16px', fontWeight: 500 }}>{formatCurrency(calculateTotal())}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                      <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: '14px' }}>IVA ({formData.vat_rate}%)</span>
+                      <span style={{ color: 'white', fontSize: '16px', fontWeight: 500 }}>{formatCurrency(calculateVat())}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ color: 'white', fontSize: '16px', fontWeight: 500 }}>Totale Contratto (IVA incl.)</span>
+                      <span style={{ color: '#85FF00', fontSize: '28px', fontWeight: 700 }}>{formatCurrency(calculateTotalWithVat())}</span>
+                    </div>
                   </div>
                 </div>
               )}
@@ -859,9 +887,13 @@ function AdminContractForm() {
                         <span style={{ color: '#6B7280' }}>Periodo</span>
                         <span style={{ fontWeight: 500 }}>{formatDate(formData.start_date)} → {formatDate(formData.end_date)}</span>
                       </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ color: '#6B7280' }}>IVA ({formData.vat_rate}%)</span>
+                        <span style={{ fontWeight: 500 }}>{formatCurrency(calculateVat())}</span>
+                      </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '12px', borderTop: '1px solid #E5E7EB' }}>
-                        <span style={{ fontWeight: 600, color: '#1A1A1A' }}>Valore Totale</span>
-                        <span style={{ fontWeight: 700, color: '#059669', fontSize: '18px' }}>{formatCurrency(calculateTotal())}</span>
+                        <span style={{ fontWeight: 600, color: '#1A1A1A' }}>Totale (IVA incl.)</span>
+                        <span style={{ fontWeight: 700, color: '#059669', fontSize: '18px' }}>{formatCurrency(calculateTotalWithVat())}</span>
                       </div>
                     </div>
                   </div>
@@ -929,9 +961,10 @@ function AdminContractForm() {
                 textAlign: 'center',
                 marginBottom: '16px'
               }}>
-                <div style={{ fontSize: '12px', color: '#065F46', fontWeight: 500, marginBottom: '4px' }}>Valore Contratto</div>
-                <div style={{ fontSize: '32px', fontWeight: 700, color: '#059669' }}>{formatCurrency(calculateTotal())}</div>
+                <div style={{ fontSize: '12px', color: '#065F46', fontWeight: 500, marginBottom: '4px' }}>Valore Contratto (IVA incl.)</div>
+                <div style={{ fontSize: '32px', fontWeight: 700, color: '#059669' }}>{formatCurrency(calculateTotalWithVat())}</div>
                 <div style={{ fontSize: '12px', color: '#065F46' }}>/anno</div>
+                <div style={{ fontSize: '11px', color: '#065F46', marginTop: '4px' }}>Netto: {formatCurrency(calculateTotal())}</div>
               </div>
 
               {/* Details */}
@@ -952,6 +985,11 @@ function AdminContractForm() {
                     ))}
                   </div>
                 )}
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #F3F4F6' }}>
+                  <span style={{ fontSize: '13px', color: '#6B7280' }}>IVA ({formData.vat_rate}%)</span>
+                  <span style={{ fontSize: '13px', fontWeight: 600 }}>{formatCurrency(calculateVat())}</span>
+                </div>
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #F3F4F6' }}>
                   <span style={{ fontSize: '13px', color: '#6B7280' }}>Periodo</span>

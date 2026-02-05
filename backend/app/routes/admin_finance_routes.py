@@ -259,21 +259,21 @@ def get_finance_dashboard():
     year = request.args.get('year', datetime.now().year, type=int)
     today = date.today()
 
-    # === ARR (Annual Recurring Revenue) ===
+    # === ARR (Annual Recurring Revenue) - con IVA ===
     active_contracts = AdminContract.query.filter(
         AdminContract.status == 'active'
     ).all()
-    total_arr = sum(c.total_value for c in active_contracts)
+    total_arr = sum(c.total_value_with_vat for c in active_contracts)
     mrr = total_arr / 12
 
-    # ARR per piano
+    # ARR per piano (con IVA)
     arr_by_plan = {'basic': 0, 'premium': 0, 'elite': 0}
     for contract in active_contracts:
         plan = contract.plan_type.lower()
         if plan in arr_by_plan:
-            arr_by_plan[plan] += contract.total_value
+            arr_by_plan[plan] += contract.total_value_with_vat
         elif plan == 'kickoff':
-            arr_by_plan['basic'] += contract.total_value
+            arr_by_plan['basic'] += contract.total_value_with_vat
 
     # === CASH-IN (Fatture pagate) ===
     # Totale anno
@@ -294,14 +294,14 @@ def get_finance_dashboard():
     current_month = today.month
     cash_in_this_month = cash_in_by_month.get(current_month, 0)
 
-    # === DA INCASSARE (basato sui contratti, non solo fatture) ===
+    # === DA INCASSARE (basato sui contratti con IVA, non solo fatture) ===
     # Totale pagato da tutti i contratti attivi
     total_paid_from_contracts = 0
     for contract in active_contracts:
         contract_invoices = AdminInvoice.query.filter_by(contract_id=contract.id, status='paid').all()
         total_paid_from_contracts += sum(inv.total_amount for inv in contract_invoices)
 
-    # Da incassare = valore totale contratti - già pagato
+    # Da incassare = valore totale contratti (con IVA) - già pagato (fatture con IVA)
     total_pending = total_arr - total_paid_from_contracts
     pending_count = len(active_contracts)  # Numero di contratti attivi
 
@@ -328,22 +328,24 @@ def get_finance_dashboard():
     ).all()
     expected_cash_in_30d = sum(inv.total_amount for inv in upcoming_invoices)
 
-    # === RIEPILOGO PER CLUB ===
+    # === RIEPILOGO PER CLUB (con IVA) ===
     club_stats = []
     for contract in active_contracts:
         club = contract.club
         # Get all invoices for this specific contract
         contract_invoices = AdminInvoice.query.filter_by(contract_id=contract.id).all()
         paid = sum(inv.total_amount for inv in contract_invoices if inv.status == 'paid')
-        # "Da Pagare" = contract value - what has been paid
-        pending = contract.total_value - paid
+        # "Da Pagare" = valore contratto con IVA - fatture pagate (già con IVA)
+        contract_total = contract.total_value_with_vat
+        pending = contract_total - paid
 
         club_stats.append({
             'club_id': club.id,
             'club_name': club.nome,
             'club_logo_url': club.logo_url,
             'plan': contract.plan_type,
-            'contract_value': contract.total_value,
+            'contract_value': contract_total,
+            'vat_rate': contract.vat_rate if contract.vat_rate is not None else 22.0,
             'paid': paid,
             'pending': max(0, pending),  # Ensure non-negative
             'balance': max(0, pending)

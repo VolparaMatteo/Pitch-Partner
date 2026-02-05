@@ -2290,18 +2290,26 @@ def get_club_invoices(club_id):
 @admin_bp.route('/clubs/<int:club_id>/invoices', methods=['POST'])
 @jwt_required()
 def create_club_invoice(club_id):
-    """Crea una nuova fattura per il club"""
+    """Crea una nuova fattura per il club (usa AdminInvoice)"""
     if not verify_admin():
         return jsonify({'error': 'Accesso non autorizzato'}), 403
 
     club = Club.query.get_or_404(club_id)
     data = request.get_json()
 
+    # Trova il contratto attivo per questo club
+    active_contract = AdminContract.query.filter_by(
+        club_id=club_id, status='active'
+    ).first()
+
+    if not active_contract:
+        return jsonify({'error': 'Nessun contratto attivo per questo club. Crea prima un contratto.'}), 400
+
     # Genera numero fattura
     year = datetime.utcnow().year
-    last_invoice = ClubInvoice.query.filter(
-        ClubInvoice.invoice_number.like(f'FT-{year}-%')
-    ).order_by(ClubInvoice.id.desc()).first()
+    last_invoice = AdminInvoice.query.filter(
+        AdminInvoice.invoice_number.like(f'PP-{year}-%')
+    ).order_by(AdminInvoice.id.desc()).first()
 
     if last_invoice:
         last_num = int(last_invoice.invoice_number.split('-')[-1])
@@ -2309,32 +2317,35 @@ def create_club_invoice(club_id):
     else:
         new_num = 1
 
-    invoice_number = f"FT-{year}-{new_num:04d}"
+    invoice_number = f"PP-{year}-{new_num:04d}"
 
-    # Crea fattura
-    invoice = ClubInvoice(
+    # Calcola importi
+    subtotal = float(data.get('subtotal', 0))
+    vat_rate = float(data.get('tax_rate', 22))
+    vat_amount = subtotal * (vat_rate / 100)
+    total_amount = subtotal + vat_amount
+
+    # Crea fattura AdminInvoice
+    invoice = AdminInvoice(
+        contract_id=active_contract.id,
         club_id=club_id,
-        subscription_id=data.get('subscription_id'),
         invoice_number=invoice_number,
-        issue_date=datetime.fromisoformat(data['issue_date']) if data.get('issue_date') else datetime.utcnow(),
-        due_date=datetime.fromisoformat(data['due_date']) if data.get('due_date') else datetime.utcnow() + timedelta(days=30),
-        subtotal=data.get('subtotal', 0),
-        tax_rate=data.get('tax_rate', 22),
-        description=data.get('description'),
-        period_start=datetime.fromisoformat(data['period_start']) if data.get('period_start') else None,
-        period_end=datetime.fromisoformat(data['period_end']) if data.get('period_end') else None,
+        amount=subtotal,
+        vat_rate=vat_rate,
+        vat_amount=vat_amount,
+        total_amount=total_amount,
+        issue_date=datetime.fromisoformat(data['issue_date']).date() if data.get('issue_date') else datetime.utcnow().date(),
+        due_date=datetime.fromisoformat(data['due_date']).date() if data.get('due_date') else (datetime.utcnow() + timedelta(days=30)).date(),
         notes=data.get('notes'),
-        status=data.get('status', 'draft')
+        status=data.get('status', 'pending'),
+        created_by=get_jwt_identity()
     )
-
-    # Calcola totali
-    invoice.calculate_totals()
 
     db.session.add(invoice)
     db.session.commit()
 
     # Log azione
-    log_action('fattura_creata', 'club_invoice', invoice.id,
+    log_action('fattura_creata', 'admin_invoice', invoice.id,
                f"Fattura {invoice_number} creata per club {club.nome}")
 
     return jsonify({
@@ -2346,11 +2357,11 @@ def create_club_invoice(club_id):
 @admin_bp.route('/clubs/<int:club_id>/invoices/<int:invoice_id>', methods=['PUT'])
 @jwt_required()
 def update_club_invoice(club_id, invoice_id):
-    """Aggiorna una fattura"""
+    """Aggiorna una fattura (usa AdminInvoice)"""
     if not verify_admin():
         return jsonify({'error': 'Accesso non autorizzato'}), 403
 
-    invoice = ClubInvoice.query.filter_by(id=invoice_id, club_id=club_id).first_or_404()
+    invoice = AdminInvoice.query.filter_by(id=invoice_id, club_id=club_id).first_or_404()
     data = request.get_json()
 
     # Aggiorna campi
@@ -2360,29 +2371,30 @@ def update_club_invoice(club_id, invoice_id):
 
         # Se pagata, registra data pagamento
         if data['status'] == 'paid' and old_status != 'paid':
-            invoice.paid_at = datetime.utcnow()
+            invoice.payment_date = datetime.utcnow().date()
             invoice.payment_method = data.get('payment_method')
             invoice.payment_reference = data.get('payment_reference')
 
+    if 'amount' in data:
+        invoice.amount = float(data['amount'])
     if 'subtotal' in data:
-        invoice.subtotal = data['subtotal']
-        invoice.calculate_totals()
+        invoice.amount = float(data['subtotal'])
 
-    if 'tax_rate' in data:
-        invoice.tax_rate = data['tax_rate']
-        invoice.calculate_totals()
+    if 'vat_rate' in data or 'tax_rate' in data:
+        invoice.vat_rate = float(data.get('vat_rate', data.get('tax_rate', invoice.vat_rate)))
+
+    # Ricalcola IVA e totale
+    invoice.vat_amount = invoice.amount * (invoice.vat_rate / 100)
+    invoice.total_amount = invoice.amount + invoice.vat_amount
 
     if 'due_date' in data:
-        invoice.due_date = datetime.fromisoformat(data['due_date']) if data['due_date'] else None
-
-    if 'description' in data:
-        invoice.description = data['description']
+        invoice.due_date = datetime.fromisoformat(data['due_date']).date() if data['due_date'] else None
 
     if 'notes' in data:
         invoice.notes = data['notes']
 
-    if 'pdf_url' in data:
-        invoice.pdf_url = data['pdf_url']
+    if 'invoice_document_url' in data:
+        invoice.invoice_document_url = data['invoice_document_url']
 
     db.session.commit()
 
@@ -2395,14 +2407,14 @@ def update_club_invoice(club_id, invoice_id):
 @admin_bp.route('/clubs/<int:club_id>/invoices/<int:invoice_id>', methods=['DELETE'])
 @jwt_required()
 def delete_club_invoice(club_id, invoice_id):
-    """Elimina una fattura (solo se draft)"""
+    """Elimina una fattura"""
     if not verify_admin():
         return jsonify({'error': 'Accesso non autorizzato'}), 403
 
-    invoice = ClubInvoice.query.filter_by(id=invoice_id, club_id=club_id).first_or_404()
+    invoice = AdminInvoice.query.filter_by(id=invoice_id, club_id=club_id).first_or_404()
 
-    if invoice.status != 'draft':
-        return jsonify({'error': 'Solo le fatture in bozza possono essere eliminate'}), 400
+    if invoice.status == 'paid':
+        return jsonify({'error': 'Impossibile eliminare una fattura già pagata'}), 400
 
     db.session.delete(invoice)
     db.session.commit()
@@ -2464,32 +2476,6 @@ def create_club_activity(club_id):
     }), 201
 
 
-@admin_bp.route('/invoices', methods=['GET'])
-@jwt_required()
-def get_all_invoices():
-    """Ottieni tutte le fatture (con filtri)"""
-    if not verify_admin():
-        return jsonify({'error': 'Accesso non autorizzato'}), 403
-
-    status = request.args.get('status')
-    page = request.args.get('page', 1, type=int)
-    per_page = request.args.get('per_page', 20, type=int)
-
-    query = ClubInvoice.query
-
-    if status:
-        query = query.filter_by(status=status)
-
-    invoices = query.order_by(ClubInvoice.issue_date.desc()).paginate(
-        page=page, per_page=per_page
-    )
-
-    return jsonify({
-        'invoices': [{
-            **i.to_dict(),
-            'club_nome': i.club.nome if i.club else None
-        } for i in invoices.items],
-        'total': invoices.total,
-        'pages': invoices.pages,
-        'current_page': page
-    }), 200
+## GET /invoices route rimossa - gestita da admin_finance_routes.py (admin_finance_bp)
+## La vecchia route leggeva da ClubInvoice (tabella sbagliata)
+## La route corretta in admin_finance_routes legge da AdminInvoice

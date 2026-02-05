@@ -114,6 +114,9 @@ def create_contract():
 
     total_value = plan_price + addon_total
 
+    # IVA
+    vat_rate = float(data.get('vat_rate', 22.0))
+
     # Crea contratto
     contract = AdminContract(
         club_id=data['club_id'],
@@ -121,6 +124,7 @@ def create_contract():
         plan_price=plan_price,
         addons=addons,
         total_value=total_value,
+        vat_rate=vat_rate,
         start_date=datetime.strptime(data['start_date'], '%Y-%m-%d').date(),
         end_date=datetime.strptime(data['end_date'], '%Y-%m-%d').date(),
         renewal_date=datetime.strptime(data['renewal_date'], '%Y-%m-%d').date() if data.get('renewal_date') else None,
@@ -201,6 +205,9 @@ def update_contract(contract_id):
     if 'signed_date' in data:
         contract.signed_date = datetime.strptime(data['signed_date'], '%Y-%m-%d').date() if data['signed_date'] else None
 
+    if 'vat_rate' in data:
+        contract.vat_rate = float(data['vat_rate'])
+
     # Ricalcola valore totale
     addon_total = sum(addon.get('price', 0) for addon in (contract.addons or []))
     contract.total_value = contract.plan_price + addon_total
@@ -254,15 +261,15 @@ def get_contract_stats():
         AdminContract.status == 'active'
     ).all()
 
-    # ARR totale
-    total_arr = sum(c.total_value for c in active_contracts)
+    # ARR totale (con IVA per coerenza con fatture)
+    total_arr = sum(c.total_value_with_vat for c in active_contracts)
 
     # ARR per piano
     arr_by_plan = {}
     contracts_by_plan = {}
     for contract in active_contracts:
         plan = contract.plan_type
-        arr_by_plan[plan] = arr_by_plan.get(plan, 0) + contract.total_value
+        arr_by_plan[plan] = arr_by_plan.get(plan, 0) + contract.total_value_with_vat
         contracts_by_plan[plan] = contracts_by_plan.get(plan, 0) + 1
 
     # Contratti in scadenza nei prossimi 90 giorni

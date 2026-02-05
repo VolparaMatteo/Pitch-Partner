@@ -627,7 +627,7 @@ function AdminContracts() {
                             </td>
                             <td>
                               <span style={{ fontWeight: 600, color: '#059669' }}>
-                                {formatCurrency(contract.total_value)}
+                                {formatCurrency(contract.total_value_with_vat || contract.total_value)}
                               </span>
                               <span style={{ fontWeight: 400, color: '#6B7280', fontSize: '12px' }}>/anno</span>
                             </td>
@@ -818,7 +818,7 @@ function AdminContracts() {
                         marginBottom: '16px'
                       }}>
                         <div style={{ fontSize: '24px', fontWeight: 700, color: '#059669' }}>
-                          {formatCurrency(contract.total_value)}
+                          {formatCurrency(contract.total_value_with_vat || contract.total_value)}
                         </div>
                         <div style={{ fontSize: '12px', color: '#065F46' }}>/anno</div>
                       </div>

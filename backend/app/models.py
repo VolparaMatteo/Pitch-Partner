@@ -6428,7 +6428,10 @@ class AdminContract(db.Model):
     addons = db.Column(db.JSON, default=[])  # [{"name": "Setup", "price": 2500}, ...]
 
     # Valore totale contratto
-    total_value = db.Column(db.Float, nullable=False)  # ARR totale (piano + addons)
+    total_value = db.Column(db.Float, nullable=False)  # ARR totale netto (piano + addons)
+
+    # IVA
+    vat_rate = db.Column(db.Float, default=22.0)  # Aliquota IVA %
 
     # Date contratto
     start_date = db.Column(db.Date, nullable=False)
@@ -6459,7 +6462,19 @@ class AdminContract(db.Model):
     club = db.relationship('Club', backref=db.backref('admin_contracts', lazy='dynamic'))
     invoices = db.relationship('AdminInvoice', backref='contract', lazy='dynamic')
 
+    @property
+    def vat_amount(self):
+        rate = self.vat_rate if self.vat_rate is not None else 22.0
+        return round(self.total_value * (rate / 100), 2)
+
+    @property
+    def total_value_with_vat(self):
+        return round(self.total_value + self.vat_amount, 2)
+
     def to_dict(self):
+        vat_rate = self.vat_rate if self.vat_rate is not None else 22.0
+        vat_amount = round(self.total_value * (vat_rate / 100), 2)
+        total_with_vat = round(self.total_value + vat_amount, 2)
         return {
             'id': self.id,
             'club_id': self.club_id,
@@ -6469,6 +6484,9 @@ class AdminContract(db.Model):
             'plan_price': self.plan_price,
             'addons': self.addons or [],
             'total_value': self.total_value,
+            'vat_rate': vat_rate,
+            'vat_amount': vat_amount,
+            'total_value_with_vat': total_with_vat,
             'start_date': self.start_date.isoformat() if self.start_date else None,
             'end_date': self.end_date.isoformat() if self.end_date else None,
             'renewal_date': self.renewal_date.isoformat() if self.renewal_date else None,

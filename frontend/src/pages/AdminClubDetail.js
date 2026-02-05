@@ -567,7 +567,7 @@ function AdminClubDetail() {
                     {(() => {
                       const activeContract = contracts.find(c => c.status === 'active');
                       const planConfig = CONTRACT_PLAN_CONFIG[activeContract?.plan_type] || CONTRACT_PLAN_CONFIG.basic;
-                      const annualValue = activeContract?.total_value || 0;
+                      const annualValue = activeContract?.total_value_with_vat || activeContract?.total_value || 0;
                       const monthlyValue = Math.round(annualValue / 12);
 
                       return (
@@ -584,7 +584,7 @@ function AdminClubDetail() {
                               <div style={{ fontSize: '24px', fontWeight: 700, color: '#3B82F6' }}>
                                 €{annualValue.toLocaleString()}
                               </div>
-                              <div style={{ fontSize: '13px', color: '#1E40AF' }}>Valore Annuo</div>
+                              <div style={{ fontSize: '13px', color: '#1E40AF' }}>Valore Annuo (IVA incl.)</div>
                             </div>
                             <div style={{ background: '#FEF3C7', borderRadius: '12px', padding: '16px', textAlign: 'center' }}>
                               <div style={{ fontSize: '24px', fontWeight: 700, color: '#D97706' }}>
@@ -782,7 +782,7 @@ function AdminClubDetail() {
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '24px' }}>
                       <div style={{ background: '#ECFDF5', borderRadius: '12px', padding: '16px', textAlign: 'center' }}>
                         <div style={{ fontSize: '24px', fontWeight: 700, color: '#059669' }}>
-                          €{contracts.filter(c => c.status === 'active').reduce((sum, c) => sum + (c.total_value || 0), 0).toLocaleString()}
+                          €{contracts.filter(c => c.status === 'active').reduce((sum, c) => sum + (c.total_value_with_vat || c.total_value || 0), 0).toLocaleString()}
                         </div>
                         <div style={{ fontSize: '13px', color: '#065F46' }}>Valore Attivo</div>
                       </div>
@@ -860,9 +860,9 @@ function AdminClubDetail() {
                               </div>
                               <div style={{ textAlign: 'right' }}>
                                 <div style={{ fontSize: '20px', fontWeight: 700, color: '#059669' }}>
-                                  €{(contract.total_value || 0).toLocaleString()}
+                                  €{(contract.total_value_with_vat || contract.total_value || 0).toLocaleString()}
                                 </div>
-                                <div style={{ fontSize: '12px', color: '#6B7280' }}>/anno</div>
+                                <div style={{ fontSize: '12px', color: '#6B7280' }}>/anno (IVA incl.)</div>
                               </div>
                             </div>
 
@@ -1036,7 +1036,7 @@ function AdminClubDetail() {
                             <tr key={invoice.id}>
                               <td><span style={{ fontWeight: 600 }}>{invoice.invoice_number}</span></td>
                               <td>{formatDate(invoice.issue_date)}</td>
-                              <td><span style={{ fontWeight: 600, color: '#059669' }}>€{invoice.total?.toLocaleString()}</span></td>
+                              <td><span style={{ fontWeight: 600, color: '#059669' }}>€{(invoice.total_amount || invoice.total)?.toLocaleString()}</span></td>
                               <td>
                                 <span style={{
                                   display: 'inline-flex',

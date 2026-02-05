@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { getAuth } from '../utils/auth';
 import { getImageUrl } from '../utils/imageUtils';
 import {
@@ -36,6 +36,7 @@ const MONTHS = ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', '
 
 const AdminFinance = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const authData = useMemo(() => getAuth(), []);
   const { user, token } = authData;
 
@@ -43,7 +44,7 @@ const AdminFinance = () => {
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'dashboard');
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
 
   // Detail modal
