@@ -18,12 +18,14 @@ import {
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5003';
 
-// Plan configuration
+// Plan configuration - allineato con Obiettivi 2026
 const PLAN_CONFIG = {
   basic: { name: 'Basic', price: 10000, color: 'bg-gray-100 text-gray-800' },
-  kickoff: { name: 'Kickoff', price: 10000, color: 'bg-gray-100 text-gray-800' },
+  Basic: { name: 'Basic', price: 10000, color: 'bg-gray-100 text-gray-800' },
   premium: { name: 'Premium', price: 15000, color: 'bg-blue-100 text-blue-800' },
-  elite: { name: 'Elite', price: 25000, color: 'bg-purple-100 text-purple-800' }
+  Premium: { name: 'Premium', price: 15000, color: 'bg-blue-100 text-blue-800' },
+  elite: { name: 'Elite', price: 25000, color: 'bg-yellow-100 text-yellow-800' },
+  Elite: { name: 'Elite', price: 25000, color: 'bg-yellow-100 text-yellow-800' }
 };
 
 const ADDON_OPTIONS = [
@@ -59,7 +61,7 @@ const AdminContracts = () => {
   const [selectedContract, setSelectedContract] = useState(null);
   const [formData, setFormData] = useState({
     club_id: '',
-    plan_type: 'premium',
+    plan_type: 'Premium',
     plan_price: 15000,
     addons: [],
     start_date: new Date().toISOString().split('T')[0],
@@ -539,7 +541,7 @@ const AdminContracts = () => {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Piano</label>
                 <div className="grid grid-cols-3 gap-4">
-                  {['basic', 'premium', 'elite'].map(plan => (
+                  {['Basic', 'Premium', 'Elite'].map(plan => (
                     <button
                       key={plan}
                       type="button"

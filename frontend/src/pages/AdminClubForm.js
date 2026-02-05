@@ -31,13 +31,6 @@ const REGIONI_ITALIANE = [
   'Trentino-Alto Adige', 'Umbria', "Valle d'Aosta", 'Veneto'
 ];
 
-const ABBONAMENTO_OPTIONS = [
-  { value: 'trial', label: 'Trial' },
-  { value: 'base', label: 'Base' },
-  { value: 'pro', label: 'Pro' },
-  { value: 'enterprise', label: 'Enterprise' }
-];
-
 function AdminClubForm() {
   const { clubId } = useParams();
   const navigate = useNavigate();
@@ -59,10 +52,8 @@ function AdminClubForm() {
   // Custom Dropdowns
   const [sportOpen, setSportOpen] = useState(false);
   const [regioneOpen, setRegioneOpen] = useState(false);
-  const [abbonamentoOpen, setAbbonamentoOpen] = useState(false);
   const sportRef = useRef(null);
   const regioneRef = useRef(null);
-  const abbonamentoRef = useRef(null);
 
   const totalSteps = 3;
   const steps = [
@@ -93,8 +84,6 @@ function AdminClubForm() {
     referente_ruolo: '',
     referente_contatto: '',
     // Licenza
-    nome_abbonamento: '',
-    costo_abbonamento: '',
     data_scadenza_licenza: '',
     account_attivo: true
   });
@@ -115,7 +104,6 @@ function AdminClubForm() {
     const handleClickOutside = (e) => {
       if (sportRef.current && !sportRef.current.contains(e.target)) setSportOpen(false);
       if (regioneRef.current && !regioneRef.current.contains(e.target)) setRegioneOpen(false);
-      if (abbonamentoRef.current && !abbonamentoRef.current.contains(e.target)) setAbbonamentoOpen(false);
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -145,8 +133,6 @@ function AdminClubForm() {
         referente_cognome: club.referente_cognome || '',
         referente_ruolo: club.referente_ruolo || '',
         referente_contatto: club.referente_contatto || '',
-        nome_abbonamento: club.nome_abbonamento || '',
-        costo_abbonamento: club.costo_abbonamento || '',
         data_scadenza_licenza: club.data_scadenza_licenza ? club.data_scadenza_licenza.split('T')[0] : '',
         account_attivo: club.account_attivo !== false
       });
@@ -432,7 +418,7 @@ function AdminClubForm() {
                     <label>Sport</label>
                     <button
                       type="button"
-                      onClick={() => { setSportOpen(!sportOpen); setRegioneOpen(false); setAbbonamentoOpen(false); }}
+                      onClick={() => { setSportOpen(!sportOpen); setRegioneOpen(false);  }}
                       style={{
                         width: '100%', padding: '12px 16px',
                         border: '2px solid #E5E7EB', borderRadius: '8px', background: 'white',
@@ -493,7 +479,7 @@ function AdminClubForm() {
                     <label>Regione</label>
                     <button
                       type="button"
-                      onClick={() => { setRegioneOpen(!regioneOpen); setSportOpen(false); setAbbonamentoOpen(false); }}
+                      onClick={() => { setRegioneOpen(!regioneOpen); setSportOpen(false);  }}
                       style={{
                         width: '100%', padding: '12px 16px',
                         border: '2px solid #E5E7EB', borderRadius: '8px', background: 'white',
@@ -621,64 +607,26 @@ function AdminClubForm() {
               {/* Step 3: Licenza & Accesso */}
               {currentStep === 3 && (
                 <div className="sf-step-content">
-                  <h2 className="sf-section-title">Licenza & Abbonamento</h2>
+                  <h2 className="sf-section-title">Licenza & Accesso</h2>
 
-                  {/* Custom Dropdown: Abbonamento */}
-                  <div className="form-group" ref={abbonamentoRef} style={{ position: 'relative' }}>
-                    <label>Piano Abbonamento</label>
-                    <button
-                      type="button"
-                      onClick={() => { setAbbonamentoOpen(!abbonamentoOpen); setSportOpen(false); setRegioneOpen(false); }}
-                      style={{
-                        width: '100%', padding: '12px 16px',
-                        border: '2px solid #E5E7EB', borderRadius: '8px', background: 'white',
-                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                        cursor: 'pointer', fontSize: '14px',
-                        color: formData.nome_abbonamento ? '#1A1A1A' : '#9CA3AF'
-                      }}
-                    >
-                      <span style={{ fontWeight: formData.nome_abbonamento ? 500 : 400 }}>
-                        {ABBONAMENTO_OPTIONS.find(a => a.value === formData.nome_abbonamento)?.label || formData.nome_abbonamento || 'Seleziona piano...'}
-                      </span>
-                      <FaChevronDown size={12} style={{
-                        transition: 'transform 0.2s',
-                        transform: abbonamentoOpen ? 'rotate(180deg)' : 'rotate(0)'
-                      }} />
-                    </button>
-                    {abbonamentoOpen && (
-                      <div style={{
-                        position: 'absolute', top: '100%', left: 0, right: 0, marginTop: '4px',
-                        background: 'white', border: '1px solid #E5E7EB', borderRadius: '12px',
-                        boxShadow: '0 10px 40px rgba(0,0,0,0.1)', zIndex: 100
-                      }}>
-                        {ABBONAMENTO_OPTIONS.map(a => (
-                          <div
-                            key={a.value}
-                            onClick={() => { setFormData(prev => ({ ...prev, nome_abbonamento: a.value })); setAbbonamentoOpen(false); }}
-                            style={{
-                              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                              padding: '10px 16px', cursor: 'pointer',
-                              background: formData.nome_abbonamento === a.value ? 'rgba(133, 255, 0, 0.1)' : 'transparent',
-                              borderLeft: formData.nome_abbonamento === a.value ? '3px solid #85FF00' : '3px solid transparent'
-                            }}
-                          >
-                            <span style={{ fontWeight: formData.nome_abbonamento === a.value ? 600 : 400 }}>{a.label}</span>
-                            {formData.nome_abbonamento === a.value && <FaCheck size={12} color="#85FF00" />}
-                          </div>
-                        ))}
+                  {/* Info Abbonamento */}
+                  <div style={{ marginBottom: '24px', padding: '16px', background: '#EFF6FF', borderRadius: '12px', border: '1px solid #3B82F6' }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                      <FaCrown size={20} color="#3B82F6" />
+                      <div>
+                        <p style={{ fontSize: '14px', fontWeight: 600, color: '#1E40AF', margin: 0 }}>
+                          Gestione Abbonamento
+                        </p>
+                        <p style={{ fontSize: '13px', color: '#3B82F6', margin: '4px 0 0' }}>
+                          L'abbonamento e il piano del club vengono gestiti dalla sezione <strong>Contratti</strong>. Dopo aver creato il club, potrai associare un contratto con il piano desiderato.
+                        </p>
                       </div>
-                    )}
+                    </div>
                   </div>
 
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label>Costo Mensile (€)</label>
-                      <input type="number" name="costo_abbonamento" value={formData.costo_abbonamento} onChange={handleChange} placeholder="99.00" step="0.01" />
-                    </div>
-                    <div className="form-group">
-                      <label>Scadenza Licenza</label>
-                      <input type="date" name="data_scadenza_licenza" value={formData.data_scadenza_licenza} onChange={handleChange} />
-                    </div>
+                  <div className="form-group">
+                    <label>Scadenza Licenza</label>
+                    <input type="date" name="data_scadenza_licenza" value={formData.data_scadenza_licenza} onChange={handleChange} />
                   </div>
 
                   <div className="form-group">
@@ -816,22 +764,6 @@ function AdminClubForm() {
                   {formData.indirizzo_sede_legale && (
                     <div style={{ fontSize: '13px', color: '#374151' }}>{formData.indirizzo_sede_legale}</div>
                   )}
-                </div>
-              )}
-
-              {/* Abbonamento */}
-              {formData.nome_abbonamento && (
-                <div style={{ marginBottom: '16px' }}>
-                  <div style={{ fontSize: '11px', fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', marginBottom: '8px' }}>Abbonamento</div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <FaCrown size={14} color="#F59E0B" />
-                    <span style={{ fontSize: '14px', fontWeight: 600, color: '#1A1A1A' }}>
-                      {ABBONAMENTO_OPTIONS.find(a => a.value === formData.nome_abbonamento)?.label || formData.nome_abbonamento}
-                    </span>
-                    {formData.costo_abbonamento && (
-                      <span style={{ fontSize: '14px', color: '#059669', fontWeight: 600 }}>€{formData.costo_abbonamento}/mese</span>
-                    )}
-                  </div>
                 </div>
               )}
 

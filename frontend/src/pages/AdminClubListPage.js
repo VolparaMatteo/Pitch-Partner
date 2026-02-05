@@ -25,13 +25,12 @@ const SUBSCRIPTION_STATUS = [
   { id: 'suspended', label: 'Sospeso', icon: <FaPause />, color: '#6366F1', bg: '#EEF2FF' }
 ];
 
-// Piani
+// Piani - allineato con Obiettivi 2026
 const PLANS = [
   { id: 'all', label: 'Tutti i piani', color: '#6B7280' },
-  { id: 'trial', label: 'Trial', color: '#F59E0B' },
-  { id: 'base', label: 'Base', color: '#3B82F6' },
-  { id: 'pro', label: 'Pro', color: '#8B5CF6' },
-  { id: 'enterprise', label: 'Enterprise', color: '#059669' }
+  { id: 'basic', label: 'Basic', color: '#6B7280' },
+  { id: 'premium', label: 'Premium', color: '#3B82F6' },
+  { id: 'elite', label: 'Elite', color: '#F59E0B' }
 ];
 
 function AdminClubListPage() {
@@ -552,20 +551,31 @@ function AdminClubListPage() {
                             </td>
                             <td>
                               {club.nome_abbonamento ? (
-                                <span style={{
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '6px',
-                                  padding: '4px 10px',
-                                  borderRadius: '6px',
-                                  background: '#F3F4F6',
-                                  fontSize: '12px',
-                                  fontWeight: 500,
-                                  color: '#374151'
-                                }}>
-                                  <FaCrown size={10} color="#F59E0B" />
-                                  {club.nome_abbonamento}
-                                </span>
+                                (() => {
+                                  const planName = club.nome_abbonamento.toLowerCase();
+                                  const planColors = {
+                                    basic: { bg: '#F9FAFB', color: '#6B7280', crown: '#6B7280' },
+                                    premium: { bg: '#EFF6FF', color: '#3B82F6', crown: '#3B82F6' },
+                                    elite: { bg: '#FFFBEB', color: '#F59E0B', crown: '#F59E0B' }
+                                  };
+                                  const colors = planColors[planName] || planColors.basic;
+                                  return (
+                                    <span style={{
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '6px',
+                                      padding: '4px 10px',
+                                      borderRadius: '6px',
+                                      background: colors.bg,
+                                      fontSize: '12px',
+                                      fontWeight: 500,
+                                      color: colors.color
+                                    }}>
+                                      <FaCrown size={10} color={colors.crown} />
+                                      {club.nome_abbonamento}
+                                    </span>
+                                  );
+                                })()
                               ) : (
                                 <span style={{ color: '#9CA3AF' }}>-</span>
                               )}
@@ -752,9 +762,33 @@ function AdminClubListPage() {
                           <span style={{ fontSize: '11px', color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                             Piano
                           </span>
-                          <p style={{ margin: '4px 0 0', fontSize: '14px', fontWeight: 500, color: '#1A1A1A' }}>
-                            {club.nome_abbonamento || '-'}
-                          </p>
+                          {club.nome_abbonamento ? (
+                            (() => {
+                              const planName = club.nome_abbonamento.toLowerCase();
+                              const planColors = {
+                                basic: { bg: '#F9FAFB', color: '#6B7280' },
+                                premium: { bg: '#EFF6FF', color: '#3B82F6' },
+                                elite: { bg: '#FFFBEB', color: '#F59E0B' }
+                              };
+                              const colors = planColors[planName] || planColors.basic;
+                              return (
+                                <p style={{
+                                  margin: '4px 0 0',
+                                  fontSize: '13px',
+                                  fontWeight: 600,
+                                  color: colors.color,
+                                  background: colors.bg,
+                                  padding: '2px 8px',
+                                  borderRadius: '4px',
+                                  display: 'inline-block'
+                                }}>
+                                  {club.nome_abbonamento}
+                                </p>
+                              );
+                            })()
+                          ) : (
+                            <p style={{ margin: '4px 0 0', fontSize: '14px', fontWeight: 500, color: '#9CA3AF' }}>-</p>
+                          )}
                         </div>
                         <div>
                           <span style={{ fontSize: '11px', color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.5px' }}>

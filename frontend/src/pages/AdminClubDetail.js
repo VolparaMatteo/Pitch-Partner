@@ -11,7 +11,8 @@ import {
   FaStickyNote, FaEllipsisH, FaCrown, FaFileInvoice,
   FaTimes, FaPause, FaPlay, FaRocket,
   FaBuilding, FaUserTie,
-  FaInbox, FaDownload, FaCopy, FaRedo, FaLink
+  FaInbox, FaDownload, FaCopy, FaRedo, FaLink,
+  FaFileContract, FaEye
 } from 'react-icons/fa';
 import '../styles/sponsor-detail.css';
 import '../styles/template-style.css';
@@ -45,6 +46,23 @@ const INVOICE_STATUS = {
   cancelled: { label: 'Annullata', color: '#6B7280', bg: '#F3F4F6' }
 };
 
+const CONTRACT_PLAN_CONFIG = {
+  basic: { name: 'Basic', color: '#6B7280', bg: '#F9FAFB', price: 10000 },
+  Basic: { name: 'Basic', color: '#6B7280', bg: '#F9FAFB', price: 10000 },
+  premium: { name: 'Premium', color: '#3B82F6', bg: '#EFF6FF', price: 15000 },
+  Premium: { name: 'Premium', color: '#3B82F6', bg: '#EFF6FF', price: 15000 },
+  elite: { name: 'Elite', color: '#F59E0B', bg: '#FFFBEB', price: 25000 },
+  Elite: { name: 'Elite', color: '#F59E0B', bg: '#FFFBEB', price: 25000 }
+};
+
+const CONTRACT_STATUS_CONFIG = {
+  draft: { label: 'Bozza', color: '#6B7280', bg: '#F3F4F6' },
+  active: { label: 'Attivo', color: '#059669', bg: '#ECFDF5' },
+  expired: { label: 'Scaduto', color: '#DC2626', bg: '#FEF2F2' },
+  cancelled: { label: 'Annullato', color: '#DC2626', bg: '#FEF2F2' },
+  renewed: { label: 'Rinnovato', color: '#3B82F6', bg: '#EFF6FF' }
+};
+
 function AdminClubDetail() {
   const { clubId } = useParams();
   const navigate = useNavigate();
@@ -56,6 +74,7 @@ function AdminClubDetail() {
   const [invoices, setInvoices] = useState([]);
   const [invoiceSummary, setInvoiceSummary] = useState(null);
   const [activities, setActivities] = useState([]);
+  const [contracts, setContracts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState(null);
   const [activeTab, setActiveTab] = useState('subscription');
@@ -97,11 +116,12 @@ function AdminClubDetail() {
       setLoading(true);
       const headers = { Authorization: `Bearer ${token}` };
 
-      const [clubRes, subRes, invoicesRes, activitiesRes] = await Promise.all([
+      const [clubRes, subRes, invoicesRes, activitiesRes, contractsRes] = await Promise.all([
         axios.get(`${API_URL}/admin/clubs/${clubId}`, { headers }),
         axios.get(`${API_URL}/admin/clubs/${clubId}/subscription`, { headers }).catch(() => ({ data: { subscription: null, events: [] } })),
         axios.get(`${API_URL}/admin/clubs/${clubId}/invoices`, { headers }).catch(() => ({ data: { invoices: [], summary: null } })),
-        axios.get(`${API_URL}/admin/clubs/${clubId}/activities`, { headers }).catch(() => ({ data: { activities: [] } }))
+        axios.get(`${API_URL}/admin/clubs/${clubId}/activities`, { headers }).catch(() => ({ data: { activities: [] } })),
+        axios.get(`${API_URL}/admin/contracts?club_id=${clubId}`, { headers }).catch(() => ({ data: { contracts: [] } }))
       ]);
 
       setClub(clubRes.data);
@@ -110,6 +130,7 @@ function AdminClubDetail() {
       setInvoices(invoicesRes.data.invoices || []);
       setInvoiceSummary(invoicesRes.data.summary);
       setActivities(activitiesRes.data.activities || []);
+      setContracts(contractsRes.data.contracts || []);
     } catch (error) {
       console.error('Errore caricamento club:', error);
       setToast({ message: 'Errore nel caricamento del club', type: 'error' });
@@ -503,6 +524,7 @@ function AdminClubDetail() {
           <div style={{ display: 'flex', gap: '8px', padding: '16px 24px', borderBottom: '1px solid #E5E7EB', background: '#FAFAFA' }}>
             {[
               { id: 'subscription', label: 'Abbonamento', icon: <FaCrown size={14} /> },
+              { id: 'contracts', label: 'Contratti', icon: <FaFileContract size={14} />, count: contracts.length },
               { id: 'invoices', label: 'Fatture', icon: <FaFileInvoice size={14} />, count: invoices.length },
               { id: 'activities', label: 'Attivita', icon: <FaHistory size={14} />, count: activities.length },
               { id: 'info', label: 'Informazioni', icon: <FaBuilding size={14} /> }
@@ -545,101 +567,433 @@ function AdminClubDetail() {
           <div className="sd-tab-content">
             {/* SUBSCRIPTION TAB */}
             {activeTab === 'subscription' && (
-              <div className="sd-tab-grid">
-                <div className="sd-detail-section">
-                  <div className="sd-tab-header">
-                    <h3 className="sd-tab-title"><FaCrown /> Abbonamento Corrente</h3>
-                  </div>
-                  <div style={{
-                    background: 'linear-gradient(135deg, #1A1A1A 0%, #2D2D2D 100%)',
-                    borderRadius: '16px',
-                    padding: '24px',
-                    color: 'white',
-                    marginBottom: '20px'
-                  }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
-                      <div>
-                        <span style={{
-                          background: statusBadge.bg,
-                          color: statusBadge.color,
-                          padding: '4px 12px',
-                          borderRadius: '20px',
-                          fontSize: '12px',
-                          fontWeight: 600,
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '4px'
-                        }}>
-                          {statusBadge.icon} {statusBadge.label}
-                        </span>
-                        <h2 style={{ margin: '12px 0 4px', fontSize: '28px', fontWeight: 700 }}>
-                          {club.nome_abbonamento || 'Nessun piano attivo'}
-                        </h2>
-                        <p style={{ margin: 0, color: '#9CA3AF', fontSize: '14px' }}>
-                          {club.tipologia_abbonamento || 'Fatturazione mensile'}
-                        </p>
-                      </div>
-                      <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: '36px', fontWeight: 700, color: '#85FF00' }}>
-                          €{club.costo_abbonamento || 0}
-                        </div>
-                        <div style={{ color: '#9CA3AF', fontSize: '14px' }}>/mese</div>
-                      </div>
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
-                      <div style={{ background: 'rgba(255,255,255,0.1)', borderRadius: '12px', padding: '16px' }}>
-                        <div style={{ fontSize: '12px', color: '#9CA3AF', marginBottom: '4px' }}>Inizio</div>
-                        <div style={{ fontSize: '16px', fontWeight: 600 }}>{formatDate(subscription?.data_inizio || club.created_at)}</div>
-                      </div>
-                      <div style={{ background: 'rgba(255,255,255,0.1)', borderRadius: '12px', padding: '16px' }}>
-                        <div style={{ fontSize: '12px', color: '#9CA3AF', marginBottom: '4px' }}>Scadenza</div>
-                        <div style={{ fontSize: '16px', fontWeight: 600 }}>{formatDate(club.data_scadenza_licenza)}</div>
-                      </div>
-                      <div style={{ background: 'rgba(255,255,255,0.1)', borderRadius: '12px', padding: '16px' }}>
-                        <div style={{ fontSize: '12px', color: '#9CA3AF', marginBottom: '4px' }}>Rinnovo</div>
-                        <div style={{ fontSize: '16px', fontWeight: 600 }}>{subscription?.auto_renew ? 'Automatico' : 'Manuale'}</div>
-                      </div>
-                    </div>
-                  </div>
+              <div style={{ padding: '24px' }}>
+                {/* Header */}
+                <div style={{ marginBottom: '24px' }}>
+                  <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 600, color: '#1A1A1A', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <FaCrown style={{ color: '#F59E0B' }} /> Abbonamento Corrente
+                  </h3>
+                  <p style={{ margin: '8px 0 0', fontSize: '13px', color: '#6B7280' }}>
+                    Per modificare l'abbonamento vai alla sezione <a href="/admin/contratti" style={{ color: '#3B82F6', textDecoration: 'none' }}>Contratti</a>
+                  </p>
                 </div>
 
-                <div className="sd-detail-section">
-                  <div className="sd-tab-header">
-                    <h3 className="sd-tab-title"><FaHistory /> Storico</h3>
+                {/* Card Abbonamento */}
+                <div style={{
+                  background: 'white',
+                  borderRadius: '16px',
+                  border: '1px solid #E5E7EB',
+                  overflow: 'hidden'
+                }}>
+                  {/* Header con gradient */}
+                  <div style={{
+                    background: 'linear-gradient(135deg, #1A1A1A 0%, #374151 100%)',
+                    padding: '32px',
+                    position: 'relative'
+                  }}>
+                    {/* Badge stato */}
+                    <span style={{
+                      position: 'absolute',
+                      top: '20px',
+                      right: '20px',
+                      background: statusBadge.bg,
+                      color: statusBadge.color,
+                      padding: '6px 14px',
+                      borderRadius: '20px',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px'
+                    }}>
+                      {statusBadge.icon} {statusBadge.label}
+                    </span>
+
+                    <div style={{ display: 'flex', alignItems: 'flex-end', gap: '16px' }}>
+                      <div style={{
+                        width: '64px',
+                        height: '64px',
+                        borderRadius: '16px',
+                        background: 'linear-gradient(135deg, #85FF00 0%, #65D000 100%)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>
+                        <FaCrown size={28} color="#1A1A1A" />
+                      </div>
+                      <div>
+                        <p style={{ margin: '0 0 4px 0', color: '#9CA3AF', fontSize: '13px' }}>Piano attivo</p>
+                        <h2 style={{ margin: 0, color: 'white', fontSize: '28px', fontWeight: 700 }}>
+                          {club.nome_abbonamento || 'Nessun piano'}
+                        </h2>
+                      </div>
+                    </div>
                   </div>
-                  {subscriptionEvents.length === 0 ? (
-                    <div style={{ textAlign: 'center', padding: '40px', color: '#6B7280' }}>
-                      <FaInbox size={32} style={{ marginBottom: '12px', opacity: 0.5 }} />
-                      <p>Nessun evento registrato</p>
-                    </div>
-                  ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                      {subscriptionEvents.slice(0, 10).map((event, idx) => (
-                        <div key={event.id || idx} style={{
-                          display: 'flex',
-                          gap: '12px',
-                          padding: '12px',
-                          background: '#F9FAFB',
-                          borderRadius: '8px'
-                        }}>
-                          <div style={{
-                            width: '8px',
-                            height: '8px',
-                            borderRadius: '50%',
-                            background: '#85FF00',
-                            marginTop: '6px',
-                            flexShrink: 0
-                          }} />
-                          <div style={{ flex: 1 }}>
-                            <div style={{ fontSize: '14px', fontWeight: 500, color: '#1A1A1A' }}>{event.evento}</div>
-                            {event.note && <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#6B7280' }}>{event.note}</p>}
-                          </div>
-                          <div style={{ fontSize: '12px', color: '#9CA3AF' }}>{formatDate(event.created_at)}</div>
+
+                  {/* Body */}
+                  <div style={{ padding: '24px' }}>
+                    {/* Prezzo in evidenza */}
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '24px',
+                      background: '#F9FAFB',
+                      borderRadius: '12px',
+                      marginBottom: '24px'
+                    }}>
+                      <div style={{ textAlign: 'center' }}>
+                        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: '4px' }}>
+                          <span style={{ fontSize: '14px', color: '#6B7280', fontWeight: 500 }}>€</span>
+                          <span style={{ fontSize: '48px', fontWeight: 700, color: '#1A1A1A' }}>
+                            {club.costo_abbonamento || 0}
+                          </span>
+                          <span style={{ fontSize: '16px', color: '#6B7280', fontWeight: 500 }}>/mese</span>
                         </div>
-                      ))}
+                        <p style={{ margin: '8px 0 0 0', color: '#6B7280', fontSize: '14px' }}>
+                          {club.tipologia_abbonamento === 'annuale'
+                            ? `€${((club.costo_abbonamento || 0) * 12).toLocaleString()} fatturati annualmente`
+                            : 'Fatturazione mensile'
+                          }
+                        </p>
+                      </div>
                     </div>
-                  )}
+
+                    {/* Dettagli in griglia */}
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(2, 1fr)',
+                      gap: '16px'
+                    }}>
+                      <div style={{
+                        padding: '20px',
+                        background: '#FAFAFA',
+                        borderRadius: '12px',
+                        border: '1px solid #F0F0F0'
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                          <div style={{
+                            width: '32px',
+                            height: '32px',
+                            borderRadius: '8px',
+                            background: '#EFF6FF',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }}>
+                            <FaCalendarAlt size={14} color="#3B82F6" />
+                          </div>
+                          <span style={{ fontSize: '13px', color: '#6B7280', fontWeight: 500 }}>Data Inizio</span>
+                        </div>
+                        <p style={{ margin: 0, fontSize: '16px', fontWeight: 600, color: '#1A1A1A' }}>
+                          {formatDate(subscription?.data_inizio || club.created_at)}
+                        </p>
+                      </div>
+
+                      <div style={{
+                        padding: '20px',
+                        background: club.licenza_valida ? '#FAFAFA' : '#FEF2F2',
+                        borderRadius: '12px',
+                        border: club.licenza_valida ? '1px solid #F0F0F0' : '1px solid #FECACA'
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                          <div style={{
+                            width: '32px',
+                            height: '32px',
+                            borderRadius: '8px',
+                            background: club.licenza_valida ? '#FEF3C7' : '#FEE2E2',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }}>
+                            {club.licenza_valida ? <FaCalendarAlt size={14} color="#D97706" /> : <FaTimes size={14} color="#DC2626" />}
+                          </div>
+                          <span style={{ fontSize: '13px', color: '#6B7280', fontWeight: 500 }}>Scadenza</span>
+                        </div>
+                        <p style={{ margin: 0, fontSize: '16px', fontWeight: 600, color: club.licenza_valida ? '#1A1A1A' : '#DC2626' }}>
+                          {formatDate(club.data_scadenza_licenza)}
+                        </p>
+                        {!club.licenza_valida && (
+                          <span style={{ fontSize: '12px', color: '#DC2626', fontWeight: 500 }}>Licenza scaduta</span>
+                        )}
+                      </div>
+
+                      <div style={{
+                        padding: '20px',
+                        background: '#FAFAFA',
+                        borderRadius: '12px',
+                        border: '1px solid #F0F0F0'
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                          <div style={{
+                            width: '32px',
+                            height: '32px',
+                            borderRadius: '8px',
+                            background: '#ECFDF5',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }}>
+                            <FaRedo size={14} color="#059669" />
+                          </div>
+                          <span style={{ fontSize: '13px', color: '#6B7280', fontWeight: 500 }}>Rinnovo</span>
+                        </div>
+                        <p style={{ margin: 0, fontSize: '16px', fontWeight: 600, color: '#1A1A1A' }}>
+                          {subscription?.auto_renew ? 'Automatico' : 'Manuale'}
+                        </p>
+                      </div>
+
+                      <div style={{
+                        padding: '20px',
+                        background: '#FAFAFA',
+                        borderRadius: '12px',
+                        border: '1px solid #F0F0F0'
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                          <div style={{
+                            width: '32px',
+                            height: '32px',
+                            borderRadius: '8px',
+                            background: '#F3E8FF',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }}>
+                            <FaFileInvoice size={14} color="#8B5CF6" />
+                          </div>
+                          <span style={{ fontSize: '13px', color: '#6B7280', fontWeight: 500 }}>Fatturazione</span>
+                        </div>
+                        <p style={{ margin: 0, fontSize: '16px', fontWeight: 600, color: '#1A1A1A' }}>
+                          {club.tipologia_abbonamento === 'annuale' ? 'Annuale' : 'Mensile'}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* MRR / ARR */}
+                    <div style={{
+                      marginTop: '24px',
+                      padding: '20px',
+                      background: 'linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%)',
+                      borderRadius: '12px',
+                      display: 'flex',
+                      justifyContent: 'space-around',
+                      alignItems: 'center'
+                    }}>
+                      <div style={{ textAlign: 'center' }}>
+                        <p style={{ margin: '0 0 4px 0', fontSize: '12px', color: '#065F46', fontWeight: 500 }}>MRR</p>
+                        <p style={{ margin: 0, fontSize: '24px', fontWeight: 700, color: '#059669' }}>
+                          €{(club.costo_abbonamento || 0).toLocaleString()}
+                        </p>
+                      </div>
+                      <div style={{ width: '1px', height: '40px', background: '#A7F3D0' }} />
+                      <div style={{ textAlign: 'center' }}>
+                        <p style={{ margin: '0 0 4px 0', fontSize: '12px', color: '#065F46', fontWeight: 500 }}>ARR</p>
+                        <p style={{ margin: 0, fontSize: '24px', fontWeight: 700, color: '#059669' }}>
+                          €{((club.costo_abbonamento || 0) * 12).toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
+              </div>
+            )}
+
+            {/* CONTRACTS TAB */}
+            {activeTab === 'contracts' && (
+              <div className="sd-tab-grid">
+                <div className="sd-tab-header">
+                  <h3 className="sd-tab-title"><FaFileContract /> Contratti</h3>
+                  <button
+                    className="tp-btn tp-btn-primary"
+                    onClick={() => window.location.href = `/admin/contratti?club_id=${clubId}`}
+                  >
+                    <FaPlus /> Nuovo Contratto
+                  </button>
+                </div>
+
+                {contracts.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '60px', color: '#6B7280' }}>
+                    <FaInbox size={48} style={{ marginBottom: '16px', opacity: 0.5 }} />
+                    <h4 style={{ margin: '0 0 8px 0' }}>Nessun contratto</h4>
+                    <p style={{ margin: '0 0 16px 0', fontSize: '14px' }}>Non ci sono contratti associati a questo club</p>
+                    <button
+                      className="tp-btn tp-btn-outline"
+                      onClick={() => window.location.href = `/admin/contratti?club_id=${clubId}`}
+                    >
+                      <FaPlus /> Crea Contratto
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    {/* Summary Cards */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '24px' }}>
+                      <div style={{ background: '#ECFDF5', borderRadius: '12px', padding: '16px', textAlign: 'center' }}>
+                        <div style={{ fontSize: '24px', fontWeight: 700, color: '#059669' }}>
+                          €{contracts.filter(c => c.status === 'active').reduce((sum, c) => sum + (c.total_value || 0), 0).toLocaleString()}
+                        </div>
+                        <div style={{ fontSize: '13px', color: '#065F46' }}>Valore Attivo</div>
+                      </div>
+                      <div style={{ background: '#EFF6FF', borderRadius: '12px', padding: '16px', textAlign: 'center' }}>
+                        <div style={{ fontSize: '24px', fontWeight: 700, color: '#3B82F6' }}>
+                          {contracts.filter(c => c.status === 'active').length}
+                        </div>
+                        <div style={{ fontSize: '13px', color: '#1E40AF' }}>Contratti Attivi</div>
+                      </div>
+                      <div style={{ background: '#F3F4F6', borderRadius: '12px', padding: '16px', textAlign: 'center' }}>
+                        <div style={{ fontSize: '24px', fontWeight: 700, color: '#374151' }}>
+                          {contracts.length}
+                        </div>
+                        <div style={{ fontSize: '13px', color: '#6B7280' }}>Totale Contratti</div>
+                      </div>
+                    </div>
+
+                    {/* Contracts List */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                      {contracts.map((contract) => {
+                        const planConfig = CONTRACT_PLAN_CONFIG[contract.plan_type] || CONTRACT_PLAN_CONFIG.basic;
+                        const statusConfig = CONTRACT_STATUS_CONFIG[contract.status] || CONTRACT_STATUS_CONFIG.draft;
+                        return (
+                          <div
+                            key={contract.id}
+                            style={{
+                              background: '#FAFAFA',
+                              borderRadius: '12px',
+                              border: '1px solid #E5E7EB',
+                              overflow: 'hidden'
+                            }}
+                          >
+                            {/* Contract Header */}
+                            <div style={{
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'center',
+                              padding: '16px 20px',
+                              borderBottom: '1px solid #E5E7EB',
+                              background: 'white'
+                            }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <div style={{
+                                  width: '40px',
+                                  height: '40px',
+                                  borderRadius: '10px',
+                                  background: planConfig.bg,
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  color: planConfig.color
+                                }}>
+                                  <FaFileContract size={18} />
+                                </div>
+                                <div>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <span style={{ fontWeight: 600, color: '#1A1A1A', fontSize: '16px' }}>
+                                      Piano {planConfig.name}
+                                    </span>
+                                    <span style={{
+                                      padding: '2px 8px',
+                                      borderRadius: '12px',
+                                      background: statusConfig.bg,
+                                      color: statusConfig.color,
+                                      fontSize: '11px',
+                                      fontWeight: 600
+                                    }}>
+                                      {statusConfig.label}
+                                    </span>
+                                  </div>
+                                  <div style={{ fontSize: '13px', color: '#6B7280', marginTop: '2px' }}>
+                                    {formatDate(contract.start_date)} → {formatDate(contract.end_date)}
+                                  </div>
+                                </div>
+                              </div>
+                              <div style={{ textAlign: 'right' }}>
+                                <div style={{ fontSize: '20px', fontWeight: 700, color: '#059669' }}>
+                                  €{(contract.total_value || 0).toLocaleString()}
+                                </div>
+                                <div style={{ fontSize: '12px', color: '#6B7280' }}>/anno</div>
+                              </div>
+                            </div>
+
+                            {/* Contract Details */}
+                            <div style={{ padding: '16px 20px' }}>
+                              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+                                <div>
+                                  <div style={{ fontSize: '12px', color: '#9CA3AF', marginBottom: '4px' }}>Prezzo Piano</div>
+                                  <div style={{ fontSize: '14px', fontWeight: 500, color: '#1A1A1A' }}>
+                                    €{(contract.plan_price || 0).toLocaleString()}
+                                  </div>
+                                </div>
+                                <div>
+                                  <div style={{ fontSize: '12px', color: '#9CA3AF', marginBottom: '4px' }}>Add-ons</div>
+                                  <div style={{ fontSize: '14px', fontWeight: 500, color: '#1A1A1A' }}>
+                                    {contract.addons?.length > 0 ? `${contract.addons.length} inclusi` : 'Nessuno'}
+                                  </div>
+                                </div>
+                                <div>
+                                  <div style={{ fontSize: '12px', color: '#9CA3AF', marginBottom: '4px' }}>Pagamento</div>
+                                  <div style={{ fontSize: '14px', fontWeight: 500, color: '#1A1A1A' }}>
+                                    {contract.payment_terms === 'annual' ? 'Annuale' :
+                                     contract.payment_terms === 'semi_annual' ? 'Semestrale' :
+                                     contract.payment_terms === 'quarterly' ? 'Trimestrale' :
+                                     contract.payment_terms === 'monthly' ? 'Mensile' : '-'}
+                                  </div>
+                                </div>
+                                <div>
+                                  <div style={{ fontSize: '12px', color: '#9CA3AF', marginBottom: '4px' }}>Firmato</div>
+                                  <div style={{ fontSize: '14px', fontWeight: 500, color: '#1A1A1A' }}>
+                                    {contract.signed_by ? `${contract.signed_by}` : 'Non firmato'}
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Add-ons list if present */}
+                              {contract.addons?.length > 0 && (
+                                <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #E5E7EB' }}>
+                                  <div style={{ fontSize: '12px', color: '#9CA3AF', marginBottom: '8px' }}>Add-ons inclusi:</div>
+                                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                                    {contract.addons.map((addon, idx) => (
+                                      <span
+                                        key={idx}
+                                        style={{
+                                          padding: '4px 10px',
+                                          borderRadius: '6px',
+                                          background: '#EFF6FF',
+                                          color: '#3B82F6',
+                                          fontSize: '12px',
+                                          fontWeight: 500
+                                        }}
+                                      >
+                                        {addon.name} (€{(addon.price || 0).toLocaleString()})
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Notes if present */}
+                              {contract.notes && (
+                                <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #E5E7EB' }}>
+                                  <div style={{ fontSize: '12px', color: '#9CA3AF', marginBottom: '4px' }}>Note:</div>
+                                  <div style={{ fontSize: '14px', color: '#4B5563' }}>{contract.notes}</div>
+                                </div>
+                              )}
+
+                              {/* Actions */}
+                              <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #E5E7EB', display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                                <button
+                                  className="tp-btn tp-btn-outline"
+                                  onClick={() => window.location.href = `/admin/contratti`}
+                                  style={{ padding: '8px 16px', fontSize: '13px' }}
+                                >
+                                  <FaEye style={{ marginRight: '6px' }} /> Gestisci Contratti
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
               </div>
             )}
 

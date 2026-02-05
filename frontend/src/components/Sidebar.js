@@ -311,19 +311,19 @@ function Sidebar() {
                     ]
                 },
                 {
-                    id: 'finanze',
-                    label: 'Finanze',
-                    items: [
-                        { id: 'contratti', label: 'Contratti', path: '/admin/contratti', icon: HiOutlineDocumentText },
-                        { id: 'fatturazione', label: 'Fatturazione', path: '/admin/finanze', icon: HiOutlineWallet },
-                    ]
-                },
-                {
                     id: 'crm',
                     label: 'CRM',
                     items: [
                         { id: 'clubs', label: 'Club', path: '/admin/clubs', icon: HiOutlineUserGroup },
+                        { id: 'contratti', label: 'Contratti', path: '/admin/contratti', icon: HiOutlineDocumentText },
                         { id: 'leads', label: 'Lead', path: '/admin/leads', icon: HiOutlineCursorArrowRays },
+                    ]
+                },
+                {
+                    id: 'finanze',
+                    label: 'Finanze',
+                    items: [
+                        { id: 'fatturazione', label: 'Fatturazione', path: '/admin/finanze', icon: HiOutlineWallet },
                     ]
                 }
             ];
