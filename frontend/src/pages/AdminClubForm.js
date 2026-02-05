@@ -84,7 +84,6 @@ function AdminClubForm() {
     referente_ruolo: '',
     referente_contatto: '',
     // Licenza
-    data_scadenza_licenza: '',
     account_attivo: true
   });
 
@@ -133,7 +132,6 @@ function AdminClubForm() {
         referente_cognome: club.referente_cognome || '',
         referente_ruolo: club.referente_ruolo || '',
         referente_contatto: club.referente_contatto || '',
-        data_scadenza_licenza: club.data_scadenza_licenza ? club.data_scadenza_licenza.split('T')[0] : '',
         account_attivo: club.account_attivo !== false
       });
     } catch (error) {
@@ -622,11 +620,6 @@ function AdminClubForm() {
                         </p>
                       </div>
                     </div>
-                  </div>
-
-                  <div className="form-group">
-                    <label>Scadenza Licenza</label>
-                    <input type="date" name="data_scadenza_licenza" value={formData.data_scadenza_licenza} onChange={handleChange} />
                   </div>
 
                   <div className="form-group">

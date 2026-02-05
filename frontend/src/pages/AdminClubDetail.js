@@ -357,42 +357,59 @@ function AdminClubDetail() {
           </div>
 
           <div className="sd-profile-body">
-            <div className="sd-profile-section">
-              <h3 className="sd-section-title">Abbonamento</h3>
-              <div style={{ background: '#F9FAFB', borderRadius: '12px', padding: '16px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                  <FaCrown style={{ color: '#F59E0B' }} />
-                  <span style={{ fontWeight: 600, color: '#1A1A1A' }}>{club.nome_abbonamento || 'Nessun piano'}</span>
-                </div>
-                {club.costo_abbonamento && (
-                  <div style={{ fontSize: '24px', fontWeight: 700, color: '#059669', marginBottom: '8px' }}>
-                    €{club.costo_abbonamento}<span style={{ fontSize: '14px', fontWeight: 400, color: '#6B7280' }}>/mese</span>
-                  </div>
-                )}
-                <div style={{ fontSize: '13px', color: '#6B7280' }}>Scade: {formatDate(club.data_scadenza_licenza)}</div>
-              </div>
+            {/* Stato Account */}
+            <div style={{ marginBottom: '20px' }}>
+              {club.account_attivo ? (
+                <button className="tp-btn tp-btn-outline" onClick={() => openStatusModal('suspend')} style={{ width: '100%', justifyContent: 'center', borderColor: '#F59E0B', color: '#F59E0B' }}>
+                  <FaPause /> Sospendi Club
+                </button>
+              ) : (
+                <button className="tp-btn tp-btn-primary" onClick={() => openStatusModal('activate')} style={{ width: '100%', justifyContent: 'center', background: '#059669' }}>
+                  <FaPlay /> Riattiva Club
+                </button>
+              )}
             </div>
 
             <div className="sd-profile-section">
-              <h3 className="sd-section-title">Contatti</h3>
-              <div className="sd-info-list">
-                {club.email && (
-                  <div className="sd-info-item">
-                    <span className="sd-info-label"><FaEnvelope style={{ color: '#6B7280', fontSize: '12px', marginRight: '6px' }} />Email</span>
-                    <span className="sd-info-value">
-                      <a href={`mailto:${club.email}`} style={{ color: '#4338CA', textDecoration: 'none' }}>{club.email}</a>
+              <h3 className="sd-section-title">Abbonamento</h3>
+              {contracts.filter(c => c.status === 'active').length === 0 ? (
+                <div style={{ background: '#FEF3C7', borderRadius: '12px', padding: '16px', textAlign: 'center' }}>
+                  <FaCrown style={{ color: '#D97706', marginBottom: '8px' }} size={24} />
+                  <div style={{ fontWeight: 600, color: '#92400E', marginBottom: '4px' }}>Nessun piano attivo</div>
+                  <div style={{ fontSize: '12px', color: '#B45309' }}>Gestisci dai Contratti</div>
+                </div>
+              ) : (
+                <div style={{ background: '#F9FAFB', borderRadius: '12px', padding: '16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                    <FaCrown style={{ color: '#F59E0B' }} />
+                    <span style={{ fontWeight: 600, color: '#1A1A1A' }}>
+                      {(() => {
+                        const activeContract = contracts.find(c => c.status === 'active');
+                        const planConfig = CONTRACT_PLAN_CONFIG[activeContract?.plan_type];
+                        return planConfig?.name || activeContract?.plan_type || 'Piano Attivo';
+                      })()}
                     </span>
                   </div>
-                )}
-                {club.telefono && (
-                  <div className="sd-info-item">
-                    <span className="sd-info-label"><FaPhone style={{ color: '#6B7280', fontSize: '12px', marginRight: '6px' }} />Telefono</span>
-                    <span className="sd-info-value">
-                      <a href={`tel:${club.telefono}`} style={{ color: '#4338CA', textDecoration: 'none' }}>{club.telefono}</a>
-                    </span>
+                  {(() => {
+                    const activeContract = contracts.find(c => c.status === 'active');
+                    const monthlyPrice = activeContract?.payment_terms === 'annual'
+                      ? Math.round((activeContract?.total_value || 0) / 12)
+                      : activeContract?.payment_terms === 'semi_annual'
+                      ? Math.round((activeContract?.total_value || 0) / 6)
+                      : activeContract?.payment_terms === 'quarterly'
+                      ? Math.round((activeContract?.total_value || 0) / 3)
+                      : (activeContract?.total_value || 0);
+                    return (
+                      <div style={{ fontSize: '24px', fontWeight: 700, color: '#059669', marginBottom: '8px' }}>
+                        €{monthlyPrice.toLocaleString()}<span style={{ fontSize: '14px', fontWeight: 400, color: '#6B7280' }}>/mese</span>
+                      </div>
+                    );
+                  })()}
+                  <div style={{ fontSize: '13px', color: '#6B7280' }}>
+                    Scade: {formatDate(contracts.find(c => c.status === 'active')?.end_date)}
                   </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
 
             {/* Sezione Attivazione Account */}
@@ -494,27 +511,6 @@ function AdminClubDetail() {
                 </div>
               )}
             </div>
-
-            <div className="sd-profile-section">
-              <h3 className="sd-section-title">Azioni Rapide</h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <button className="tp-btn tp-btn-outline" onClick={() => setShowInvoiceModal(true)} style={{ width: '100%', justifyContent: 'center' }}>
-                  <FaFileInvoice /> Nuova Fattura
-                </button>
-                <button className="tp-btn tp-btn-outline" onClick={() => setShowActivityModal(true)} style={{ width: '100%', justifyContent: 'center' }}>
-                  <FaHistory /> Registra Attivita
-                </button>
-                {club.account_attivo ? (
-                  <button className="tp-btn tp-btn-outline" onClick={() => openStatusModal('suspend')} style={{ width: '100%', justifyContent: 'center', borderColor: '#F59E0B', color: '#F59E0B' }}>
-                    <FaPause /> Sospendi Account
-                  </button>
-                ) : (
-                  <button className="tp-btn tp-btn-primary" onClick={() => openStatusModal('activate')} style={{ width: '100%', justifyContent: 'center', background: '#059669' }}>
-                    <FaPlay /> Riattiva Account
-                  </button>
-                )}
-              </div>
-            </div>
           </div>
         </div>
 
@@ -550,7 +546,7 @@ function AdminClubDetail() {
                 {tab.label}
                 {tab.count !== undefined && (
                   <span style={{
-                    background: activeTab === tab.id ? '#85FF00' : '#E5E7EB',
+                    background: activeTab === tab.id ? '#FFFFFF' : '#E5E7EB',
                     color: activeTab === tab.id ? '#1A1A1A' : '#6B7280',
                     padding: '2px 8px',
                     borderRadius: '12px',
@@ -573,228 +569,302 @@ function AdminClubDetail() {
                   <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 600, color: '#1A1A1A', display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <FaCrown style={{ color: '#F59E0B' }} /> Abbonamento Corrente
                   </h3>
-                  <p style={{ margin: '8px 0 0', fontSize: '13px', color: '#6B7280' }}>
-                    Per modificare l'abbonamento vai alla sezione <a href="/admin/contratti" style={{ color: '#3B82F6', textDecoration: 'none' }}>Contratti</a>
-                  </p>
                 </div>
 
-                {/* Card Abbonamento */}
-                <div style={{
-                  background: 'white',
-                  borderRadius: '16px',
-                  border: '1px solid #E5E7EB',
-                  overflow: 'hidden'
-                }}>
-                  {/* Header con gradient */}
+                {/* Check if there's an active contract */}
+                {contracts.filter(c => c.status === 'active').length === 0 ? (
+                  /* No active contract - show simple message */
                   <div style={{
-                    background: 'linear-gradient(135deg, #1A1A1A 0%, #374151 100%)',
-                    padding: '32px',
-                    position: 'relative'
+                    background: '#F9FAFB',
+                    borderRadius: '16px',
+                    border: '1px solid #E5E7EB',
+                    padding: '48px',
+                    textAlign: 'center'
                   }}>
-                    {/* Badge stato */}
-                    <span style={{
-                      position: 'absolute',
-                      top: '20px',
-                      right: '20px',
-                      background: statusBadge.bg,
-                      color: statusBadge.color,
-                      padding: '6px 14px',
-                      borderRadius: '20px',
-                      fontSize: '12px',
-                      fontWeight: 600,
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '6px'
-                    }}>
-                      {statusBadge.icon} {statusBadge.label}
-                    </span>
-
-                    <div style={{ display: 'flex', alignItems: 'flex-end', gap: '16px' }}>
-                      <div style={{
-                        width: '64px',
-                        height: '64px',
-                        borderRadius: '16px',
-                        background: 'linear-gradient(135deg, #85FF00 0%, #65D000 100%)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                      }}>
-                        <FaCrown size={28} color="#1A1A1A" />
-                      </div>
-                      <div>
-                        <p style={{ margin: '0 0 4px 0', color: '#9CA3AF', fontSize: '13px' }}>Piano attivo</p>
-                        <h2 style={{ margin: 0, color: 'white', fontSize: '28px', fontWeight: 700 }}>
-                          {club.nome_abbonamento || 'Nessun piano'}
-                        </h2>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Body */}
-                  <div style={{ padding: '24px' }}>
-                    {/* Prezzo in evidenza */}
                     <div style={{
+                      width: '80px',
+                      height: '80px',
+                      borderRadius: '50%',
+                      background: '#FEF3C7',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      padding: '24px',
-                      background: '#F9FAFB',
-                      borderRadius: '12px',
-                      marginBottom: '24px'
+                      margin: '0 auto 24px'
                     }}>
-                      <div style={{ textAlign: 'center' }}>
-                        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: '4px' }}>
-                          <span style={{ fontSize: '14px', color: '#6B7280', fontWeight: 500 }}>€</span>
-                          <span style={{ fontSize: '48px', fontWeight: 700, color: '#1A1A1A' }}>
-                            {club.costo_abbonamento || 0}
-                          </span>
-                          <span style={{ fontSize: '16px', color: '#6B7280', fontWeight: 500 }}>/mese</span>
-                        </div>
-                        <p style={{ margin: '8px 0 0 0', color: '#6B7280', fontSize: '14px' }}>
-                          {club.tipologia_abbonamento === 'annuale'
-                            ? `€${((club.costo_abbonamento || 0) * 12).toLocaleString()} fatturati annualmente`
-                            : 'Fatturazione mensile'
-                          }
-                        </p>
-                      </div>
+                      <FaCrown size={36} color="#D97706" />
                     </div>
-
-                    {/* Dettagli in griglia */}
-                    <div style={{
-                      display: 'grid',
-                      gridTemplateColumns: 'repeat(2, 1fr)',
-                      gap: '16px'
-                    }}>
-                      <div style={{
-                        padding: '20px',
-                        background: '#FAFAFA',
-                        borderRadius: '12px',
-                        border: '1px solid #F0F0F0'
-                      }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-                          <div style={{
-                            width: '32px',
-                            height: '32px',
-                            borderRadius: '8px',
-                            background: '#EFF6FF',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                          }}>
-                            <FaCalendarAlt size={14} color="#3B82F6" />
-                          </div>
-                          <span style={{ fontSize: '13px', color: '#6B7280', fontWeight: 500 }}>Data Inizio</span>
-                        </div>
-                        <p style={{ margin: 0, fontSize: '16px', fontWeight: 600, color: '#1A1A1A' }}>
-                          {formatDate(subscription?.data_inizio || club.created_at)}
-                        </p>
-                      </div>
-
-                      <div style={{
-                        padding: '20px',
-                        background: club.licenza_valida ? '#FAFAFA' : '#FEF2F2',
-                        borderRadius: '12px',
-                        border: club.licenza_valida ? '1px solid #F0F0F0' : '1px solid #FECACA'
-                      }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-                          <div style={{
-                            width: '32px',
-                            height: '32px',
-                            borderRadius: '8px',
-                            background: club.licenza_valida ? '#FEF3C7' : '#FEE2E2',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                          }}>
-                            {club.licenza_valida ? <FaCalendarAlt size={14} color="#D97706" /> : <FaTimes size={14} color="#DC2626" />}
-                          </div>
-                          <span style={{ fontSize: '13px', color: '#6B7280', fontWeight: 500 }}>Scadenza</span>
-                        </div>
-                        <p style={{ margin: 0, fontSize: '16px', fontWeight: 600, color: club.licenza_valida ? '#1A1A1A' : '#DC2626' }}>
-                          {formatDate(club.data_scadenza_licenza)}
-                        </p>
-                        {!club.licenza_valida && (
-                          <span style={{ fontSize: '12px', color: '#DC2626', fontWeight: 500 }}>Licenza scaduta</span>
-                        )}
-                      </div>
-
-                      <div style={{
-                        padding: '20px',
-                        background: '#FAFAFA',
-                        borderRadius: '12px',
-                        border: '1px solid #F0F0F0'
-                      }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-                          <div style={{
-                            width: '32px',
-                            height: '32px',
-                            borderRadius: '8px',
-                            background: '#ECFDF5',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                          }}>
-                            <FaRedo size={14} color="#059669" />
-                          </div>
-                          <span style={{ fontSize: '13px', color: '#6B7280', fontWeight: 500 }}>Rinnovo</span>
-                        </div>
-                        <p style={{ margin: 0, fontSize: '16px', fontWeight: 600, color: '#1A1A1A' }}>
-                          {subscription?.auto_renew ? 'Automatico' : 'Manuale'}
-                        </p>
-                      </div>
-
-                      <div style={{
-                        padding: '20px',
-                        background: '#FAFAFA',
-                        borderRadius: '12px',
-                        border: '1px solid #F0F0F0'
-                      }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-                          <div style={{
-                            width: '32px',
-                            height: '32px',
-                            borderRadius: '8px',
-                            background: '#F3E8FF',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                          }}>
-                            <FaFileInvoice size={14} color="#8B5CF6" />
-                          </div>
-                          <span style={{ fontSize: '13px', color: '#6B7280', fontWeight: 500 }}>Fatturazione</span>
-                        </div>
-                        <p style={{ margin: 0, fontSize: '16px', fontWeight: 600, color: '#1A1A1A' }}>
-                          {club.tipologia_abbonamento === 'annuale' ? 'Annuale' : 'Mensile'}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* MRR / ARR */}
-                    <div style={{
-                      marginTop: '24px',
-                      padding: '20px',
-                      background: 'linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%)',
-                      borderRadius: '12px',
-                      display: 'flex',
-                      justifyContent: 'space-around',
-                      alignItems: 'center'
-                    }}>
-                      <div style={{ textAlign: 'center' }}>
-                        <p style={{ margin: '0 0 4px 0', fontSize: '12px', color: '#065F46', fontWeight: 500 }}>MRR</p>
-                        <p style={{ margin: 0, fontSize: '24px', fontWeight: 700, color: '#059669' }}>
-                          €{(club.costo_abbonamento || 0).toLocaleString()}
-                        </p>
-                      </div>
-                      <div style={{ width: '1px', height: '40px', background: '#A7F3D0' }} />
-                      <div style={{ textAlign: 'center' }}>
-                        <p style={{ margin: '0 0 4px 0', fontSize: '12px', color: '#065F46', fontWeight: 500 }}>ARR</p>
-                        <p style={{ margin: 0, fontSize: '24px', fontWeight: 700, color: '#059669' }}>
-                          €{((club.costo_abbonamento || 0) * 12).toLocaleString()}
-                        </p>
-                      </div>
-                    </div>
+                    <h3 style={{ margin: '0 0 12px 0', fontSize: '20px', fontWeight: 600, color: '#1A1A1A' }}>
+                      Nessun piano attivo
+                    </h3>
+                    <p style={{ margin: '0 0 24px 0', fontSize: '14px', color: '#6B7280', maxWidth: '400px', marginLeft: 'auto', marginRight: 'auto' }}>
+                      Questo club non ha un contratto attivo. Per attivare un piano, crea un nuovo contratto dalla sezione Contratti.
+                    </p>
+                    <button
+                      className="tp-btn tp-btn-primary"
+                      onClick={() => setActiveTab('contracts')}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+                    >
+                      <FaFileContract /> Vai ai Contratti
+                    </button>
                   </div>
-                </div>
+                ) : (
+                  /* Has active contract - show full details */
+                  <>
+                    <p style={{ margin: '-16px 0 24px', fontSize: '13px', color: '#6B7280' }}>
+                      Per modificare l'abbonamento vai alla sezione <button onClick={() => setActiveTab('contracts')} style={{ color: '#3B82F6', textDecoration: 'none', background: 'none', border: 'none', cursor: 'pointer', padding: 0, font: 'inherit' }}>Contratti</button>
+                    </p>
+
+                    {/* Card Abbonamento */}
+                    <div style={{
+                      background: 'white',
+                      borderRadius: '16px',
+                      border: '1px solid #E5E7EB',
+                      overflow: 'hidden'
+                    }}>
+                      {/* Header con gradient */}
+                      <div style={{
+                        background: 'linear-gradient(135deg, #1A1A1A 0%, #374151 100%)',
+                        padding: '32px',
+                        position: 'relative'
+                      }}>
+                        {/* Badge stato */}
+                        <span style={{
+                          position: 'absolute',
+                          top: '20px',
+                          right: '20px',
+                          background: statusBadge.bg,
+                          color: statusBadge.color,
+                          padding: '6px 14px',
+                          borderRadius: '20px',
+                          fontSize: '12px',
+                          fontWeight: 600,
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px'
+                        }}>
+                          {statusBadge.icon} {statusBadge.label}
+                        </span>
+
+                        <div style={{ display: 'flex', alignItems: 'flex-end', gap: '16px' }}>
+                          <div style={{
+                            width: '64px',
+                            height: '64px',
+                            borderRadius: '16px',
+                            background: 'linear-gradient(135deg, #85FF00 0%, #65D000 100%)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }}>
+                            <FaCrown size={28} color="#1A1A1A" />
+                          </div>
+                          <div>
+                            <p style={{ margin: '0 0 4px 0', color: '#9CA3AF', fontSize: '13px' }}>Piano attivo</p>
+                            <h2 style={{ margin: 0, color: 'white', fontSize: '28px', fontWeight: 700 }}>
+                              {(() => {
+                                const activeContract = contracts.find(c => c.status === 'active');
+                                const planConfig = CONTRACT_PLAN_CONFIG[activeContract?.plan_type];
+                                return planConfig?.name || activeContract?.plan_type || 'Piano Attivo';
+                              })()}
+                            </h2>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Body */}
+                      <div style={{ padding: '24px' }}>
+                        {/* Prezzo in evidenza */}
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          padding: '24px',
+                          background: '#F9FAFB',
+                          borderRadius: '12px',
+                          marginBottom: '24px'
+                        }}>
+                          <div style={{ textAlign: 'center' }}>
+                            {(() => {
+                              const activeContract = contracts.find(c => c.status === 'active');
+                              const monthlyPrice = activeContract?.payment_terms === 'annual'
+                                ? Math.round((activeContract?.total_value || 0) / 12)
+                                : activeContract?.payment_terms === 'semi_annual'
+                                ? Math.round((activeContract?.total_value || 0) / 6)
+                                : activeContract?.payment_terms === 'quarterly'
+                                ? Math.round((activeContract?.total_value || 0) / 3)
+                                : (activeContract?.total_value || 0);
+                              return (
+                                <>
+                                  <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: '4px' }}>
+                                    <span style={{ fontSize: '14px', color: '#6B7280', fontWeight: 500 }}>€</span>
+                                    <span style={{ fontSize: '48px', fontWeight: 700, color: '#1A1A1A' }}>
+                                      {monthlyPrice.toLocaleString()}
+                                    </span>
+                                    <span style={{ fontSize: '16px', color: '#6B7280', fontWeight: 500 }}>/mese</span>
+                                  </div>
+                                  <p style={{ margin: '8px 0 0 0', color: '#6B7280', fontSize: '14px' }}>
+                                    €{(activeContract?.total_value || 0).toLocaleString()} {
+                                      activeContract?.payment_terms === 'annual' ? 'fatturati annualmente' :
+                                      activeContract?.payment_terms === 'semi_annual' ? 'fatturati semestralmente' :
+                                      activeContract?.payment_terms === 'quarterly' ? 'fatturati trimestralmente' :
+                                      'fatturati mensilmente'
+                                    }
+                                  </p>
+                                </>
+                              );
+                            })()}
+                          </div>
+                        </div>
+
+                        {/* Dettagli in griglia */}
+                        <div style={{
+                          display: 'grid',
+                          gridTemplateColumns: 'repeat(2, 1fr)',
+                          gap: '16px'
+                        }}>
+                          <div style={{
+                            padding: '20px',
+                            background: '#FAFAFA',
+                            borderRadius: '12px',
+                            border: '1px solid #F0F0F0'
+                          }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                              <div style={{
+                                width: '32px',
+                                height: '32px',
+                                borderRadius: '8px',
+                                background: '#EFF6FF',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                              }}>
+                                <FaCalendarAlt size={14} color="#3B82F6" />
+                              </div>
+                              <span style={{ fontSize: '13px', color: '#6B7280', fontWeight: 500 }}>Data Inizio</span>
+                            </div>
+                            <p style={{ margin: 0, fontSize: '16px', fontWeight: 600, color: '#1A1A1A' }}>
+                              {formatDate(contracts.find(c => c.status === 'active')?.start_date)}
+                            </p>
+                          </div>
+
+                          <div style={{
+                            padding: '20px',
+                            background: '#FAFAFA',
+                            borderRadius: '12px',
+                            border: '1px solid #F0F0F0'
+                          }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                              <div style={{
+                                width: '32px',
+                                height: '32px',
+                                borderRadius: '8px',
+                                background: '#FEF3C7',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                              }}>
+                                <FaCalendarAlt size={14} color="#D97706" />
+                              </div>
+                              <span style={{ fontSize: '13px', color: '#6B7280', fontWeight: 500 }}>Scadenza</span>
+                            </div>
+                            <p style={{ margin: 0, fontSize: '16px', fontWeight: 600, color: '#1A1A1A' }}>
+                              {formatDate(contracts.find(c => c.status === 'active')?.end_date)}
+                            </p>
+                          </div>
+
+                          <div style={{
+                            padding: '20px',
+                            background: '#FAFAFA',
+                            borderRadius: '12px',
+                            border: '1px solid #F0F0F0'
+                          }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                              <div style={{
+                                width: '32px',
+                                height: '32px',
+                                borderRadius: '8px',
+                                background: '#ECFDF5',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                              }}>
+                                <FaRedo size={14} color="#059669" />
+                              </div>
+                              <span style={{ fontSize: '13px', color: '#6B7280', fontWeight: 500 }}>Rinnovo</span>
+                            </div>
+                            <p style={{ margin: 0, fontSize: '16px', fontWeight: 600, color: '#1A1A1A' }}>
+                              {contracts.find(c => c.status === 'active')?.auto_renew ? 'Automatico' : 'Manuale'}
+                            </p>
+                          </div>
+
+                          <div style={{
+                            padding: '20px',
+                            background: '#FAFAFA',
+                            borderRadius: '12px',
+                            border: '1px solid #F0F0F0'
+                          }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                              <div style={{
+                                width: '32px',
+                                height: '32px',
+                                borderRadius: '8px',
+                                background: '#F3E8FF',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                              }}>
+                                <FaFileInvoice size={14} color="#8B5CF6" />
+                              </div>
+                              <span style={{ fontSize: '13px', color: '#6B7280', fontWeight: 500 }}>Fatturazione</span>
+                            </div>
+                            <p style={{ margin: 0, fontSize: '16px', fontWeight: 600, color: '#1A1A1A' }}>
+                              {(() => {
+                                const pt = contracts.find(c => c.status === 'active')?.payment_terms;
+                                return pt === 'annual' ? 'Annuale' :
+                                       pt === 'semi_annual' ? 'Semestrale' :
+                                       pt === 'quarterly' ? 'Trimestrale' :
+                                       pt === 'monthly' ? 'Mensile' : '-';
+                              })()}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* MRR / ARR */}
+                        <div style={{
+                          marginTop: '24px',
+                          padding: '20px',
+                          background: 'linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%)',
+                          borderRadius: '12px',
+                          display: 'flex',
+                          justifyContent: 'space-around',
+                          alignItems: 'center'
+                        }}>
+                          {(() => {
+                            const activeContract = contracts.find(c => c.status === 'active');
+                            const annualValue = activeContract?.total_value || 0;
+                            const monthlyValue = Math.round(annualValue / 12);
+                            return (
+                              <>
+                                <div style={{ textAlign: 'center' }}>
+                                  <p style={{ margin: '0 0 4px 0', fontSize: '12px', color: '#065F46', fontWeight: 500 }}>MRR</p>
+                                  <p style={{ margin: 0, fontSize: '24px', fontWeight: 700, color: '#059669' }}>
+                                    €{monthlyValue.toLocaleString()}
+                                  </p>
+                                </div>
+                                <div style={{ width: '1px', height: '40px', background: '#A7F3D0' }} />
+                                <div style={{ textAlign: 'center' }}>
+                                  <p style={{ margin: '0 0 4px 0', fontSize: '12px', color: '#065F46', fontWeight: 500 }}>ARR</p>
+                                  <p style={{ margin: 0, fontSize: '24px', fontWeight: 700, color: '#059669' }}>
+                                    €{annualValue.toLocaleString()}
+                                  </p>
+                                </div>
+                              </>
+                            );
+                          })()}
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             )}
 
@@ -812,7 +882,7 @@ function AdminClubDetail() {
                 </div>
 
                 {contracts.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '60px', color: '#6B7280' }}>
+                  <div style={{ textAlign: 'center', padding: '60px', color: '#6B7280', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                     <FaInbox size={48} style={{ marginBottom: '16px', opacity: 0.5 }} />
                     <h4 style={{ margin: '0 0 8px 0' }}>Nessun contratto</h4>
                     <p style={{ margin: '0 0 16px 0', fontSize: '14px' }}>Non ci sono contratti associati a questo club</p>
@@ -1403,7 +1473,7 @@ function AdminClubDetail() {
         <Modal
           isOpen={showStatusModal}
           onClose={closeStatusModal}
-          title={statusAction === 'suspend' ? 'Sospendi Account' : 'Riattiva Account'}
+          title={statusAction === 'suspend' ? 'Sospendi Club' : 'Riattiva Club'}
         >
           <div style={{ padding: '20px' }}>
             <div style={{
@@ -1494,7 +1564,7 @@ function AdminClubDetail() {
                   opacity: (statusAction === 'suspend' && !statusMotivo.trim()) ? 0.5 : 1
                 }}
               >
-                {statusAction === 'suspend' ? 'Sospendi Account' : 'Riattiva Account'}
+                {statusAction === 'suspend' ? 'Sospendi Club' : 'Riattiva Club'}
               </button>
             </div>
           </div>

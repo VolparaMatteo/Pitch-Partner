@@ -335,6 +335,21 @@ def create_club():
     db.session.add(club)
     db.session.commit()
 
+    # Registra attività di creazione
+    admin_id = get_jwt_identity()
+    admin = Admin.query.get(admin_id)
+    admin_name = admin.email if admin else 'admin'
+
+    activity = ClubActivity(
+        club_id=club.id,
+        tipo='altro',
+        descrizione=f'Club "{club.nome}" creato da {admin_name}',
+        esito='positivo',
+        created_by=admin_name
+    )
+    db.session.add(activity)
+    db.session.commit()
+
     return jsonify({
         'message': 'Club creato con successo',
         'club': {
