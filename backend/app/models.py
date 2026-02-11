@@ -6577,3 +6577,101 @@ class AdminInvoice(db.Model):
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
             'created_by': self.created_by
         }
+
+
+# ============================================================
+# Newsletter Models
+# ============================================================
+
+newsletter_campaign_groups = db.Table('newsletter_campaign_groups',
+    db.Column('campaign_id', db.Integer, db.ForeignKey('newsletter_campaigns.id'), primary_key=True),
+    db.Column('group_id', db.Integer, db.ForeignKey('newsletter_groups.id'), primary_key=True)
+)
+
+
+class NewsletterGroup(db.Model):
+    __tablename__ = 'newsletter_groups'
+
+    id = db.Column(db.Integer, primary_key=True)
+    nome = db.Column(db.String(200), nullable=False)
+    descrizione = db.Column(db.Text, nullable=True)
+    colore = db.Column(db.String(7), default='#6B7280')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    recipients = db.relationship('NewsletterRecipient', backref='group', cascade='all, delete-orphan')
+
+    def to_dict(self, include_recipients=False):
+        data = {
+            'id': self.id,
+            'nome': self.nome,
+            'descrizione': self.descrizione,
+            'colore': self.colore,
+            'recipients_count': len(self.recipients) if self.recipients else 0,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+        }
+        if include_recipients:
+            data['recipients'] = [r.to_dict() for r in self.recipients]
+        return data
+
+
+class NewsletterRecipient(db.Model):
+    __tablename__ = 'newsletter_recipients'
+
+    id = db.Column(db.Integer, primary_key=True)
+    group_id = db.Column(db.Integer, db.ForeignKey('newsletter_groups.id'), nullable=False)
+    email = db.Column(db.String(200), nullable=False)
+    nome = db.Column(db.String(200), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    __table_args__ = (
+        db.UniqueConstraint('group_id', 'email', name='uq_newsletter_recipient_group_email'),
+    )
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'group_id': self.group_id,
+            'email': self.email,
+            'nome': self.nome,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+        }
+
+
+class NewsletterCampaign(db.Model):
+    __tablename__ = 'newsletter_campaigns'
+
+    id = db.Column(db.Integer, primary_key=True)
+    titolo = db.Column(db.String(300), nullable=False)
+    oggetto = db.Column(db.String(500), nullable=False)
+    corpo_html = db.Column(db.Text, nullable=False)
+    account_key = db.Column(db.String(50), nullable=False)
+    status = db.Column(db.String(50), default='bozza')
+    totale_destinatari = db.Column(db.Integer, default=0)
+    inviati_ok = db.Column(db.Integer, default=0)
+    inviati_errore = db.Column(db.Integer, default=0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    sent_at = db.Column(db.DateTime, nullable=True)
+
+    groups = db.relationship('NewsletterGroup', secondary=newsletter_campaign_groups,
+                             backref=db.backref('campaigns', lazy='dynamic'))
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'titolo': self.titolo,
+            'oggetto': self.oggetto,
+            'corpo_html': self.corpo_html,
+            'account_key': self.account_key,
+            'status': self.status,
+            'totale_destinatari': self.totale_destinatari,
+            'inviati_ok': self.inviati_ok,
+            'inviati_errore': self.inviati_errore,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'sent_at': self.sent_at.isoformat() if self.sent_at else None,
+            'group_ids': [g.id for g in self.groups],
+            'groups': [{'id': g.id, 'nome': g.nome, 'colore': g.colore} for g in self.groups],
+        }

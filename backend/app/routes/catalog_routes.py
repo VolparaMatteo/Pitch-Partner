@@ -356,7 +356,7 @@ def export_excel(catalog_id):
         )
 
         # Header
-        headers = ['Codice', 'Nome', 'Categoria', 'Tipo', 'Posizione', 'Dimensioni', 'Prezzo', 'Disponibile']
+        headers = ['Nome', 'Categoria', 'Tipo', 'Posizione', 'Dimensioni', 'Prezzo', 'Disponibile']
         for col, header in enumerate(headers, 1):
             cell = ws.cell(row=1, column=col, value=header)
             cell.fill = header_fill
@@ -367,7 +367,6 @@ def export_excel(catalog_id):
         # Dati
         for row, asset in enumerate(catalog.assets, 2):
             data = [
-                asset.codice,
                 asset.nome,
                 asset.category.nome if asset.category else '',
                 asset.tipo,
@@ -461,16 +460,15 @@ def export_pdf(catalog_id):
 
         # Tabella asset
         if catalog.assets:
-            data = [['Codice', 'Nome', 'Categoria', 'Prezzo']]
+            data = [['Nome', 'Categoria', 'Prezzo']]
             for asset in catalog.assets:
                 data.append([
-                    asset.codice,
                     asset.nome,
                     asset.category.nome if asset.category else '',
                     f"€ {asset.prezzo_listino:,.2f}" if asset.prezzo_listino else '-'
                 ])
 
-            table = Table(data, colWidths=[3*cm, 7*cm, 4*cm, 3*cm])
+            table = Table(data, colWidths=[7*cm, 4*cm, 3*cm])
             table.setStyle(TableStyle([
                 ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1A1A1A')),
                 ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
@@ -543,7 +541,6 @@ def get_available_assets():
             categories[cat_name] = []
         categories[cat_name].append({
             'id': asset.id,
-            'codice': asset.codice,
             'nome': asset.nome,
             'descrizione_breve': asset.descrizione_breve,
             'immagine_principale': asset.immagine_principale,

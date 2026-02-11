@@ -4,6 +4,7 @@ from flask_migrate import Migrate
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from dotenv import load_dotenv
+from datetime import timedelta
 import os
 import json
 
@@ -20,6 +21,7 @@ def create_app():
     app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///pitch_partner.db')
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', 'jwt-secret-key')
+    app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(days=30)
 
     db.init_app(app)
     migrate.init_app(app, db)
@@ -41,7 +43,13 @@ def create_app():
     # Enable CORS for all routes with full configuration
     CORS(app, resources={
         r"/api/*": {
-            "origins": ["http://localhost:3001", "http://localhost:3000", "http://localhost:3003"],
+            "origins": [
+                "http://localhost:3001",
+                "http://localhost:3000",
+                "http://localhost:3003",
+                "http://localhost:19006",
+                "http://localhost:8081",
+            ],
             "methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
             "allow_headers": ["Content-Type", "Authorization"],
             "expose_headers": ["Content-Type", "Authorization"],
@@ -119,12 +127,18 @@ def create_app():
     from app.routes.admin_contract_routes import admin_contract_bp
     from app.routes.admin_finance_routes import admin_finance_bp
     from app.routes.admin_notification_routes import admin_notification_bp
+    from app.routes.admin_email_routes import admin_email_bp
+    from app.routes.admin_newsletter_routes import admin_newsletter_bp
+    from app.routes.auth_routes import auth_bp
 
+    app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(admin_bp, url_prefix='/api/admin')
     app.register_blueprint(admin_kpi_bp, url_prefix='/api/admin/kpi')
     app.register_blueprint(admin_contract_bp, url_prefix='/api/admin')
     app.register_blueprint(admin_finance_bp, url_prefix='/api/admin')
     app.register_blueprint(admin_notification_bp, url_prefix='/api/admin')
+    app.register_blueprint(admin_email_bp, url_prefix='/api/admin')
+    app.register_blueprint(admin_newsletter_bp, url_prefix='/api/admin')
     app.register_blueprint(club_bp, url_prefix='/api/club')
     app.register_blueprint(sponsor_bp, url_prefix='/api')
     app.register_blueprint(upload_bp, url_prefix='/api')

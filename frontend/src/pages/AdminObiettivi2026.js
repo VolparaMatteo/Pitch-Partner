@@ -212,18 +212,17 @@ function AdminObiettivi2026() {
           </div>
 
           {/* Context Banner */}
-          <div className="bg-gradient-to-r from-gray-900 to-gray-800 rounded-2xl p-6 mb-6 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-lime-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+          <div className="bg-white rounded-2xl p-6 mb-6 border-2 border-gray-900 relative overflow-hidden">
             <div className="relative">
               <div className="flex items-center gap-3 mb-3">
-                <span className="px-3 py-1 bg-white text-gray-900 rounded-full text-xs font-bold uppercase tracking-wide">
+                <span className="px-3 py-1 bg-gray-900 text-white rounded-full text-xs font-bold uppercase tracking-wide">
                   Fase Pre-Revenue
                 </span>
               </div>
-              <p className="text-gray-300 text-lg">
-                <span className="text-red-400 font-semibold">0 clienti • 0 fatturato</span>
-                <span className="mx-3 text-gray-600">→</span>
-                <span className="text-lime-400 font-semibold">Validazione + Revenue ricorrenti + Credibilità investitori</span>
+              <p className="text-gray-900 text-lg">
+                <span className="font-semibold">0 clienti • 0 fatturato</span>
+                <span className="mx-3">→</span>
+                <span className="font-semibold">Validazione + Revenue ricorrenti + Credibilità investitori</span>
               </p>
             </div>
           </div>
@@ -281,7 +280,7 @@ function AdminObiettivi2026() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                 <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-5 text-white">
                   <div className="flex items-center justify-between mb-4">
-                    <div className="w-11 h-11 bg-lime-400 rounded-xl flex items-center justify-center">
+                    <div className="w-11 h-11 bg-white rounded-xl flex items-center justify-center">
                       <HiOutlineUserGroup className="w-6 h-6 text-gray-900" />
                     </div>
                     <span className="text-xs font-semibold px-2 py-1 bg-white/10 rounded-lg">TARGET</span>
@@ -292,7 +291,7 @@ function AdminObiettivi2026() {
 
                 <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-5 text-white">
                   <div className="flex items-center justify-between mb-4">
-                    <div className="w-11 h-11 bg-lime-400 rounded-xl flex items-center justify-center">
+                    <div className="w-11 h-11 bg-white rounded-xl flex items-center justify-center">
                       <HiOutlineCurrencyEuro className="w-6 h-6 text-gray-900" />
                     </div>
                     <span className="text-xs font-semibold px-2 py-1 bg-white/10 rounded-lg">ARR</span>
@@ -303,7 +302,7 @@ function AdminObiettivi2026() {
 
                 <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-5 text-white">
                   <div className="flex items-center justify-between mb-4">
-                    <div className="w-11 h-11 bg-lime-400 rounded-xl flex items-center justify-center">
+                    <div className="w-11 h-11 bg-white rounded-xl flex items-center justify-center">
                       <HiOutlineBanknotes className="w-6 h-6 text-gray-900" />
                     </div>
                     <span className="text-xs font-semibold px-2 py-1 bg-white/10 rounded-lg">REVENUE</span>
@@ -314,7 +313,7 @@ function AdminObiettivi2026() {
 
                 <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-5 text-white">
                   <div className="flex items-center justify-between mb-4">
-                    <div className="w-11 h-11 bg-lime-400 rounded-xl flex items-center justify-center">
+                    <div className="w-11 h-11 bg-white rounded-xl flex items-center justify-center">
                       <HiOutlineArrowTrendingUp className="w-6 h-6 text-gray-900" />
                     </div>
                     <span className="text-xs font-semibold px-2 py-1 bg-white/10 rounded-lg">CASH</span>
@@ -628,7 +627,7 @@ function AdminObiettivi2026() {
                       <div className="flex items-center gap-4">
                         <div className={`w-14 h-14 rounded-xl flex items-center justify-center text-lg font-bold ${
                           expandedQuarter === quarter
-                            ? 'bg-lime-400 text-gray-900'
+                            ? 'bg-white text-gray-900'
                             : 'bg-gray-200 text-gray-700'
                         }`}>
                           {quarter}
@@ -644,7 +643,7 @@ function AdminObiettivi2026() {
                       </div>
                       <div className="flex items-center gap-6">
                         <div className="text-right">
-                          <div className={`text-2xl font-bold ${expandedQuarter === quarter ? 'text-lime-400' : 'text-gray-900'}`}>
+                          <div className={`text-2xl font-bold ${expandedQuarter === quarter ? 'text-white' : 'text-gray-900'}`}>
                             {data.contracts}
                           </div>
                           <div className={`text-xs ${expandedQuarter === quarter ? 'text-gray-400' : 'text-gray-500'}`}>
@@ -662,7 +661,7 @@ function AdminObiettivi2026() {
                           </div>
                         )}
                         <HiOutlineChevronDown className={`w-5 h-5 transition-transform ${
-                          expandedQuarter === quarter ? 'text-lime-400 rotate-180' : 'text-gray-400'
+                          expandedQuarter === quarter ? 'text-white rotate-180' : 'text-gray-400'
                         }`} />
                       </div>
                     </button>

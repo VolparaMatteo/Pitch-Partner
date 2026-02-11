@@ -55,7 +55,6 @@ def get_lead_products(lead_id):
             asset = InventoryAsset.query.get(p.asset_id)
             if asset:
                 item['asset_nome'] = asset.nome
-                item['asset_codice'] = asset.codice
                 item['prezzo_listino'] = asset.prezzo_listino
         elif p.right_id:
             right = Right.query.get(p.right_id)
@@ -265,7 +264,6 @@ def get_available_catalog(lead_id):
     return jsonify({
         'assets': [{
             'id': a.id,
-            'codice': a.codice,
             'nome': a.nome,
             'tipo': a.tipo,
             'prezzo_listino': a.prezzo_listino,

@@ -106,7 +106,6 @@ def create_activation(match_id):
             if inv_asset:
                 inventory_asset_info = {
                     'id': inv_asset.id,
-                    'codice': inv_asset.codice,
                     'nome': inv_asset.nome,
                     'tipo': inv_asset.tipo,
                     'immagine_principale': inv_asset.immagine_principale
@@ -184,7 +183,6 @@ def get_activations(match_id):
             if inv_asset:
                 inventory_asset_info = {
                     'id': inv_asset.id,
-                    'codice': inv_asset.codice,
                     'nome': inv_asset.nome,
                     'tipo': inv_asset.tipo,
                     'posizione': inv_asset.posizione,
@@ -455,7 +453,6 @@ def get_contract_activations(contract_id):
             if inv_asset:
                 inventory_asset_info = {
                     'id': inv_asset.id,
-                    'codice': inv_asset.codice,
                     'nome': inv_asset.nome,
                     'tipo': inv_asset.tipo,
                     'immagine_principale': inv_asset.immagine_principale
@@ -546,7 +543,6 @@ def get_available_allocations_for_match(match_id):
             'asset_id': allocation.asset_id,
             'inventory_asset': {
                 'id': inv_asset.id,
-                'codice': inv_asset.codice,
                 'nome': inv_asset.nome,
                 'tipo': inv_asset.tipo,
                 'posizione': inv_asset.posizione,
@@ -608,7 +604,6 @@ def get_available_inventory_assets_for_match(match_id):
 
         assets_data.append({
             'id': asset.id,
-            'codice': asset.codice,
             'nome': asset.nome,
             'tipo': asset.tipo,
             'posizione': asset.posizione,

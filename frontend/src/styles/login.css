@@ -2,7 +2,9 @@
 
 .modern-login-container {
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
   background: #ffffff;
   animation: fadeIn 0.5s ease-in-out;
 }
@@ -26,6 +28,7 @@
   justify-content: space-between;
   padding: 48px;
   overflow: hidden;
+  min-height: 0;
 }
 
 .login-left-section::before {
@@ -80,9 +83,10 @@
 
 .testimonial-container {
   margin-top: auto;
-  margin-bottom: 80px;
+  margin-bottom: 40px;
   position: relative;
-  min-height: 300px;
+  flex-shrink: 1;
+  overflow: hidden;
 }
 
 .testimonial-slide {
@@ -195,8 +199,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 48px;
+  padding: 40px;
   background: #ffffff;
+  overflow-y: auto;
+  min-height: 0;
 }
 
 .login-form-container {
@@ -557,6 +563,167 @@
   border-color: #1a1a1a;
 }
 
+/* Role Selector Modal */
+.role-selector-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  animation: fadeIn 0.2s ease;
+  backdrop-filter: blur(4px);
+}
+
+.role-selector-modal {
+  background: white;
+  border-radius: 20px;
+  padding: 36px;
+  max-width: 520px;
+  width: 90%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.role-selector-header {
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.role-selector-header h2 {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-bottom: 8px;
+}
+
+.role-selector-header p {
+  font-size: 14px;
+  color: #666;
+  line-height: 1.5;
+}
+
+.role-selector-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.role-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 20px;
+  border: 2px solid #e5e7eb;
+  border-radius: 14px;
+  background: #f9fafb;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  text-align: left;
+  width: 100%;
+  outline: none;
+  font-family: inherit;
+}
+
+.role-card:hover {
+  border-color: #1a1a1a;
+  background: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+}
+
+.role-card:active {
+  transform: translateY(0);
+}
+
+.role-card-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: #1a1a1a;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.role-card-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.role-card-label {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 2px;
+}
+
+.role-card-detail {
+  font-size: 13px;
+  color: #666;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.role-card-arrow {
+  color: #999;
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.role-card:hover .role-card-arrow {
+  color: #1a1a1a;
+  transform: translateX(3px);
+}
+
+.role-selector-cancel {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  background: transparent;
+  color: #666;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.role-selector-cancel:hover {
+  background: #f3f4f6;
+  color: #1a1a1a;
+}
+
+@media (max-width: 640px) {
+  .role-selector-modal {
+    padding: 24px;
+    margin: 16px;
+  }
+
+  .role-selector-header h2 {
+    font-size: 20px;
+  }
+
+  .role-card {
+    padding: 14px 16px;
+  }
+
+  .role-card-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+  }
+}
+
 /* Responsive Design */
 @media (max-width: 968px) {
   .modern-login-container {
@@ -564,45 +731,186 @@
   }
 
   .login-left-section {
-    min-height: 300px;
-    padding: 32px;
+    display: none;
+  }
+
+  .login-right-section {
+    flex: 1;
+    padding: 32px 24px;
+    height: 100vh;
+    height: 100dvh;
+  }
+
+  .login-form-logo {
+    height: 100px;
+  }
+
+  .login-header {
+    margin-bottom: 28px;
+  }
+
+  .portal-badge {
+    margin-bottom: 24px;
+  }
+}
+
+@media (max-width: 640px) {
+  .login-right-section {
+    padding: 24px 20px;
+  }
+
+  .login-form-logo {
+    height: 80px;
+  }
+
+  .login-logo-container {
+    margin-bottom: 16px;
+  }
+
+  .login-header h1 {
+    font-size: 26px;
+  }
+
+  .login-header {
+    margin-bottom: 24px;
+  }
+
+  .portal-badge {
+    margin-bottom: 20px;
+  }
+
+  .other-logins {
+    margin-top: 24px;
+    padding-top: 16px;
+  }
+
+  .login-help {
+    margin-top: 16px;
+  }
+
+  .form-input-new {
+    padding: 14px 16px;
+  }
+
+  .btn-continue {
+    padding: 14px;
+  }
+
+  .login-form-new {
+    gap: 16px;
+  }
+}
+
+@media (max-height: 700px) {
+  .login-form-logo {
+    height: 70px;
+  }
+
+  .login-logo-container {
+    margin-bottom: 12px;
+  }
+
+  .login-header {
+    margin-bottom: 20px;
+  }
+
+  .login-header h1 {
+    font-size: 24px;
+  }
+
+  .portal-badge {
+    margin-bottom: 16px;
+    padding: 6px 16px;
+  }
+
+  .login-form-new {
+    gap: 14px;
+  }
+
+  .form-input-new {
+    padding: 12px 16px;
+  }
+
+  .btn-continue {
+    padding: 12px;
+    margin-top: 8px;
+  }
+
+  .login-help {
+    margin-top: 12px;
+  }
+
+  .other-logins {
+    margin-top: 16px;
+    padding-top: 12px;
   }
 
   .testimonial-quote {
     font-size: 24px;
   }
 
-  .login-right-section {
-    padding: 32px 24px;
+  .testimonial-container {
+    margin-bottom: 20px;
   }
 
-  .testimonial-navigation {
-    margin-top: 24px;
+  .login-left-section {
+    padding: 32px;
   }
 }
 
-@media (max-width: 640px) {
-  .login-left-section {
-    padding: 24px;
+@media (max-height: 600px) {
+  .login-form-logo {
+    height: 50px;
   }
 
-  .login-right-section {
-    padding: 24px 16px;
+  .login-logo-container {
+    margin-bottom: 8px;
   }
 
   .login-header h1 {
-    font-size: 28px;
+    font-size: 22px;
+    margin-bottom: 4px;
   }
 
-  .testimonial-quote {
-    font-size: 20px;
+  .login-header {
+    margin-bottom: 16px;
   }
 
-  .login-tabs {
-    flex-direction: column;
+  .portal-badge {
+    margin-bottom: 12px;
+    padding: 4px 12px;
+    font-size: 11px;
   }
 
-  .login-tab {
-    padding: 12px;
+  .login-form-new {
+    gap: 10px;
+  }
+
+  .form-group-new {
+    gap: 6px;
+  }
+
+  .form-input-new {
+    padding: 10px 14px;
+    font-size: 14px;
+  }
+
+  .btn-continue {
+    padding: 10px;
+    font-size: 14px;
+    margin-top: 4px;
+  }
+
+  .login-help {
+    margin-top: 8px;
+  }
+
+  .other-logins {
+    margin-top: 12px;
+    padding-top: 10px;
+  }
+
+  .other-logins-title {
+    margin-bottom: 8px;
   }
 }

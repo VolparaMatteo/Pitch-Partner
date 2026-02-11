@@ -10,7 +10,7 @@ function LayoutContent({ children }) {
     const location = useLocation();
 
     // Don't show sidebar/topbar on login pages
-    const isLoginPage = ['/', '/admin/login', '/club/login', '/sponsor/login'].includes(location.pathname);
+    const isLoginPage = ['/', '/login', '/admin/login', '/club/login', '/sponsor/login'].includes(location.pathname);
 
     // Fullscreen pages (no sidebar, topbar, footer)
     // Automation builder pages: /club/automations/new, /club/automations/:id, /club/automations/:id/edit
@@ -22,8 +22,8 @@ function LayoutContent({ children }) {
                              location.pathname.startsWith('/catalog/') ||
                              location.pathname.startsWith('/activate/');
 
-    // Pages without footer (chat-style pages)
-    const isNoFooterPage = location.pathname === '/messages';
+    // Pages without footer (chat-style pages, admin pages)
+    const isNoFooterPage = location.pathname === '/messages' || location.pathname.startsWith('/admin');
 
     if (isLoginPage || isFullscreenPage) {
         return <>{children}</>;
@@ -45,7 +45,7 @@ function LayoutContent({ children }) {
                 </main>
 
                 {/* Footer */}
-                <Footer />
+                {!isNoFooterPage && <Footer />}
             </div>
         </div>
     );

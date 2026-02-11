@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import Login from './pages/Login';
 import AdminLogin from './pages/AdminLogin';
 import AdminProfile from './pages/AdminProfile';
 import AdminLeadListPage from './pages/AdminLeadListPage';
@@ -16,6 +17,8 @@ import AdminFinance from './pages/AdminFinance';
 import AdminInvoiceForm from './pages/AdminInvoiceForm';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminNotifications from './pages/AdminNotifications';
+import AdminEmail from './pages/AdminEmail';
+import AdminNewsletter from './pages/AdminNewsletter';
 import ClubLogin from './pages/ClubLogin';
 import ClubDashboard from './pages/ClubDashboard';
 import ClubAnalytics from './pages/ClubAnalytics';
@@ -140,9 +143,10 @@ function App() {
                         <ScrollToTop />
                         <Layout>
                                 <Routes>
-                                        {/* Admin Routes */}
-                                        <Route path="/" element={<AdminLogin />} />
-                                        <Route path="/admin/login" element={<AdminLogin />} />
+                                        {/* Unified Login */}
+                                        <Route path="/" element={<Login />} />
+                                        <Route path="/login" element={<Login />} />
+                                        <Route path="/admin/login" element={<Login />} />
                                         <Route path="/admin/dashboard" element={<AdminDashboard />} />
                                         <Route path="/admin/profile" element={<AdminProfile />} />
                                         <Route path="/admin/leads" element={<AdminLeadListPage />} />
@@ -165,9 +169,11 @@ function App() {
                                         <Route path="/admin/fatture/new" element={<AdminInvoiceForm />} />
                                         <Route path="/admin/fatture/:invoiceId/edit" element={<AdminInvoiceForm />} />
                                         <Route path="/admin/notifiche" element={<AdminNotifications />} />
+                                        <Route path="/admin/email" element={<AdminEmail />} />
+                                        <Route path="/admin/newsletter" element={<AdminNewsletter />} />
 
                                         {/* Club Routes */}
-                                        <Route path="/club/login" element={<ClubLogin />} />
+                                        <Route path="/club/login" element={<Login />} />
                                         <Route path="/club/dashboard" element={<ClubDashboard />} />
                                         <Route path="/club/analytics" element={<ClubAnalytics />} />
                                         <Route path="/club/profile" element={<ClubProfile />} />
@@ -243,7 +249,7 @@ function App() {
                                         <Route path="/club/catalogs/:id" element={<CatalogBuilder />} />
 
                                         {/* Sponsor Routes */}
-                                        <Route path="/sponsor/login" element={<SponsorLogin />} />
+                                        <Route path="/sponsor/login" element={<Login />} />
                                         <Route path="/sponsor/dashboard" element={<SponsorDashboard />} />
                                         <Route path="/sponsor/analytics" element={<SponsorAnalytics />} />
                                         <Route path="/sponsor/profile" element={<SponsorProfile />} />

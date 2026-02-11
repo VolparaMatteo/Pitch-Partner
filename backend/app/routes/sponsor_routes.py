@@ -778,11 +778,17 @@ def get_sponsor_assets(sponsor_id):
             if asset:
                 assets_data.append({
                     'id': asset.id,
-                    'codice': asset.codice,
                     'nome': asset.nome,
                     'tipo': asset.tipo,
+                    'categoria': asset.category.nome if asset.category else None,
+                    'posizione': asset.posizione,
+                    'dimensioni': asset.dimensioni,
                     'immagine_principale': asset.immagine_principale,
+                    'immagine_url': asset.immagine_principale,
                     'prezzo_listino': asset.prezzo_listino,
+                    'prezzo': alloc.prezzo_concordato or asset.prezzo_listino or 0,
+                    'quantita_totale': asset.quantita_totale,
+                    'quantita_allocata': alloc.quantita or 1,
                     'allocation': {
                         'id': alloc.id,
                         'stagione': alloc.stagione,
@@ -2347,12 +2353,17 @@ def get_sponsor_allocated_assets():
             'allocation_id': alloc.id,
             'asset': {
                 'id': asset.id,
-                'codice': asset.codice,
                 'nome': asset.nome,
                 'tipo': asset.tipo,
-                'categoria': asset.categoria,
+                'categoria': asset.category.nome if asset.category else None,
+                'posizione': asset.posizione,
+                'dimensioni': asset.dimensioni,
                 'immagine_principale': asset.immagine_principale,
-                'prezzo_listino': asset.prezzo_listino
+                'immagine_url': asset.immagine_principale,
+                'prezzo_listino': asset.prezzo_listino,
+                'prezzo': alloc.prezzo_concordato or asset.prezzo_listino or 0,
+                'quantita_totale': asset.quantita_totale,
+                'quantita_allocata': alloc.quantita or 1
             },
             'stagione': alloc.stagione,
             'data_inizio': alloc.data_inizio.isoformat() if alloc.data_inizio else None,

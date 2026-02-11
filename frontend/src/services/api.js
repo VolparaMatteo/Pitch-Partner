@@ -51,6 +51,12 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+// Auth API (Unified Login)
+export const authAPI = {
+  unifiedLogin: (email, password, role, roleId) =>
+    api.post('/auth/unified-login', { email, password, role, role_id: roleId }),
+};
+
 // Admin API
 export const adminAPI = {
   login: (email, password) =>
@@ -991,6 +997,111 @@ export const adminNotificationAPI = {
 
   deleteNotification: (id) =>
     api.delete(`/admin/notifications/${id}`)
+};
+
+// Admin Email API
+export const adminEmailAPI = {
+  getAccounts: () =>
+    api.get('/admin/email/accounts'),
+
+  getUnreadCounts: (refresh = false) =>
+    api.get(`/admin/email/unread-counts${refresh ? '?refresh=true' : ''}`),
+
+  getMessages: (key, params = {}) => {
+    const queryParams = new URLSearchParams();
+    if (params.folder) queryParams.append('folder', params.folder);
+    if (params.page) queryParams.append('page', params.page);
+    if (params.per_page) queryParams.append('per_page', params.per_page);
+    if (params.search) queryParams.append('search', params.search);
+    if (params.refresh) queryParams.append('refresh', 'true');
+    return api.get(`/admin/email/${key}/messages?${queryParams.toString()}`);
+  },
+
+  getMessageDetail: (key, uid, folder) => {
+    const params = folder ? `?folder=${encodeURIComponent(folder)}` : '';
+    return api.get(`/admin/email/${key}/messages/${uid}${params}`);
+  },
+
+  sendEmail: (key, data) =>
+    api.post(`/admin/email/${key}/send`, data),
+
+  markAsRead: (key, uid, folder) => {
+    const params = folder ? `?folder=${encodeURIComponent(folder)}` : '';
+    return api.put(`/admin/email/${key}/messages/${uid}/read${params}`);
+  },
+
+  deleteMessage: (key, uid, folder) => {
+    const params = folder ? `?folder=${encodeURIComponent(folder)}` : '';
+    return api.delete(`/admin/email/${key}/messages/${uid}${params}`);
+  },
+
+  getAttachmentUrl: (key, uid, filename, folder) => {
+    const token = localStorage.getItem('token');
+    const params = new URLSearchParams();
+    if (folder) params.append('folder', folder);
+    return `${API_URL}/admin/email/${key}/messages/${uid}/attachment/${encodeURIComponent(filename)}?${params.toString()}`;
+  }
+};
+
+// Admin Newsletter API
+export const adminNewsletterAPI = {
+  getStats: () =>
+    api.get('/admin/newsletter/stats'),
+
+  // Groups
+  getGroups: () =>
+    api.get('/admin/newsletter/groups'),
+
+  createGroup: (data) =>
+    api.post('/admin/newsletter/groups', data),
+
+  getGroup: (id) =>
+    api.get(`/admin/newsletter/groups/${id}`),
+
+  updateGroup: (id, data) =>
+    api.put(`/admin/newsletter/groups/${id}`, data),
+
+  deleteGroup: (id) =>
+    api.delete(`/admin/newsletter/groups/${id}`),
+
+  // Recipients
+  addRecipients: (groupId, recipients) =>
+    api.post(`/admin/newsletter/groups/${groupId}/recipients`, { recipients }),
+
+  getRecipients: (groupId, params = {}) => {
+    const queryParams = new URLSearchParams();
+    if (params.page) queryParams.append('page', params.page);
+    if (params.per_page) queryParams.append('per_page', params.per_page);
+    if (params.search) queryParams.append('search', params.search);
+    return api.get(`/admin/newsletter/groups/${groupId}/recipients?${queryParams.toString()}`);
+  },
+
+  removeRecipient: (recipientId) =>
+    api.delete(`/admin/newsletter/recipients/${recipientId}`),
+
+  // Campaigns
+  getCampaigns: (params = {}) => {
+    const queryParams = new URLSearchParams();
+    if (params.page) queryParams.append('page', params.page);
+    if (params.per_page) queryParams.append('per_page', params.per_page);
+    if (params.status) queryParams.append('status', params.status);
+    return api.get(`/admin/newsletter/campaigns?${queryParams.toString()}`);
+  },
+
+  createCampaign: (data) =>
+    api.post('/admin/newsletter/campaigns', data),
+
+  getCampaign: (id) =>
+    api.get(`/admin/newsletter/campaigns/${id}`),
+
+  updateCampaign: (id, data) =>
+    api.put(`/admin/newsletter/campaigns/${id}`, data),
+
+  deleteCampaign: (id) =>
+    api.delete(`/admin/newsletter/campaigns/${id}`),
+
+  sendCampaign: (id) =>
+    api.post(`/admin/newsletter/campaigns/${id}/send`),
 };
 
 // Public Catalog API (no auth required)

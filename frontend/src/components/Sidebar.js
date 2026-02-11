@@ -38,7 +38,9 @@ import {
     HiOutlineArchiveBox,
     HiOutlineDocumentDuplicate,
     HiOutlineShoppingCart,
-    HiOutlineFlag
+    HiOutlineFlag,
+    HiOutlineEnvelope,
+    HiOutlineMegaphone
 } from 'react-icons/hi2';
 
 function Sidebar() {
@@ -324,6 +326,15 @@ function Sidebar() {
                     label: 'Finanze',
                     items: [
                         { id: 'fatturazione', label: 'Fatturazione', path: '/admin/finanze', icon: HiOutlineWallet },
+                    ]
+                },
+                {
+                    id: 'comunicazioni',
+                    label: 'Comunicazioni',
+                    items: [
+                        { id: 'email', label: 'Email', path: '/admin/email', icon: HiOutlineEnvelope },
+                        { id: 'newsletter', label: 'Newsletter', path: '/admin/newsletter', icon: HiOutlineMegaphone },
+                        { id: 'notifiche', label: 'Notifiche', path: '/admin/notifiche', icon: HiOutlineBell },
                     ]
                 }
             ];
