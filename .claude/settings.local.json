@@ -15,7 +15,8 @@
       "Bash(tree:*)",
       "Bash(dir /s /b \"C:\\\\Users\\\\spino\\\\Documents\\\\GitHub\\\\Pitch-Partner\")",
       "Bash(dir:*)",
-      "Bash(xargs:*)"
+      "Bash(xargs:*)",
+      "Bash(wc:*)"
     ]
   }
 }
