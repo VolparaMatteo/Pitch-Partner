@@ -14,6 +14,9 @@ import {
   FaInbox, FaDownload, FaCopy, FaRedo, FaLink,
   FaFileContract, FaEye, FaFilePdf, FaExternalLinkAlt
 } from 'react-icons/fa';
+import ConversationTab from '../components/ConversationTab';
+import UnifiedTimeline from '../components/UnifiedTimeline';
+import { adminEmailAPI } from '../services/api';
 import '../styles/sponsor-detail.css';
 import '../styles/template-style.css';
 
@@ -75,9 +78,10 @@ function AdminClubDetail() {
   const [invoiceSummary, setInvoiceSummary] = useState(null);
   const [activities, setActivities] = useState([]);
   const [contracts, setContracts] = useState([]);
+  const [timelineEmails, setTimelineEmails] = useState([]);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState(null);
-  const [activeTab, setActiveTab] = useState('subscription');
+  const [activeTab, setActiveTab] = useState('timeline');
 
   const [showActivityModal, setShowActivityModal] = useState(false);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
@@ -131,6 +135,13 @@ function AdminClubDetail() {
       setInvoiceSummary(invoicesRes.data.summary);
       setActivities(activitiesRes.data.activities || []);
       setContracts(contractsRes.data.contracts || []);
+
+      // Fetch conversation emails for timeline (non-blocking)
+      if (clubRes.data?.email) {
+        adminEmailAPI.getConversation(clubRes.data.email).then(res => {
+          setTimelineEmails(res.data?.messages || []);
+        }).catch(() => {});
+      }
     } catch (error) {
       console.error('Errore caricamento club:', error);
       setToast({ message: 'Errore nel caricamento del club', type: 'error' });
@@ -475,12 +486,18 @@ function AdminClubDetail() {
         {/* MAIN CONTENT */}
         <div className="sd-content-card">
           {/* Tabs */}
-          <div style={{ display: 'flex', gap: '8px', padding: '16px 24px', borderBottom: '1px solid #E5E7EB', background: '#FAFAFA' }}>
+          <div style={{
+            display: 'flex', gap: '8px', padding: '16px 24px', borderBottom: '1px solid #E5E7EB', background: '#FAFAFA',
+            overflowX: 'auto', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'thin', scrollbarColor: '#D1D5DB transparent',
+            maskImage: 'linear-gradient(to right, black calc(100% - 32px), transparent 100%)', WebkitMaskImage: 'linear-gradient(to right, black calc(100% - 32px), transparent 100%)'
+          }}>
             {[
+              { id: 'timeline', label: 'Timeline', icon: <FaHistory size={14} />, count: activities.length + invoices.length + contracts.length },
               { id: 'subscription', label: 'Abbonamento', icon: <FaCrown size={14} /> },
               { id: 'contracts', label: 'Contratti', icon: <FaFileContract size={14} />, count: contracts.length },
               { id: 'invoices', label: 'Fatture', icon: <FaFileInvoice size={14} />, count: invoices.length },
               { id: 'activities', label: 'Attivita', icon: <FaHistory size={14} />, count: activities.length },
+              { id: 'conversations', label: 'Conversazioni', icon: <FaEnvelope size={14} /> },
               { id: 'info', label: 'Informazioni', icon: <FaBuilding size={14} /> }
             ].map(tab => (
               <button
@@ -497,7 +514,9 @@ function AdminClubDetail() {
                   color: activeTab === tab.id ? '#FFFFFF' : '#6B7280',
                   fontSize: '14px',
                   fontWeight: 600,
-                  cursor: 'pointer'
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0
                 }}
               >
                 {tab.icon}
@@ -519,6 +538,22 @@ function AdminClubDetail() {
           </div>
 
           <div className="sd-tab-content">
+            {/* TIMELINE TAB */}
+            {activeTab === 'timeline' && (
+              <div className="sd-tab-grid">
+                <div className="sd-tab-header">
+                  <h3 className="sd-tab-title"><FaHistory style={{ color: '#4F46E5' }} /> Timeline Completa</h3>
+                </div>
+                <UnifiedTimeline
+                  activities={activities}
+                  invoices={invoices}
+                  contracts={contracts}
+                  subscriptionEvents={subscriptionEvents}
+                  emails={timelineEmails}
+                />
+              </div>
+            )}
+
             {/* SUBSCRIPTION TAB */}
             {activeTab === 'subscription' && (
               <div className="sd-tab-grid">
@@ -1154,6 +1189,13 @@ function AdminClubDetail() {
                     })}
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* CONVERSATIONS TAB */}
+            {activeTab === 'conversations' && (
+              <div className="sd-tab-grid">
+                <ConversationTab contactEmail={club.email} contactName={club.nome} />
               </div>
             )}
 

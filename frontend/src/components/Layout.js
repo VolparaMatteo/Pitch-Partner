@@ -5,6 +5,7 @@ import Topbar from './Topbar';
 import Footer from './Footer';
 import '../styles/sidebar.css';
 import '../styles/topbar.css';
+import AdminPitchyWidget from './AdminPitchyWidget';
 
 function LayoutContent({ children }) {
     const location = useLocation();
@@ -25,29 +26,35 @@ function LayoutContent({ children }) {
     // Pages without footer (chat-style pages, admin pages)
     const isNoFooterPage = location.pathname === '/messages' || location.pathname.startsWith('/admin');
 
+    // Show Pitchy widget on admin pages (not login)
+    const isAdminPage = location.pathname.startsWith('/admin') && !isLoginPage;
+
     if (isLoginPage || isFullscreenPage) {
         return <>{children}</>;
     }
 
     return (
-        <div className="app-layout">
-            {/* Sidebar */}
-            <Sidebar />
+        <>
+            <div className="app-layout">
+                {/* Sidebar */}
+                <Sidebar />
 
-            {/* Main Area */}
-            <div className="app-main">
-                {/* Topbar */}
-                <Topbar />
+                {/* Main Area */}
+                <div className="app-main">
+                    {/* Topbar */}
+                    <Topbar />
 
-                {/* Content */}
-                <main className="app-content">
-                    {children}
-                </main>
+                    {/* Content */}
+                    <main className="app-content">
+                        {children}
+                    </main>
 
-                {/* Footer */}
-                {!isNoFooterPage && <Footer />}
+                    {/* Footer */}
+                    {!isNoFooterPage && <Footer />}
+                </div>
             </div>
-        </div>
+            {isAdminPage && <AdminPitchyWidget />}
+        </>
     );
 }
 

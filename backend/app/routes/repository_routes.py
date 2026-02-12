@@ -394,7 +394,7 @@ def get_media(sponsor_id):
     if tipo:
         query = query.filter_by(tipo=tipo)
     if tags:
-        query = query.filter(Media.tags.like(f'%{tags}%'))
+        query = query.filter(Media.tags.ilike(f'%{tags}%'))
 
     media_list = query.order_by(Media.created_at.desc()).all()
 

@@ -21,7 +21,7 @@ def generate_invoice_number():
     year = datetime.now().year
     # Trova l'ultimo numero fattura dell'anno
     last_invoice = AdminInvoice.query.filter(
-        AdminInvoice.invoice_number.like(f'PP-{year}-%')
+        AdminInvoice.invoice_number.ilike(f'PP-{year}-%')
     ).order_by(AdminInvoice.id.desc()).first()
 
     if last_invoice:

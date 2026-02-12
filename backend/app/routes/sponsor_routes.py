@@ -4,6 +4,7 @@ from app import db
 from app.models import Sponsor, HeadOfTerms, SponsorAccount, SponsorInvitation, Club
 from datetime import datetime, timedelta
 from sqlalchemy import func
+from collections import Counter
 import secrets
 
 
@@ -368,15 +369,14 @@ def get_sponsors_analytics():
 
     # Nuovi sponsor negli ultimi 12 mesi
     twelve_months_ago = datetime.utcnow() - timedelta(days=365)
-    sponsors_timeline = db.session.query(
-        func.strftime('%Y-%m', Sponsor.created_at).label('month'),
-        func.count(Sponsor.id).label('count')
-    ).filter(
+    recent_sponsors = Sponsor.query.filter(
         Sponsor.club_id == club_id,
         Sponsor.created_at >= twelve_months_ago
-    ).group_by('month').all()
-
-    timeline_data = [{'month': item[0], 'count': item[1]} for item in sponsors_timeline]
+    ).all()
+    month_counts = Counter(
+        s.created_at.strftime('%Y-%m') for s in recent_sponsors if s.created_at
+    )
+    timeline_data = [{'month': m, 'count': c} for m, c in sorted(month_counts.items())]
 
     # Contratti in scadenza (60 giorni)
     sixty_days = datetime.utcnow() + timedelta(days=60)

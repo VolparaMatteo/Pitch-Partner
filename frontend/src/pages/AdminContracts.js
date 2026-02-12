@@ -5,11 +5,11 @@ import { getImageUrl } from '../utils/imageUtils';
 import Toast from '../components/Toast';
 import {
   FaSearch, FaList, FaTh, FaEye, FaPlus, FaTrash,
-  FaFileContract, FaCheck, FaTimes, FaClock,
-  FaInbox, FaEuroSign, FaChevronDown,
+  FaCheck, FaTimes, FaClock,
+  FaInbox, FaChevronDown,
   FaFilter, FaCrown, FaRedo,
   FaChevronLeft, FaChevronRight,
-  FaCalendarAlt, FaExclamationTriangle, FaBuilding
+  FaCalendarAlt, FaExclamationTriangle, FaBuilding, FaFileContract
 } from 'react-icons/fa';
 import '../styles/template-style.css';
 
@@ -43,7 +43,6 @@ const PLAN_COLORS = {
 
 function AdminContracts() {
   const [contracts, setContracts] = useState([]);
-  const [stats, setStats] = useState(null);
   const [clubsWithoutContract, setClubsWithoutContract] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -95,20 +94,14 @@ function AdminContracts() {
       setLoading(true);
       const headers = { Authorization: `Bearer ${token}` };
 
-      const [contractsRes, statsRes, clubsRes] = await Promise.all([
+      const [contractsRes, clubsRes] = await Promise.all([
         fetch(`${API_URL}/admin/contracts`, { headers }),
-        fetch(`${API_URL}/admin/contracts/stats`, { headers }).catch(() => ({ ok: false })),
         fetch(`${API_URL}/admin/contracts/clubs-without-contract`, { headers }).catch(() => ({ ok: false }))
       ]);
 
       if (contractsRes.ok) {
         const data = await contractsRes.json();
         setContracts(data.contracts || []);
-      }
-
-      if (statsRes.ok) {
-        const data = await statsRes.json();
-        setStats(data);
       }
 
       if (clubsRes.ok) {
@@ -241,7 +234,13 @@ function AdminContracts() {
       {/* Page Header */}
       <div className="tp-page-header">
         <h1 className="tp-page-title">Gestione Contratti</h1>
-        <div className="tp-page-actions">
+        <div className="tp-page-actions" style={{ display: 'flex', gap: '8px' }}>
+          <button
+            className="tp-btn tp-btn-outline"
+            onClick={() => navigate('/admin/contract-templates')}
+          >
+            <FaFileContract /> Template
+          </button>
           <button
             className="tp-btn tp-btn-primary"
             onClick={() => navigate('/admin/contratti/new')}
@@ -250,51 +249,6 @@ function AdminContracts() {
           </button>
         </div>
       </div>
-
-      {/* KPI Stats */}
-      {stats && (
-        <div className="tp-stats-row" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
-          <div className="tp-stat-card-dark">
-            <div className="tp-stat-icon" style={{ background: '#FFFFFF' }}>
-              <FaFileContract style={{ color: '#1F2937' }} />
-            </div>
-            <div className="tp-stat-content">
-              <div className="tp-stat-value">{stats.active_contracts || 0}</div>
-              <div className="tp-stat-label">Contratti Attivi</div>
-            </div>
-          </div>
-
-          <div className="tp-stat-card-dark">
-            <div className="tp-stat-icon" style={{ background: '#FFFFFF' }}>
-              <FaEuroSign style={{ color: '#1F2937' }} />
-            </div>
-            <div className="tp-stat-content">
-              <div className="tp-stat-value">{formatCurrency(stats.total_arr)}</div>
-              <div className="tp-stat-label">ARR Totale</div>
-            </div>
-          </div>
-
-          <div className="tp-stat-card-dark">
-            <div className="tp-stat-icon" style={{ background: '#FFFFFF' }}>
-              <FaEuroSign style={{ color: '#1F2937' }} />
-            </div>
-            <div className="tp-stat-content">
-              <div className="tp-stat-value">{formatCurrency(stats.mrr)}</div>
-              <div className="tp-stat-label">MRR</div>
-            </div>
-          </div>
-
-          <div className="tp-stat-card-dark">
-            <div className="tp-stat-icon" style={{ background: '#FFFFFF' }}>
-              <FaExclamationTriangle style={{ color: '#1F2937' }} />
-            </div>
-            <div className="tp-stat-content">
-              <div className="tp-stat-value">{stats.expiring_soon || 0}</div>
-              <div className="tp-stat-label">In Scadenza (90gg)</div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Clubs without contract alert */}
       {clubsWithoutContract.length > 0 && (
@@ -587,15 +541,17 @@ function AdminContracts() {
                           <tr key={contract.id} onClick={() => navigate(`/admin/contratti/${contract.id}`)} style={{ cursor: 'pointer' }}>
                             <td>
                               <div className="tp-table-user">
-                                <div className="tp-table-avatar" style={{ borderRadius: '10px', background: contract.club_logo_url ? 'white' : '#F3F4F6', overflow: 'hidden' }}>
+                                <div className="tp-table-avatar" style={{ borderRadius: '50%' }}>
                                   {contract.club_logo_url ? (
                                     <img
                                       src={getImageUrl(contract.club_logo_url)}
                                       alt={contract.club_name}
-                                      style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                                      style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
                                     />
                                   ) : (
-                                    <FaBuilding size={18} color="#6B7280" />
+                                    <span style={{ fontSize: '16px', fontWeight: 700, color: '#1A1A1A' }}>
+                                      {contract.club_name?.charAt(0) || '?'}
+                                    </span>
                                   )}
                                 </div>
                                 <div className="tp-table-user-info">
@@ -753,22 +709,24 @@ function AdminContracts() {
                         <div style={{
                           width: '56px',
                           height: '56px',
-                          borderRadius: '12px',
-                          background: contract.club_logo_url ? 'white' : '#F3F4F6',
+                          borderRadius: '50%',
+                          background: contract.club_logo_url ? 'white' : 'linear-gradient(135deg, #F3F4F6 0%, #E5E7EB 100%)',
+                          border: '2px solid #E5E7EB',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          overflow: 'hidden',
-                          border: '1px solid #E5E7EB'
+                          overflow: 'hidden'
                         }}>
                           {contract.club_logo_url ? (
                             <img
                               src={getImageUrl(contract.club_logo_url)}
                               alt={contract.club_name}
-                              style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '4px' }}
+                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                             />
                           ) : (
-                            <FaBuilding size={24} color="#6B7280" />
+                            <span style={{ fontSize: '22px', fontWeight: 700, color: '#1A1A1A' }}>
+                              {contract.club_name?.charAt(0) || '?'}
+                            </span>
                           )}
                         </div>
                         <div style={{ flex: 1 }}>

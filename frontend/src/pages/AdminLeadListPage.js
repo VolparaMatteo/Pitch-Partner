@@ -9,7 +9,7 @@ import {
   FaSearch, FaList, FaTh, FaEye, FaTrashAlt, FaPlus,
   FaPhone, FaFileAlt, FaHandshake, FaStar,
   FaCheck, FaTimes,
-  FaInbox, FaPercent, FaChevronDown,
+  FaInbox, FaChevronDown,
   FaFilter, FaUserTie, FaBuilding,
   FaChevronLeft, FaChevronRight,
   FaFutbol, FaMapMarkerAlt, FaRocket
@@ -47,7 +47,6 @@ const FONTE_OPTIONS = [
 
 function AdminLeadListPage() {
   const [leads, setLeads] = useState([]);
-  const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState({ fonte: 'all', status: 'all' });
@@ -111,15 +110,6 @@ function AdminLeadListPage() {
 
       const leadsData = Array.isArray(leadsRes.data) ? leadsRes.data : (leadsRes.data?.leads || []);
       setLeads(leadsData);
-
-      // Build stats from leads data
-      const totals = {
-        total_leads: leadsData.filter(l => !['vinto', 'perso'].includes(l.stage)).length,
-        total_value: leadsData.reduce((sum, l) => sum + (l.valore_stimato || 0), 0),
-        won_count: leadsData.filter(l => l.stage === 'vinto').length,
-        lost_count: leadsData.filter(l => l.stage === 'perso').length
-      };
-      setStats({ totals });
     } catch (error) {
       console.error('Errore:', error);
       setLeads([]);
@@ -302,39 +292,6 @@ function AdminLeadListPage() {
           </button>
         </div>
       </div>
-
-      {/* KPI Stats */}
-      {stats?.totals && (
-        <div className="tp-stats-row" style={{ gridTemplateColumns: 'repeat(2, 1fr)' }}>
-          <div className="tp-stat-card-dark">
-            <div className="tp-stat-icon" style={{ background: '#FFFFFF' }}>
-              <FaInbox style={{ color: '#1F2937' }} />
-            </div>
-            <div className="tp-stat-content">
-              <div className="tp-stat-value">{stats.totals.total_leads || 0}</div>
-              <div className="tp-stat-label">Lead Attivi</div>
-            </div>
-          </div>
-
-          <div className="tp-stat-card-dark">
-            <div className="tp-stat-icon" style={{ background: '#FFFFFF' }}>
-              <FaPercent style={{ color: '#1F2937' }} />
-            </div>
-            <div className="tp-stat-content">
-              <div className="tp-stat-value">
-                {(() => {
-                  const vinti = stats.totals.won_count || 0;
-                  const persi = stats.totals.lost_count || 0;
-                  const total = vinti + persi;
-                  return total > 0 ? Math.round(vinti / total * 100) : 0;
-                })()}%
-              </div>
-              <div className="tp-stat-label">Tasso Conversione</div>
-            </div>
-          </div>
-
-        </div>
-      )}
 
       {/* Main Card with Filters */}
       <div className="tp-card">

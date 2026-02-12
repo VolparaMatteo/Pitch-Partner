@@ -129,7 +129,15 @@ def create_app():
     from app.routes.admin_notification_routes import admin_notification_bp
     from app.routes.admin_email_routes import admin_email_bp
     from app.routes.admin_newsletter_routes import admin_newsletter_bp
+    from app.routes.admin_task_routes import admin_task_bp
+    from app.routes.admin_calendar_routes import admin_calendar_bp
+    from app.routes.booking_routes import booking_bp
     from app.routes.auth_routes import auth_bp
+    from app.routes.admin_automation_routes import admin_automation_bp
+    from app.routes.admin_pitchy_routes import admin_pitchy_bp
+    from app.routes.admin_document_routes import admin_document_bp
+    from app.routes.contract_signing_routes import contract_signing_bp
+    from app.routes.admin_credential_routes import admin_credential_bp
 
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(admin_bp, url_prefix='/api/admin')
@@ -139,6 +147,14 @@ def create_app():
     app.register_blueprint(admin_notification_bp, url_prefix='/api/admin')
     app.register_blueprint(admin_email_bp, url_prefix='/api/admin')
     app.register_blueprint(admin_newsletter_bp, url_prefix='/api/admin')
+    app.register_blueprint(admin_task_bp, url_prefix='/api/admin')
+    app.register_blueprint(admin_calendar_bp, url_prefix='/api/admin')
+    app.register_blueprint(admin_automation_bp, url_prefix='/api/admin')
+    app.register_blueprint(admin_pitchy_bp, url_prefix='/api/admin')
+    app.register_blueprint(admin_document_bp, url_prefix='/api/admin')
+    app.register_blueprint(admin_credential_bp, url_prefix='/api/admin')
+    app.register_blueprint(contract_signing_bp, url_prefix='/api')
+    app.register_blueprint(booking_bp, url_prefix='/api')
     app.register_blueprint(club_bp, url_prefix='/api/club')
     app.register_blueprint(sponsor_bp, url_prefix='/api')
     app.register_blueprint(upload_bp, url_prefix='/api')

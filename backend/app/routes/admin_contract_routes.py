@@ -161,6 +161,13 @@ def create_contract():
     db.session.add(activity)
     db.session.commit()
 
+    # Trigger automazione
+    try:
+        from app.services.admin_automation_triggers import trigger_admin_contract_created
+        trigger_admin_contract_created(contract)
+    except Exception as e:
+        print(f"[Trigger] contract_created error: {e}")
+
     return jsonify({
         'message': 'Contratto creato con successo',
         'contract': contract.to_dict()

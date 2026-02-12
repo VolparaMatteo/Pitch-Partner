@@ -19,6 +19,14 @@ import AdminDashboard from './pages/AdminDashboard';
 import AdminNotifications from './pages/AdminNotifications';
 import AdminEmail from './pages/AdminEmail';
 import AdminNewsletter from './pages/AdminNewsletter';
+import AdminTasks from './pages/AdminTasks';
+import AdminCalendar from './pages/AdminCalendar';
+import AdminWorkflows from './pages/AdminWorkflows';
+import AdminWorkflowEditor from './pages/AdminWorkflowEditor';
+import AdminContractTemplates from './pages/AdminContractTemplates';
+import AdminCredentials from './pages/AdminCredentials';
+import ContractSigning from './pages/ContractSigning';
+import PublicBooking from './pages/PublicBooking';
 import ClubLogin from './pages/ClubLogin';
 import ClubDashboard from './pages/ClubDashboard';
 import ClubAnalytics from './pages/ClubAnalytics';
@@ -171,6 +179,13 @@ function App() {
                                         <Route path="/admin/notifiche" element={<AdminNotifications />} />
                                         <Route path="/admin/email" element={<AdminEmail />} />
                                         <Route path="/admin/newsletter" element={<AdminNewsletter />} />
+                                        <Route path="/admin/tasks" element={<AdminTasks />} />
+                                        <Route path="/admin/calendario" element={<AdminCalendar />} />
+                                        <Route path="/admin/workflows" element={<AdminWorkflows />} />
+                                        <Route path="/admin/contract-templates" element={<AdminContractTemplates />} />
+                                        <Route path="/admin/credenziali" element={<AdminCredentials />} />
+                                        <Route path="/admin/workflows/new" element={<AdminWorkflowEditor />} />
+                                        <Route path="/admin/workflows/:workflowId" element={<AdminWorkflowEditor />} />
 
                                         {/* Club Routes */}
                                         <Route path="/club/login" element={<Login />} />
@@ -301,6 +316,8 @@ function App() {
                                         <Route path="/catalog/:token" element={<PublicCatalog />} />
                                         <Route path="/join/sponsor/:token" element={<SponsorJoin />} />
                                         <Route path="/activate/:token" element={<ClubActivation />} />
+                                        <Route path="/firma/:token" element={<ContractSigning />} />
+                                        <Route path="/prenota-demo" element={<PublicBooking />} />
                                         <Route path="/documentazione" element={<Documentazione />} />
                                         <Route path="/docs" element={<Docs />} />
                                         <Route path="/faq" element={<FAQ />} />

@@ -39,6 +39,26 @@ def get_unread_counts():
         return jsonify({'error': str(e)}), 500
 
 
+# GET - Conversazione con un contatto (cerca in tutti gli account)
+@admin_email_bp.route('/email/conversation', methods=['GET'])
+@jwt_required()
+def get_conversation():
+    if not _require_admin():
+        return jsonify({'error': 'Accesso non autorizzato'}), 403
+
+    contact_email = request.args.get('email', '').strip()
+    if not contact_email:
+        return jsonify({'error': 'Parametro email obbligatorio'}), 400
+
+    force = request.args.get('refresh', 'false').lower() == 'true'
+
+    try:
+        result = AdminEmailService.fetch_conversation(contact_email, force_refresh=force)
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
 # GET - Lista email per account
 @admin_email_bp.route('/email/<key>/messages', methods=['GET'])
 @jwt_required()

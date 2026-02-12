@@ -1499,6 +1499,13 @@ def create_lead():
 
     log_action('create', 'lead', lead.id, f"Creato lead {lead.nome_club}")
 
+    # Trigger automazione
+    try:
+        from app.services.admin_automation_triggers import trigger_admin_lead_created
+        trigger_admin_lead_created(lead)
+    except Exception as e:
+        print(f"[Trigger] lead_created error: {e}")
+
     return jsonify({
         'message': 'Lead creato',
         'lead': lead.to_dict()
@@ -1552,7 +1559,8 @@ def update_lead(lead_id):
     lead.updated_at = datetime.utcnow()
 
     # Log cambio stage
-    if old_stage != lead.stage:
+    stage_changed = old_stage != lead.stage
+    if stage_changed:
         activity = CRMLeadActivity(
             lead_id=lead.id,
             tipo='stage_change',
@@ -1562,6 +1570,14 @@ def update_lead(lead_id):
         db.session.add(activity)
 
     db.session.commit()
+
+    # Trigger automazione cambio stage
+    if stage_changed:
+        try:
+            from app.services.admin_automation_triggers import trigger_admin_lead_stage_changed
+            trigger_admin_lead_stage_changed(lead, old_stage, lead.stage)
+        except Exception as e:
+            print(f"[Trigger] lead_stage_changed error: {e}")
 
     log_action('update', 'lead', lead.id, f"Aggiornato lead {lead.nome_club}")
 
@@ -1704,6 +1720,14 @@ def convert_lead(lead_id):
     log_action('convert', 'lead', lead.id,
                f"Lead {lead.nome_club} convertito in club {club.id}")
 
+    # Trigger automazione
+    try:
+        from app.services.admin_automation_triggers import trigger_admin_lead_converted, trigger_admin_club_created
+        trigger_admin_lead_converted(lead, club)
+        trigger_admin_club_created(club)
+    except Exception as e:
+        print(f"[Trigger] lead_converted error: {e}")
+
     return jsonify({
         'message': 'Lead convertito con successo',
         'club_id': club.id,
@@ -1770,7 +1794,11 @@ def get_email_templates():
     if not verify_admin():
         return jsonify({'error': 'Accesso non autorizzato'}), 403
 
-    templates = AdminEmailTemplate.query.filter_by(attivo=True).all()
+    include_inactive = request.args.get('all', 'false').lower() == 'true'
+    if include_inactive:
+        templates = AdminEmailTemplate.query.order_by(AdminEmailTemplate.nome).all()
+    else:
+        templates = AdminEmailTemplate.query.filter_by(attivo=True).order_by(AdminEmailTemplate.nome).all()
     return jsonify([t.to_dict() for t in templates]), 200
 
 
@@ -1838,6 +1866,23 @@ def update_email_template(template_id):
         'message': 'Template aggiornato',
         'template': template.to_dict()
     }), 200
+
+
+@admin_bp.route('/email-templates/<int:template_id>', methods=['DELETE'])
+@jwt_required()
+def delete_email_template(template_id):
+    """Elimina template email"""
+    if not verify_admin():
+        return jsonify({'error': 'Accesso non autorizzato'}), 403
+
+    template = AdminEmailTemplate.query.get_or_404(template_id)
+    nome = template.nome
+    db.session.delete(template)
+    db.session.commit()
+
+    log_action('delete', 'email_template', template_id, f"Eliminato template {nome}")
+
+    return jsonify({'message': 'Template eliminato'}), 200
 
 
 @admin_bp.route('/communications/send', methods=['POST'])
@@ -2308,7 +2353,7 @@ def create_club_invoice(club_id):
     # Genera numero fattura
     year = datetime.utcnow().year
     last_invoice = AdminInvoice.query.filter(
-        AdminInvoice.invoice_number.like(f'PP-{year}-%')
+        AdminInvoice.invoice_number.ilike(f'PP-{year}-%')
     ).order_by(AdminInvoice.id.desc()).first()
 
     if last_invoice:

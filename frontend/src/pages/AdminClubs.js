@@ -10,11 +10,6 @@ const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5003/api';
 function AdminClubs() {
   const [clubs, setClubs] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({
-    total: 0,
-    active: 0,
-    expired: 0
-  });
   const navigate = useNavigate();
   const { user } = getAuth();
 
@@ -37,16 +32,6 @@ function AdminClubs() {
 
       const clubsData = Array.isArray(response.data) ? response.data : [];
       setClubs(clubsData);
-
-      // Calcola statistiche
-      const active = clubsData.filter(c => c.account_attivo && c.licenza_valida).length;
-      const expired = clubsData.filter(c => !c.licenza_valida).length;
-
-      setStats({
-        total: clubsData.length,
-        active: active,
-        expired: expired
-      });
     } catch (error) {
       console.error('Errore nel caricamento club:', error);
       setClubs([]);
@@ -88,33 +73,6 @@ function AdminClubs() {
           >
             + Nuovo Club
           </button>
-        </div>
-
-        {/* KPI Cards */}
-        <div className="stats-header">
-          <div className="stat-card-green">
-            <div className="stat-card-content">
-              <div className="stat-label">Totale Club</div>
-              <div className="stat-description">Tutti i club registrati</div>
-              <div className="stat-value">{stats.total}</div>
-            </div>
-          </div>
-
-          <div className="stat-card-dark">
-            <div className="stat-card-content">
-              <div className="stat-label">Club Attivi</div>
-              <div className="stat-description">Con licenza valida</div>
-              <div className="stat-value-green">{stats.active}</div>
-            </div>
-          </div>
-
-          <div className="stat-card-pink">
-            <div className="stat-card-content">
-              <div className="stat-label">Licenze Scadute</div>
-              <div className="stat-description">Richiedono rinnovo</div>
-              <div className="stat-value-dark">{stats.expired}</div>
-            </div>
-          </div>
         </div>
 
         {/* Clubs List */}

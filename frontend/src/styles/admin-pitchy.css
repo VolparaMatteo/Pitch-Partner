@@ -1,0 +1,437 @@
+/* ============================================
+   Admin Pitchy Widget - Light Theme
+   Prefix: ap-
+   ============================================ */
+
+/* --- FAB (Floating Action Button) --- */
+.ap-fab {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: #ffffff;
+    border: 3px solid #000000;
+    cursor: pointer;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.ap-fab:hover {
+    transform: scale(1.08);
+    box-shadow: 0 6px 28px rgba(0, 0, 0, 0.2);
+}
+
+.ap-fab.ap-fab--open {
+    background: #f3f4f6;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.ap-fab.ap-fab--open:hover {
+    box-shadow: 0 6px 22px rgba(0, 0, 0, 0.2);
+}
+
+.ap-fab .ap-fab-close {
+    color: #374151;
+    font-size: 22px;
+}
+
+/* --- Overlay --- */
+.ap-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(2px);
+    z-index: 9997;
+    animation: ap-fadeIn 0.2s ease;
+}
+
+/* --- Panel --- */
+.ap-panel {
+    position: fixed;
+    bottom: 96px;
+    right: 24px;
+    width: 420px;
+    height: 600px;
+    background: #ffffff;
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+    z-index: 9998;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: ap-slideUp 0.3s ease;
+    border: 3px solid #000000;
+}
+
+/* --- Header --- */
+.ap-header {
+    background: #f9fafb;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 1px solid #e5e7eb;
+    flex-shrink: 0;
+}
+
+.ap-header-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.ap-header-title {
+    color: #111827;
+    font-size: 15px;
+    font-weight: 600;
+    margin: 0;
+}
+
+.ap-header-page {
+    color: #6b7280;
+    font-size: 11px;
+    margin: 2px 0 0 0;
+    opacity: 0.8;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ap-header-close {
+    background: none;
+    border: none;
+    color: #9ca3af;
+    cursor: pointer;
+    padding: 4px;
+    font-size: 18px;
+    transition: color 0.2s;
+    flex-shrink: 0;
+}
+
+.ap-header-close:hover {
+    color: #374151;
+}
+
+/* --- Messages area --- */
+.ap-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.ap-messages::-webkit-scrollbar {
+    width: 4px;
+}
+
+.ap-messages::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.ap-messages::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 2px;
+}
+
+/* --- Empty state --- */
+.ap-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    gap: 16px;
+    padding: 20px;
+    animation: ap-fadeUp 0.4s ease;
+}
+
+.ap-empty-avatar {
+    opacity: 0.9;
+}
+
+.ap-empty-title {
+    color: #111827;
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0;
+}
+
+.ap-empty-subtitle {
+    color: #6b7280;
+    font-size: 13px;
+    margin: 0;
+    text-align: center;
+}
+
+/* --- Suggestion chips --- */
+.ap-chips {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+    max-width: 320px;
+    margin-top: 8px;
+}
+
+.ap-chip {
+    background: #f3f4f6;
+    border: 1px solid #e5e7eb;
+    color: #374151;
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: left;
+    width: 100%;
+}
+
+.ap-chip:hover {
+    background: #e5e7eb;
+    border-color: #d1d5db;
+    transform: translateX(4px);
+}
+
+/* --- Message rows --- */
+.ap-row {
+    display: flex;
+    animation: ap-fadeUp 0.25s ease;
+}
+
+.ap-row.user {
+    justify-content: flex-end;
+}
+
+.ap-row.bot {
+    justify-content: flex-start;
+}
+
+/* --- Bubbles --- */
+.ap-bubble {
+    max-width: 85%;
+    padding: 10px 14px;
+    border-radius: 16px;
+    font-size: 13.5px;
+    line-height: 1.5;
+    word-break: break-word;
+}
+
+.ap-row.user .ap-bubble {
+    background: #111827;
+    color: #fff;
+    border-bottom-right-radius: 4px;
+}
+
+.ap-row.bot .ap-bubble {
+    background: #f3f4f6;
+    color: #1f2937;
+    border-bottom-left-radius: 4px;
+}
+
+/* Markdown inside bot bubble */
+.ap-row.bot .ap-bubble p {
+    margin: 0 0 8px 0;
+}
+
+.ap-row.bot .ap-bubble p:last-child {
+    margin-bottom: 0;
+}
+
+.ap-row.bot .ap-bubble ul,
+.ap-row.bot .ap-bubble ol {
+    margin: 4px 0;
+    padding-left: 18px;
+}
+
+.ap-row.bot .ap-bubble li {
+    margin-bottom: 4px;
+}
+
+.ap-row.bot .ap-bubble strong {
+    color: #111827;
+}
+
+.ap-row.bot .ap-bubble code {
+    background: rgba(0, 0, 0, 0.06);
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-size: 12px;
+}
+
+.ap-row.bot .ap-bubble h1,
+.ap-row.bot .ap-bubble h2,
+.ap-row.bot .ap-bubble h3 {
+    font-size: 14px;
+    color: #111827;
+    margin: 12px 0 4px 0;
+}
+
+.ap-row.bot .ap-bubble h1:first-child,
+.ap-row.bot .ap-bubble h2:first-child,
+.ap-row.bot .ap-bubble h3:first-child {
+    margin-top: 0;
+}
+
+/* --- Typing indicator --- */
+.ap-typing {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 12px 16px;
+}
+
+.ap-typing-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #9ca3af;
+    animation: ap-bounce 1.2s infinite;
+}
+
+.ap-typing-dot:nth-child(2) {
+    animation-delay: 0.15s;
+}
+
+.ap-typing-dot:nth-child(3) {
+    animation-delay: 0.3s;
+}
+
+/* --- Input area --- */
+.ap-input-area {
+    padding: 12px 16px 16px;
+    border-top: 1px solid #e5e7eb;
+    background: #f9fafb;
+    flex-shrink: 0;
+}
+
+.ap-clear {
+    display: block;
+    width: 100%;
+    background: none;
+    border: none;
+    color: #9ca3af;
+    font-size: 12px;
+    cursor: pointer;
+    padding: 4px 0 10px;
+    text-align: center;
+    transition: color 0.2s;
+}
+
+.ap-clear:hover {
+    color: #6b7280;
+}
+
+.ap-form {
+    display: flex;
+    gap: 8px;
+    align-items: flex-end;
+}
+
+.ap-form input {
+    flex: 1;
+    background: #ffffff;
+    border: 1px solid #d1d5db;
+    border-radius: 12px;
+    padding: 10px 14px;
+    color: #111827;
+    font-size: 13.5px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.ap-form input::placeholder {
+    color: #9ca3af;
+}
+
+.ap-form input:focus {
+    border-color: #6b7280;
+}
+
+.ap-form button {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: #111827;
+    border: none;
+    color: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+    transition: opacity 0.2s, transform 0.2s;
+}
+
+.ap-form button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.ap-form button:not(:disabled):hover {
+    transform: scale(1.05);
+}
+
+/* --- Animations --- */
+@keyframes ap-slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.96);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes ap-fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes ap-fadeUp {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes ap-bounce {
+    0%, 60%, 100% {
+        transform: translateY(0);
+        opacity: 0.4;
+    }
+    30% {
+        transform: translateY(-6px);
+        opacity: 1;
+    }
+}
+
+/* --- Responsive --- */
+@media (max-width: 768px) {
+    .ap-panel {
+        width: calc(100vw - 16px);
+        height: calc(100vh - 120px);
+        right: 8px;
+        bottom: 88px;
+        border-radius: 16px;
+    }
+
+    .ap-fab {
+        bottom: 16px;
+        right: 16px;
+        width: 50px;
+        height: 50px;
+    }
+}

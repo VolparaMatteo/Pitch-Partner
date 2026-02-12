@@ -12,6 +12,7 @@ import time
 import threading
 import re
 from datetime import datetime
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
 IMAP_HOST = 'imaps.aruba.it'
@@ -298,6 +299,10 @@ class AdminEmailService:
                         'has_attachments': has_attachments
                     })
 
+            # Re-sort by the requested page_uids order (newest first)
+            uid_order = {uid.decode() if isinstance(uid, bytes) else uid: idx for idx, uid in enumerate(page_uids)}
+            emails.sort(key=lambda e: uid_order.get(e['uid'], 999999))
+
             result = {'emails': emails, 'total': total, 'page': page, 'pages': pages}
             cls._cache_set(cache_key, result)
             return result
@@ -513,6 +518,175 @@ class AdminEmailService:
                 conn.logout()
             except Exception:
                 pass
+
+    # ------------------------------------------------------------------ fetch conversation
+    # Set of all PP email addresses for direction detection
+    _PP_EMAILS = {a['email'] for a in ACCOUNTS}
+
+    @classmethod
+    def _search_account_folder(cls, account_key, folder, contact_email):
+        """Search a single account/folder for messages from/to contact_email."""
+        messages = []
+        conn = None
+        try:
+            conn = cls._connect_imap(account_key)
+            status, _ = conn.select(folder, readonly=True)
+            if status != 'OK':
+                return messages
+
+            # Search for emails FROM or TO the contact
+            # Use separate searches and combine for better compatibility
+            all_uids = set()
+
+            status, data = conn.uid('search', None, f'FROM "{contact_email}"')
+            if status == 'OK' and data[0]:
+                all_uids.update(data[0].split())
+
+            status, data = conn.uid('search', None, f'TO "{contact_email}"')
+            if status == 'OK' and data[0]:
+                all_uids.update(data[0].split())
+
+            # Also search CC
+            status, data = conn.uid('search', None, f'CC "{contact_email}"')
+            if status == 'OK' and data[0]:
+                all_uids.update(data[0].split())
+
+            if not all_uids:
+                return messages
+
+            uid_list = sorted(all_uids, key=lambda x: int(x))
+            # Limit to 100 most recent per account/folder
+            if len(uid_list) > 100:
+                uid_list = uid_list[-100:]
+
+            uid_str = b','.join(uid_list)
+            # Fetch only headers + flags (reliable, no body parsing issues)
+            status, msg_data = conn.uid('fetch', uid_str, '(UID FLAGS BODY.PEEK[HEADER] RFC822.SIZE)')
+            if status != 'OK':
+                return messages
+
+            pp_emails_lower = {e.lower() for e in cls._PP_EMAILS}
+
+            for item in msg_data:
+                if not isinstance(item, tuple) or len(item) < 2:
+                    continue
+
+                header_data = item[1]
+                meta_line = item[0].decode('utf-8', errors='replace') if isinstance(item[0], bytes) else str(item[0])
+
+                uid_match = re.search(r'UID (\d+)', meta_line)
+                uid = uid_match.group(1) if uid_match else '0'
+
+                flags_match = re.search(r'FLAGS \(([^)]*)\)', meta_line)
+                flags = flags_match.group(1) if flags_match else ''
+                seen = '\\Seen' in flags
+
+                msg = email.message_from_bytes(header_data) if isinstance(header_data, bytes) else email.message_from_string(header_data)
+                subject = cls._decode_header_value(msg.get('Subject', ''))
+                from_raw = msg.get('From', '')
+                to_raw = msg.get('To', '')
+                from_name, from_addr = parseaddr(from_raw)
+                from_name = cls._decode_header_value(from_name) if from_name else from_addr
+                message_id = msg.get('Message-ID', '')
+                date_raw = msg.get('Date', '')
+
+                date_parsed = None
+                if date_raw:
+                    try:
+                        date_parsed = email.utils.parsedate_to_datetime(date_raw).isoformat()
+                    except Exception:
+                        date_parsed = date_raw
+
+                content_type = msg.get('Content-Type', '')
+                has_attachments = 'multipart/mixed' in content_type.lower()
+
+                direction = 'outbound' if from_addr.lower() in pp_emails_lower else 'inbound'
+
+                messages.append({
+                    'uid': uid,
+                    'account_key': account_key,
+                    'folder': folder,
+                    'direction': direction,
+                    'message_id': message_id,
+                    'subject': subject,
+                    'from_name': from_name,
+                    'from_email': from_addr,
+                    'to': cls._decode_header_value(to_raw),
+                    'date': date_parsed,
+                    'snippet': '',
+                    'seen': seen,
+                    'has_attachments': has_attachments
+                })
+        except Exception:
+            pass
+        finally:
+            if conn:
+                try:
+                    conn.close()
+                    conn.logout()
+                except Exception:
+                    pass
+        return messages
+
+    @classmethod
+    def fetch_conversation(cls, contact_email, force_refresh=False):
+        """Fetch all emails exchanged with contact_email across all PP accounts."""
+        cache_key = f'conversation:{contact_email.lower()}'
+        if not force_refresh:
+            cached = cls._cache_get(cache_key)
+            if cached:
+                return cached
+
+        start_time = time.time()
+        all_messages = []
+
+        # Build tasks: 7 accounts x 2 folders = 14 tasks
+        tasks = []
+        for account in ACCOUNTS:
+            tasks.append((account['key'], 'INBOX', contact_email))
+            tasks.append((account['key'], cls.SENT_FOLDER, contact_email))
+
+        with ThreadPoolExecutor(max_workers=14) as executor:
+            futures = {
+                executor.submit(cls._search_account_folder, key, folder, em): (key, folder)
+                for key, folder, em in tasks
+            }
+            for future in as_completed(futures):
+                try:
+                    messages = future.result()
+                    all_messages.extend(messages)
+                except Exception:
+                    pass
+
+        # Deduplicate by Message-ID
+        seen_ids = set()
+        unique_messages = []
+        for msg in all_messages:
+            mid = msg.get('message_id', '')
+            if mid and mid in seen_ids:
+                continue
+            if mid:
+                seen_ids.add(mid)
+            unique_messages.append(msg)
+
+        # Sort chronologically (oldest first, like a chat)
+        def sort_key(m):
+            d = m.get('date', '')
+            if not d:
+                return ''
+            return d
+        unique_messages.sort(key=sort_key)
+
+        search_time_ms = int((time.time() - start_time) * 1000)
+
+        result = {
+            'messages': unique_messages,
+            'total': len(unique_messages),
+            'search_time_ms': search_time_ms
+        }
+
+        cls._cache_set(cache_key, result)
+        return result
 
     # ------------------------------------------------------------------ branded template
     @staticmethod

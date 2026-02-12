@@ -40,7 +40,9 @@ import {
     HiOutlineShoppingCart,
     HiOutlineFlag,
     HiOutlineEnvelope,
-    HiOutlineMegaphone
+    HiOutlineMegaphone,
+    HiOutlineClipboardDocumentList,
+    HiOutlineKey
 } from 'react-icons/hi2';
 
 function Sidebar() {
@@ -313,18 +315,27 @@ function Sidebar() {
                     ]
                 },
                 {
+                    id: 'operativita',
+                    label: 'Operatività',
+                    items: [
+                        { id: 'calendario', label: 'Calendario', path: '/admin/calendario', icon: HiOutlineCalendarDays },
+                        { id: 'tasks', label: 'Task', path: '/admin/tasks', icon: HiOutlineClipboardDocumentList },
+                    ]
+                },
+                {
                     id: 'crm',
                     label: 'CRM',
                     items: [
                         { id: 'clubs', label: 'Club', path: '/admin/clubs', icon: HiOutlineUserGroup },
-                        { id: 'contratti', label: 'Contratti', path: '/admin/contratti', icon: HiOutlineDocumentText },
                         { id: 'leads', label: 'Lead', path: '/admin/leads', icon: HiOutlineCursorArrowRays },
+                        { id: 'automazioni', label: 'Automazioni', path: '/admin/workflows', icon: HiOutlineBolt },
                     ]
                 },
                 {
-                    id: 'finanze',
-                    label: 'Finanze',
+                    id: 'erp',
+                    label: 'ERP',
                     items: [
+                        { id: 'contratti', label: 'Contratti', path: '/admin/contratti', icon: HiOutlineDocumentText },
                         { id: 'fatturazione', label: 'Fatturazione', path: '/admin/finanze', icon: HiOutlineWallet },
                     ]
                 },
@@ -335,6 +346,13 @@ function Sidebar() {
                         { id: 'email', label: 'Email', path: '/admin/email', icon: HiOutlineEnvelope },
                         { id: 'newsletter', label: 'Newsletter', path: '/admin/newsletter', icon: HiOutlineMegaphone },
                         { id: 'notifiche', label: 'Notifiche', path: '/admin/notifiche', icon: HiOutlineBell },
+                    ]
+                },
+                {
+                    id: 'impostazioni',
+                    label: 'Impostazioni',
+                    items: [
+                        { id: 'credenziali', label: 'Credenziali', path: '/admin/credenziali', icon: HiOutlineKey },
                     ]
                 }
             ];

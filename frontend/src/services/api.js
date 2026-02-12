@@ -1004,6 +1004,9 @@ export const adminEmailAPI = {
   getAccounts: () =>
     api.get('/admin/email/accounts'),
 
+  getConversation: (email, refresh = false) =>
+    api.get('/admin/email/conversation', { params: { email, refresh } }),
+
   getUnreadCounts: (refresh = false) =>
     api.get(`/admin/email/unread-counts${refresh ? '?refresh=true' : ''}`),
 
@@ -1040,7 +1043,20 @@ export const adminEmailAPI = {
     const params = new URLSearchParams();
     if (folder) params.append('folder', folder);
     return `${API_URL}/admin/email/${key}/messages/${uid}/attachment/${encodeURIComponent(filename)}?${params.toString()}`;
-  }
+  },
+
+  // Email Templates
+  getTemplates: (all = false) =>
+    api.get(`/admin/email-templates${all ? '?all=true' : ''}`),
+
+  createTemplate: (data) =>
+    api.post('/admin/email-templates', data),
+
+  updateTemplate: (id, data) =>
+    api.put(`/admin/email-templates/${id}`, data),
+
+  deleteTemplate: (id) =>
+    api.delete(`/admin/email-templates/${id}`)
 };
 
 // Admin Newsletter API
@@ -1102,6 +1118,52 @@ export const adminNewsletterAPI = {
 
   sendCampaign: (id) =>
     api.post(`/admin/newsletter/campaigns/${id}/send`),
+};
+
+// Admin Workflow / Automation API
+export const workflowAPI = {
+  getMeta: () => api.get('/admin/workflows/meta'),
+  getAll: (params) => api.get('/admin/workflows', { params }),
+  getStats: () => api.get('/admin/workflows/stats'),
+  getTemplates: () => api.get('/admin/workflows/templates'),
+  getById: (id) => api.get(`/admin/workflows/${id}`),
+  create: (data) => api.post('/admin/workflows', data),
+  update: (id, data) => api.put(`/admin/workflows/${id}`, data),
+  delete: (id) => api.delete(`/admin/workflows/${id}`),
+  toggle: (id) => api.post(`/admin/workflows/${id}/toggle`),
+  test: (id, data) => api.post(`/admin/workflows/${id}/test`, data),
+  getExecutions: (id, params) => api.get(`/admin/workflows/${id}/executions`, { params }),
+  getExecutionDetail: (execId) => api.get(`/admin/workflows/executions/${execId}`),
+  getEnrollments: (id, params) => api.get(`/admin/workflows/${id}/enrollments`, { params }),
+  createEnrollment: (id, data) => api.post(`/admin/workflows/${id}/enrollments`, data),
+  removeEnrollment: (id, eid) => api.delete(`/admin/workflows/${id}/enrollments/${eid}`),
+};
+
+// Admin Document & Contract Template API
+export const adminDocumentAPI = {
+    // Templates
+    getTemplates: (params) => api.get('/admin/document/templates', { params }),
+    getTemplate: (id) => api.get(`/admin/document/templates/${id}`),
+    createTemplate: (data) => api.post('/admin/document/templates', data),
+    updateTemplate: (id, data) => api.put(`/admin/document/templates/${id}`, data),
+    deleteTemplate: (id) => api.delete(`/admin/document/templates/${id}`),
+    previewTemplate: (id, data) => api.post(`/admin/document/templates/${id}/preview`, data),
+    // Documents
+    generateDocument: (contractId, data) => api.post(`/admin/contracts/${contractId}/documents/generate`, data),
+    getContractDocuments: (contractId) => api.get(`/admin/contracts/${contractId}/documents`),
+    getDocument: (id) => api.get(`/admin/documents/${id}`),
+    sendDocument: (id, data) => api.post(`/admin/documents/${id}/send`, data),
+    revokeDocument: (id) => api.post(`/admin/documents/${id}/revoke`),
+    getDocumentTracking: (id) => api.get(`/admin/documents/${id}/tracking`),
+};
+
+// Admin Credential Vault API
+export const adminCredentialAPI = {
+    getAll: (params) => api.get('/admin/credentials', { params }),
+    create: (data) => api.post('/admin/credentials', data),
+    update: (id, data) => api.put(`/admin/credentials/${id}`, data),
+    delete: (id) => api.delete(`/admin/credentials/${id}`),
+    revealPassword: (id) => api.post(`/admin/credentials/${id}/reveal`),
 };
 
 // Public Catalog API (no auth required)

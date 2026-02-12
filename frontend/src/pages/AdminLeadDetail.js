@@ -13,6 +13,9 @@ import {
   FaGlobe, FaBuilding, FaUserTie,
   FaMapMarkerAlt, FaFutbol, FaRocket, FaInbox
 } from 'react-icons/fa';
+import ConversationTab from '../components/ConversationTab';
+import UnifiedTimeline from '../components/UnifiedTimeline';
+import { adminEmailAPI } from '../services/api';
 import '../styles/sponsor-detail.css';
 import '../styles/template-style.css';
 
@@ -66,7 +69,8 @@ function AdminLeadDetail() {
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [activeTab, setActiveTab] = useState('activities');
+  const [activeTab, setActiveTab] = useState('timeline');
+  const [timelineEmails, setTimelineEmails] = useState([]);
 
   // Activity Modal
   const [showActivityModal, setShowActivityModal] = useState(false);
@@ -101,6 +105,13 @@ function AdminLeadDetail() {
       });
       setLead(res.data);
       setActivities(res.data.activities || []);
+
+      // Fetch conversation emails for timeline (non-blocking)
+      if (res.data?.contatto_email) {
+        adminEmailAPI.getConversation(res.data.contatto_email).then(emailRes => {
+          setTimelineEmails(emailRes.data?.messages || []);
+        }).catch(() => {});
+      }
     } catch (error) {
       console.error('Errore caricamento lead:', error);
       setToast({ message: 'Errore nel caricamento del lead', type: 'error' });
@@ -432,6 +443,36 @@ function AdminLeadDetail() {
             background: '#FAFAFA'
           }}>
             <button
+              onClick={() => setActiveTab('timeline')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '10px 20px',
+                borderRadius: '8px',
+                border: 'none',
+                background: activeTab === 'timeline' ? '#1A1A1A' : 'transparent',
+                color: activeTab === 'timeline' ? '#FFFFFF' : '#6B7280',
+                fontSize: '14px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              <FaHistory size={14} />
+              Timeline
+              <span style={{
+                background: activeTab === 'timeline' ? '#85FF00' : '#E5E7EB',
+                color: activeTab === 'timeline' ? '#1A1A1A' : '#6B7280',
+                padding: '2px 8px',
+                borderRadius: '12px',
+                fontSize: '12px',
+                fontWeight: 700
+              }}>
+                {activities.length + timelineEmails.length}
+              </span>
+            </button>
+            <button
               onClick={() => setActiveTab('activities')}
               style={{
                 display: 'flex',
@@ -462,6 +503,26 @@ function AdminLeadDetail() {
               </span>
             </button>
             <button
+              onClick={() => setActiveTab('conversations')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '10px 20px',
+                borderRadius: '8px',
+                border: 'none',
+                background: activeTab === 'conversations' ? '#1A1A1A' : 'transparent',
+                color: activeTab === 'conversations' ? '#FFFFFF' : '#6B7280',
+                fontSize: '14px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              <FaEnvelope size={14} />
+              Conversazioni
+            </button>
+            <button
               onClick={() => setActiveTab('info')}
               style={{
                 display: 'flex',
@@ -485,6 +546,19 @@ function AdminLeadDetail() {
 
           {/* Tab Content */}
           <div className="sd-tab-content">
+            {/* TIMELINE TAB */}
+            {activeTab === 'timeline' && (
+              <div className="sd-tab-grid">
+                <div className="sd-tab-header">
+                  <h3 className="sd-tab-title"><FaHistory style={{ color: '#4F46E5' }} /> Timeline Completa</h3>
+                </div>
+                <UnifiedTimeline
+                  activities={activities}
+                  emails={timelineEmails}
+                />
+              </div>
+            )}
+
             {/* INFO TAB */}
             {activeTab === 'info' && (
               <div className="sd-tab-grid">
@@ -673,6 +747,13 @@ function AdminLeadDetail() {
                     })}
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* CONVERSATIONS TAB */}
+            {activeTab === 'conversations' && (
+              <div className="sd-tab-grid">
+                <ConversationTab contactEmail={lead.contatto_email} contactName={lead.contatto_nome ? `${lead.contatto_nome} (${lead.nome_club || ''})` : lead.nome_club} />
               </div>
             )}
           </div>

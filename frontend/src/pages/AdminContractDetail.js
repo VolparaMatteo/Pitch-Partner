@@ -5,11 +5,14 @@ import { getAuth } from '../utils/auth';
 import { getImageUrl } from '../utils/imageUtils';
 import Toast from '../components/Toast';
 import Modal from '../components/Modal';
+import { adminDocumentAPI } from '../services/api';
 import {
   FaArrowLeft, FaPen, FaCheck, FaTimes,
   FaCalendarAlt, FaCrown, FaFileInvoice,
   FaBuilding, FaInbox, FaFilePdf, FaExternalLinkAlt,
-  FaFileContract, FaEuroSign, FaTrash
+  FaFileContract, FaEuroSign, FaTrash,
+  FaPlus, FaPaperPlane, FaEye, FaBan, FaDownload,
+  FaSignature, FaCopy, FaLink
 } from 'react-icons/fa';
 import '../styles/sponsor-detail.css';
 import '../styles/template-style.css';
@@ -47,11 +50,22 @@ function AdminContractDetail() {
 
   const [contract, setContract] = useState(null);
   const [invoices, setInvoices] = useState([]);
+  const [documents, setDocuments] = useState([]);
+  const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState(null);
   const [activeTab, setActiveTab] = useState('details');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [showGenerateModal, setShowGenerateModal] = useState(false);
+  const [showSendModal, setShowSendModal] = useState(false);
+  const [showTrackingModal, setShowTrackingModal] = useState(false);
+  const [selectedDocId, setSelectedDocId] = useState(null);
+  const [sendEmail, setSendEmail] = useState('');
+  const [trackingData, setTrackingData] = useState([]);
+  const [generating, setGenerating] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [selectedTemplateId, setSelectedTemplateId] = useState('');
 
   useEffect(() => {
     if (!user || user.role !== 'admin') {
@@ -59,6 +73,8 @@ function AdminContractDetail() {
       return;
     }
     fetchContract();
+    fetchDocuments();
+    fetchTemplates();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [contractId]);
 
@@ -77,6 +93,104 @@ function AdminContractDetail() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchDocuments = async () => {
+    try {
+      const res = await adminDocumentAPI.getContractDocuments(contractId);
+      setDocuments(res.data.documents || []);
+    } catch (err) {
+      console.error('Errore caricamento documenti:', err);
+    }
+  };
+
+  const fetchTemplates = async () => {
+    try {
+      const res = await adminDocumentAPI.getTemplates({ attivo: true });
+      setTemplates(res.data.templates || []);
+    } catch (err) {
+      console.error('Errore caricamento template:', err);
+    }
+  };
+
+  const handleGenerateDocument = async () => {
+    if (!selectedTemplateId) return;
+    try {
+      setGenerating(true);
+      await adminDocumentAPI.generateDocument(contractId, { template_id: parseInt(selectedTemplateId) });
+      setToast({ message: 'Documento PDF generato con successo', type: 'success' });
+      setShowGenerateModal(false);
+      setSelectedTemplateId('');
+      fetchDocuments();
+    } catch (err) {
+      setToast({ message: err.response?.data?.error || 'Errore nella generazione', type: 'error' });
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const handleSendDocument = async () => {
+    if (!selectedDocId || !sendEmail) return;
+    try {
+      setSending(true);
+      const res = await adminDocumentAPI.sendDocument(selectedDocId, { email: sendEmail });
+      setToast({ message: `Link firma inviato a ${sendEmail}`, type: 'success' });
+      setShowSendModal(false);
+      setSendEmail('');
+      fetchDocuments();
+
+      // Copy signing URL
+      const signingUrl = `${window.location.origin}${res.data.signing_url}`;
+      navigator.clipboard?.writeText(signingUrl);
+    } catch (err) {
+      setToast({ message: err.response?.data?.error || 'Errore nell\'invio', type: 'error' });
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const handleRevokeDocument = async (docId) => {
+    if (!window.confirm('Sei sicuro di voler revocare questo documento?')) return;
+    try {
+      await adminDocumentAPI.revokeDocument(docId);
+      setToast({ message: 'Documento revocato', type: 'success' });
+      fetchDocuments();
+    } catch (err) {
+      setToast({ message: err.response?.data?.error || 'Errore nella revoca', type: 'error' });
+    }
+  };
+
+  const handleViewTracking = async (docId) => {
+    try {
+      const res = await adminDocumentAPI.getDocumentTracking(docId);
+      setTrackingData(res.data.views || []);
+      setShowTrackingModal(true);
+    } catch (err) {
+      setToast({ message: 'Errore nel caricamento tracking', type: 'error' });
+    }
+  };
+
+  const openSendModal = (docId) => {
+    setSelectedDocId(docId);
+    setSendEmail(contract?.club_email || '');
+    setShowSendModal(true);
+  };
+
+  const getDocStatusBadge = (status) => {
+    const config = {
+      draft: { label: 'Bozza', bg: '#F3F4F6', color: '#6B7280' },
+      sent: { label: 'Inviato', bg: '#EFF6FF', color: '#3B82F6' },
+      viewed: { label: 'Visualizzato', bg: '#FFF7ED', color: '#D97706' },
+      signed: { label: 'Firmato', bg: '#ECFDF5', color: '#059669' },
+      expired: { label: 'Scaduto', bg: '#FEF2F2', color: '#DC2626' },
+      revoked: { label: 'Revocato', bg: '#FEF2F2', color: '#991B1B' },
+    };
+    const c = config[status] || config.draft;
+    return (
+      <span style={{ padding: '3px 10px', borderRadius: '12px', fontSize: '11px', fontWeight: 600, background: c.bg, color: c.color }}>
+        {c.label}
+      </span>
+    );
   };
 
   const handleDelete = async () => {
@@ -144,6 +258,7 @@ function AdminContractDetail() {
 
   const tabs = [
     { id: 'details', label: 'Dettagli', icon: <FaFileContract size={14} /> },
+    { id: 'documents', label: 'Documenti', icon: <FaFilePdf size={14} />, count: documents.length },
     { id: 'invoices', label: 'Fatture', icon: <FaFileInvoice size={14} />, count: invoices.length }
   ];
 
@@ -215,6 +330,96 @@ function AdminContractDetail() {
                   Fatturazione: {PAYMENT_TERMS[contract.payment_terms] || '-'}
                 </div>
               </div>
+            </div>
+
+            {/* Genera Contratto */}
+            <div className="sd-profile-section">
+              <h3 className="sd-section-title">Documento Contratto</h3>
+              {documents.length > 0 && documents[0].status === 'signed' ? (
+                <div style={{
+                  display: 'flex', flexDirection: 'column', gap: '8px'
+                }}>
+                  <div style={{
+                    display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 16px',
+                    background: '#ECFDF5', border: '1px solid #A7F3D0', borderRadius: '10px',
+                    fontSize: '13px', color: '#059669', fontWeight: 500
+                  }}>
+                    <FaCheck size={14} />
+                    Firmato da {documents[0].signature?.signer_name || 'N/A'}
+                  </div>
+                  {documents[0].signature?.signed_file_url && (
+                    <a
+                      href={getImageUrl(documents[0].signature.signed_file_url)}
+                      target="_blank" rel="noopener noreferrer"
+                      style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                        padding: '10px 16px', background: '#ECFDF5', border: '1px solid #A7F3D0',
+                        borderRadius: '10px', color: '#059669', textDecoration: 'none', fontSize: '13px', fontWeight: 500
+                      }}
+                    >
+                      <FaDownload size={12} /> Scarica PDF Firmato
+                    </a>
+                  )}
+                </div>
+              ) : documents.length > 0 && (documents[0].status === 'sent' || documents[0].status === 'viewed') ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div style={{
+                    display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 16px',
+                    background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: '10px',
+                    fontSize: '13px', color: '#3B82F6', fontWeight: 500
+                  }}>
+                    <FaPaperPlane size={12} />
+                    In attesa di firma
+                  </div>
+                  <button
+                    onClick={() => {
+                      const url = `${window.location.origin}/firma/${documents[0].token}`;
+                      navigator.clipboard?.writeText(url);
+                      setToast({ message: 'Link firma copiato negli appunti', type: 'success' });
+                    }}
+                    style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                      padding: '10px 16px', background: 'white', border: '1px solid #E5E7EB',
+                      borderRadius: '10px', color: '#374151', fontSize: '13px', fontWeight: 500, cursor: 'pointer'
+                    }}
+                  >
+                    <FaCopy size={12} /> Copia Link Firma
+                  </button>
+                </div>
+              ) : documents.length > 0 && documents[0].status === 'draft' ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div style={{
+                    display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 16px',
+                    background: '#F3F4F6', border: '1px solid #E5E7EB', borderRadius: '10px',
+                    fontSize: '13px', color: '#6B7280', fontWeight: 500
+                  }}>
+                    <FaFilePdf size={14} />
+                    PDF generato (v{documents[0].versione})
+                  </div>
+                  <button
+                    onClick={() => openSendModal(documents[0].id)}
+                    style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                      padding: '10px 16px', background: '#1A1A1A', border: 'none',
+                      borderRadius: '10px', color: 'white', fontSize: '13px', fontWeight: 600, cursor: 'pointer'
+                    }}
+                  >
+                    <FaPaperPlane size={12} /> Invia per Firma
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setShowGenerateModal(true)}
+                  style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                    padding: '14px 16px', background: '#1A1A1A', border: 'none',
+                    borderRadius: '10px', color: 'white', fontSize: '14px', fontWeight: 600,
+                    cursor: 'pointer', width: '100%'
+                  }}
+                >
+                  <FaFileContract size={16} /> Genera Contratto
+                </button>
+              )}
             </div>
 
             {/* PDF */}
@@ -482,6 +687,140 @@ function AdminContractDetail() {
               </div>
             )}
 
+            {/* DOCUMENTS TAB */}
+            {activeTab === 'documents' && (
+              <div className="sd-tab-grid">
+                <div className="sd-tab-header">
+                  <h3 className="sd-tab-title"><FaFilePdf /> Documenti</h3>
+                  <button className="tp-btn tp-btn-primary" onClick={() => setShowGenerateModal(true)}>
+                    <FaPlus /> Genera Documento
+                  </button>
+                </div>
+
+                {documents.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '60px', color: '#6B7280', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    <FaFilePdf size={48} style={{ marginBottom: '16px', opacity: 0.5 }} />
+                    <h4 style={{ margin: '0 0 8px 0' }}>Nessun documento</h4>
+                    <p style={{ margin: 0, fontSize: '14px' }}>Genera il primo documento PDF da un template</p>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {documents.map(doc => (
+                      <div key={doc.id} style={{
+                        padding: '16px 20px', background: 'white', borderRadius: '10px',
+                        border: '1px solid #E5E7EB'
+                      }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <div style={{
+                              width: '40px', height: '40px', borderRadius: '10px', background: '#FEF2F2',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center'
+                            }}>
+                              <FaFilePdf size={18} color="#DC2626" />
+                            </div>
+                            <div>
+                              <div style={{ fontWeight: 600, color: '#1A1A1A' }}>
+                                v{doc.versione} - {doc.template_name || 'Documento'}
+                              </div>
+                              <div style={{ fontSize: '12px', color: '#9CA3AF' }}>
+                                {formatDate(doc.created_at)}
+                                {doc.sent_to_email && <> &middot; Inviato a {doc.sent_to_email}</>}
+                              </div>
+                            </div>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            {getDocStatusBadge(doc.status)}
+                            {doc.views_count > 0 && (
+                              <span style={{ fontSize: '12px', color: '#6B7280', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                <FaEye size={12} /> {doc.views_count}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Signature info */}
+                        {doc.signature && (
+                          <div style={{
+                            padding: '10px 14px', background: '#ECFDF5', borderRadius: '8px',
+                            fontSize: '13px', color: '#059669', marginBottom: '10px',
+                            display: 'flex', alignItems: 'center', gap: '8px'
+                          }}>
+                            <FaCheck size={12} />
+                            Firmato da <strong>{doc.signature.signer_name}</strong>
+                            {doc.signature.signed_at && <> il {formatDate(doc.signature.signed_at)}</>}
+                          </div>
+                        )}
+
+                        {/* Actions */}
+                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                          {doc.file_url && (
+                            <a
+                              href={getImageUrl(doc.file_url)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="tp-btn tp-btn-outline"
+                              style={{ fontSize: '12px', padding: '6px 12px', textDecoration: 'none' }}
+                            >
+                              <FaDownload size={11} /> PDF
+                            </a>
+                          )}
+                          {doc.signature?.signed_file_url && (
+                            <a
+                              href={getImageUrl(doc.signature.signed_file_url)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="tp-btn tp-btn-outline"
+                              style={{ fontSize: '12px', padding: '6px 12px', textDecoration: 'none', borderColor: '#059669', color: '#059669' }}
+                            >
+                              <FaDownload size={11} /> PDF Firmato
+                            </a>
+                          )}
+                          {(doc.status === 'draft' || doc.status === 'sent' || doc.status === 'viewed') && !doc.signature && (
+                            <button
+                              className="tp-btn tp-btn-outline"
+                              style={{ fontSize: '12px', padding: '6px 12px' }}
+                              onClick={() => openSendModal(doc.id)}
+                            >
+                              <FaPaperPlane size={11} /> Invia per firma
+                            </button>
+                          )}
+                          {doc.token && doc.status !== 'draft' && (
+                            <button
+                              className="tp-btn tp-btn-outline"
+                              style={{ fontSize: '12px', padding: '6px 12px' }}
+                              onClick={() => {
+                                const url = `${window.location.origin}/firma/${doc.token}`;
+                                navigator.clipboard?.writeText(url);
+                                setToast({ message: 'Link firma copiato', type: 'success' });
+                              }}
+                            >
+                              <FaLink size={11} /> Copia Link
+                            </button>
+                          )}
+                          <button
+                            className="tp-btn tp-btn-outline"
+                            style={{ fontSize: '12px', padding: '6px 12px' }}
+                            onClick={() => handleViewTracking(doc.id)}
+                          >
+                            <FaEye size={11} /> Tracking
+                          </button>
+                          {doc.status !== 'signed' && doc.status !== 'revoked' && (
+                            <button
+                              className="tp-btn tp-btn-outline"
+                              style={{ fontSize: '12px', padding: '6px 12px', borderColor: '#DC2626', color: '#DC2626' }}
+                              onClick={() => handleRevokeDocument(doc.id)}
+                            >
+                              <FaBan size={11} /> Revoca
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* INVOICES TAB */}
             {activeTab === 'invoices' && (
               <div className="sd-tab-grid">
@@ -549,6 +888,118 @@ function AdminContractDetail() {
           </div>
         </div>
       </div>
+
+      {/* Generate Document Modal */}
+      {showGenerateModal && (
+        <Modal isOpen={showGenerateModal} onClose={() => setShowGenerateModal(false)} title="Genera Documento PDF">
+          <div style={{ padding: '20px' }}>
+            <p style={{ marginBottom: '16px', color: '#4B5563', fontSize: '14px' }}>
+              Seleziona un template per generare il documento PDF del contratto.
+            </p>
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>
+                Template
+              </label>
+              <select
+                value={selectedTemplateId}
+                onChange={e => setSelectedTemplateId(e.target.value)}
+                style={{
+                  width: '100%', padding: '10px 14px', border: '1px solid #D1D5DB',
+                  borderRadius: '8px', fontSize: '14px', background: '#FFF'
+                }}
+              >
+                <option value="">Seleziona template...</option>
+                {templates.map(t => (
+                  <option key={t.id} value={t.id}>
+                    {t.nome} {t.plan_type ? `(${t.plan_type})` : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+              <button className="tp-btn tp-btn-outline" onClick={() => setShowGenerateModal(false)}>Annulla</button>
+              <button
+                className="tp-btn tp-btn-primary"
+                onClick={handleGenerateDocument}
+                disabled={generating || !selectedTemplateId}
+              >
+                {generating ? 'Generazione...' : 'Genera PDF'}
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Send Document Modal */}
+      {showSendModal && (
+        <Modal isOpen={showSendModal} onClose={() => setShowSendModal(false)} title="Invia per Firma">
+          <div style={{ padding: '20px' }}>
+            <p style={{ marginBottom: '16px', color: '#4B5563', fontSize: '14px' }}>
+              Inserisci l'email del destinatario. Ricevera un link per visualizzare e firmare il documento.
+            </p>
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>
+                Email destinatario
+              </label>
+              <input
+                type="email"
+                value={sendEmail}
+                onChange={e => setSendEmail(e.target.value)}
+                placeholder="email@club.it"
+                style={{
+                  width: '100%', padding: '10px 14px', border: '1px solid #D1D5DB',
+                  borderRadius: '8px', fontSize: '14px', boxSizing: 'border-box'
+                }}
+              />
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+              <button className="tp-btn tp-btn-outline" onClick={() => setShowSendModal(false)}>Annulla</button>
+              <button
+                className="tp-btn tp-btn-primary"
+                onClick={handleSendDocument}
+                disabled={sending || !sendEmail}
+              >
+                {sending ? 'Invio...' : 'Invia Link Firma'}
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Tracking Modal */}
+      {showTrackingModal && (
+        <Modal isOpen={showTrackingModal} onClose={() => setShowTrackingModal(false)} title="Tracking Visualizzazioni">
+          <div style={{ padding: '20px' }}>
+            {trackingData.length === 0 ? (
+              <p style={{ textAlign: 'center', color: '#6B7280', padding: '20px' }}>
+                Nessuna visualizzazione registrata
+              </p>
+            ) : (
+              <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                {trackingData.map((v, i) => (
+                  <div key={i} style={{
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    padding: '10px 0', borderBottom: i < trackingData.length - 1 ? '1px solid #F3F4F6' : 'none'
+                  }}>
+                    <div>
+                      <div style={{ fontSize: '13px', color: '#1A1A1A' }}>
+                        {v.viewed_at ? new Date(v.viewed_at).toLocaleString('it-IT') : '-'}
+                      </div>
+                      <div style={{ fontSize: '11px', color: '#9CA3AF' }}>
+                        IP: {v.ip_address || 'N/A'}
+                      </div>
+                    </div>
+                    <FaEye size={14} color="#9CA3AF" />
+                  </div>
+                ))}
+              </div>
+            )}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
+              <button className="tp-btn tp-btn-outline" onClick={() => setShowTrackingModal(false)}>Chiudi</button>
+            </div>
+          </div>
+        </Modal>
+      )}
 
       {/* Delete Modal */}
       {showDeleteModal && (

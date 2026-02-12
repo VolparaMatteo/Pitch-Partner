@@ -50,11 +50,21 @@ const AdminEmail = () => {
   const [composeBody, setComposeBody] = useState('');
   const [sending, setSending] = useState(false);
 
-  // Load accounts on mount - always fresh
+  // Template state
+  const [templates, setTemplates] = useState([]);
+  const [showTemplateManager, setShowTemplateManager] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState(null);
+  const [templateForm, setTemplateForm] = useState({
+    codice: '', nome: '', descrizione: '', categoria: 'general',
+    oggetto: '', corpo_html: ''
+  });
+
+  // Load accounts + templates on mount
   useEffect(() => {
     if (token) {
       fetchAccounts();
       fetchUnreadCounts(true);
+      fetchTemplates();
     }
   }, [token]);
 
@@ -251,6 +261,62 @@ const AdminEmail = () => {
     } catch { return dateStr; }
   };
 
+  // Template functions
+  const fetchTemplates = async () => {
+    try {
+      const res = await adminEmailAPI.getTemplates(true);
+      setTemplates(res.data || []);
+    } catch { /* ignore */ }
+  };
+
+  const handleApplyTemplate = (templateId) => {
+    const t = templates.find(tp => tp.id === parseInt(templateId));
+    if (t) {
+      setComposeSubject(t.oggetto);
+      setComposeBody(t.corpo_html.replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, ''));
+    }
+  };
+
+  const resetTemplateForm = () => {
+    setTemplateForm({ codice: '', nome: '', descrizione: '', categoria: 'general', oggetto: '', corpo_html: '' });
+    setEditingTemplate(null);
+  };
+
+  const handleEditTemplate = (t) => {
+    setEditingTemplate(t.id);
+    setTemplateForm({
+      codice: t.codice, nome: t.nome, descrizione: t.descrizione || '',
+      categoria: t.categoria || 'general', oggetto: t.oggetto,
+      corpo_html: t.corpo_html.replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '')
+    });
+  };
+
+  const handleSaveTemplate = async () => {
+    if (!templateForm.codice || !templateForm.nome || !templateForm.oggetto) return;
+    try {
+      const payload = {
+        ...templateForm,
+        corpo_html: templateForm.corpo_html.replace(/\n/g, '<br>'),
+        corpo_text: templateForm.corpo_html
+      };
+      if (editingTemplate) {
+        await adminEmailAPI.updateTemplate(editingTemplate, payload);
+      } else {
+        await adminEmailAPI.createTemplate(payload);
+      }
+      resetTemplateForm();
+      fetchTemplates();
+    } catch { /* ignore */ }
+  };
+
+  const handleDeleteTemplate = async (id) => {
+    if (!window.confirm('Eliminare questo template?')) return;
+    try {
+      await adminEmailAPI.deleteTemplate(id);
+      fetchTemplates();
+    } catch { /* ignore */ }
+  };
+
   const totalUnread = Object.values(unreadCounts).reduce((a, b) => a + b, 0);
   const currentAccount = accounts.find(a => a.key === selectedAccount);
 
@@ -276,6 +342,19 @@ const AdminEmail = () => {
           >
             <HiOutlineArrowPath size={15} className={refreshing ? 'spin' : ''} />
             Aggiorna
+          </button>
+          <button
+            onClick={() => { setShowTemplateManager(!showTemplateManager); }}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '6px',
+              padding: '10px 18px', borderRadius: '10px',
+              border: '1px solid #E5E7EB', background: showTemplateManager ? '#F0F9FF' : '#fff',
+              fontSize: '13px', fontWeight: 600, cursor: 'pointer',
+              color: showTemplateManager ? '#2563EB' : '#374151'
+            }}
+          >
+            <HiOutlineEnvelope size={15} />
+            Template ({templates.length})
           </button>
           <button
             onClick={() => { setShowCompose(true); setComposeTo(''); setComposeCc(''); setComposeSubject(''); setComposeBody(''); }}
@@ -793,6 +872,20 @@ const AdminEmail = () => {
                   style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid #E5E7EB', fontSize: '13px', outline: 'none', boxSizing: 'border-box' }}
                 />
               </div>
+              {templates.length > 0 && (
+                <div style={{ marginBottom: '12px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#6B7280', display: 'block', marginBottom: '4px' }}>Usa Template</label>
+                  <select
+                    onChange={e => { if (e.target.value) handleApplyTemplate(e.target.value); e.target.value = ''; }}
+                    style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid #E5E7EB', fontSize: '13px', background: '#F9FAFB', cursor: 'pointer', boxSizing: 'border-box' }}
+                  >
+                    <option value="">Seleziona un template...</option>
+                    {templates.filter(t => t.attivo).map(t => (
+                      <option key={t.id} value={t.id}>{t.nome} — {t.categoria}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
               <div style={{ marginBottom: '12px' }}>
                 <label style={{ fontSize: '12px', fontWeight: 600, color: '#6B7280', display: 'block', marginBottom: '4px' }}>Oggetto *</label>
                 <input type="text" value={composeSubject} onChange={e => setComposeSubject(e.target.value)}
@@ -826,6 +919,229 @@ const AdminEmail = () => {
                   <HiOutlinePaperAirplane size={15} />
                   {sending ? 'Invio in corso...' : 'Invia'}
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Template Manager Modal */}
+      {showTemplateManager && (
+        <div
+          style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            zIndex: 1000, padding: '20px'
+          }}
+          onClick={() => { setShowTemplateManager(false); resetTemplateForm(); }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: '#fff', borderRadius: '16px', width: '100%',
+              maxWidth: '900px', maxHeight: '90vh', overflow: 'auto',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.2)'
+            }}
+          >
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '20px 24px', borderBottom: '1px solid #E5E7EB'
+            }}>
+              <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: '#1F2937' }}>
+                Gestione Template Email
+              </h3>
+              <button
+                onClick={() => { setShowTemplateManager(false); resetTemplateForm(); }}
+                style={{
+                  width: '32px', height: '32px', borderRadius: '8px',
+                  border: 'none', background: '#F3F4F6',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  cursor: 'pointer', color: '#6B7280'
+                }}
+              >
+                <HiOutlineXMark size={18} />
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', minHeight: '400px' }}>
+              {/* Template List */}
+              <div style={{ width: '320px', borderRight: '1px solid #E5E7EB', overflowY: 'auto', maxHeight: '70vh' }}>
+                <div style={{ padding: '12px 16px', borderBottom: '1px solid #F3F4F6' }}>
+                  <button
+                    onClick={resetTemplateForm}
+                    style={{
+                      width: '100%', padding: '8px 12px', borderRadius: '8px',
+                      border: '1px dashed #D1D5DB', background: '#FAFAFA',
+                      fontSize: '13px', fontWeight: 600, cursor: 'pointer',
+                      color: '#4F46E5', display: 'flex', alignItems: 'center',
+                      justifyContent: 'center', gap: '6px'
+                    }}
+                  >
+                    + Nuovo Template
+                  </button>
+                </div>
+                {templates.map(t => (
+                  <div
+                    key={t.id}
+                    onClick={() => handleEditTemplate(t)}
+                    style={{
+                      padding: '12px 16px', borderBottom: '1px solid #F3F4F6',
+                      cursor: 'pointer',
+                      background: editingTemplate === t.id ? '#F0F9FF' : 'transparent',
+                      transition: 'background 0.15s'
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: '13px', fontWeight: 600, color: '#1F2937', marginBottom: '2px' }}>{t.nome}</div>
+                        <div style={{ fontSize: '11px', color: '#9CA3AF' }}>{t.codice} — {t.categoria}</div>
+                        <div style={{ fontSize: '12px', color: '#6B7280', marginTop: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {t.oggetto}
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: '4px', flexShrink: 0, marginLeft: '8px' }}>
+                        {!t.attivo && (
+                          <span style={{ fontSize: '10px', background: '#FEF2F2', color: '#DC2626', padding: '2px 6px', borderRadius: '4px' }}>OFF</span>
+                        )}
+                        <button
+                          onClick={e => { e.stopPropagation(); handleDeleteTemplate(t.id); }}
+                          style={{
+                            width: '24px', height: '24px', borderRadius: '6px',
+                            border: 'none', background: 'transparent',
+                            cursor: 'pointer', color: '#9CA3AF', display: 'flex',
+                            alignItems: 'center', justifyContent: 'center'
+                          }}
+                        >
+                          <HiOutlineTrash size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {templates.length === 0 && (
+                  <div style={{ padding: '40px 16px', textAlign: 'center', color: '#9CA3AF', fontSize: '13px' }}>
+                    Nessun template. Creane uno!
+                  </div>
+                )}
+              </div>
+
+              {/* Template Form */}
+              <div style={{ flex: 1, padding: '20px 24px', overflowY: 'auto', maxHeight: '70vh' }}>
+                <h4 style={{ margin: '0 0 16px', fontSize: '14px', fontWeight: 700, color: '#1F2937' }}>
+                  {editingTemplate ? 'Modifica Template' : 'Nuovo Template'}
+                </h4>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                  <div>
+                    <label style={{ fontSize: '12px', fontWeight: 600, color: '#6B7280', display: 'block', marginBottom: '4px' }}>Codice *</label>
+                    <input
+                      value={templateForm.codice}
+                      onChange={e => setTemplateForm({...templateForm, codice: e.target.value})}
+                      placeholder="es. welcome_club"
+                      disabled={!!editingTemplate}
+                      style={{
+                        width: '100%', padding: '8px 12px', borderRadius: '8px',
+                        border: '1px solid #E5E7EB', fontSize: '13px', boxSizing: 'border-box',
+                        background: editingTemplate ? '#F3F4F6' : '#fff'
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '12px', fontWeight: 600, color: '#6B7280', display: 'block', marginBottom: '4px' }}>Categoria</label>
+                    <select
+                      value={templateForm.categoria}
+                      onChange={e => setTemplateForm({...templateForm, categoria: e.target.value})}
+                      style={{
+                        width: '100%', padding: '8px 12px', borderRadius: '8px',
+                        border: '1px solid #E5E7EB', fontSize: '13px', boxSizing: 'border-box'
+                      }}
+                    >
+                      <option value="general">Generale</option>
+                      <option value="subscription">Abbonamento</option>
+                      <option value="lead">Lead</option>
+                      <option value="notification">Notifica</option>
+                      <option value="marketing">Marketing</option>
+                    </select>
+                  </div>
+                </div>
+                <div style={{ marginBottom: '12px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#6B7280', display: 'block', marginBottom: '4px' }}>Nome *</label>
+                  <input
+                    value={templateForm.nome}
+                    onChange={e => setTemplateForm({...templateForm, nome: e.target.value})}
+                    placeholder="es. Benvenuto Nuovo Club"
+                    style={{
+                      width: '100%', padding: '8px 12px', borderRadius: '8px',
+                      border: '1px solid #E5E7EB', fontSize: '13px', boxSizing: 'border-box'
+                    }}
+                  />
+                </div>
+                <div style={{ marginBottom: '12px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#6B7280', display: 'block', marginBottom: '4px' }}>Descrizione</label>
+                  <input
+                    value={templateForm.descrizione}
+                    onChange={e => setTemplateForm({...templateForm, descrizione: e.target.value})}
+                    placeholder="Breve descrizione del template"
+                    style={{
+                      width: '100%', padding: '8px 12px', borderRadius: '8px',
+                      border: '1px solid #E5E7EB', fontSize: '13px', boxSizing: 'border-box'
+                    }}
+                  />
+                </div>
+                <div style={{ marginBottom: '12px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#6B7280', display: 'block', marginBottom: '4px' }}>Oggetto Email *</label>
+                  <input
+                    value={templateForm.oggetto}
+                    onChange={e => setTemplateForm({...templateForm, oggetto: e.target.value})}
+                    placeholder="Oggetto dell'email"
+                    style={{
+                      width: '100%', padding: '8px 12px', borderRadius: '8px',
+                      border: '1px solid #E5E7EB', fontSize: '13px', boxSizing: 'border-box'
+                    }}
+                  />
+                </div>
+                <div style={{ marginBottom: '16px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#6B7280', display: 'block', marginBottom: '4px' }}>Corpo del Messaggio *</label>
+                  <textarea
+                    value={templateForm.corpo_html}
+                    onChange={e => setTemplateForm({...templateForm, corpo_html: e.target.value})}
+                    rows={8}
+                    placeholder="Scrivi il testo del template...&#10;&#10;Puoi usare variabili come {{club_nome}}, {{data_scadenza}}, ecc."
+                    style={{
+                      width: '100%', padding: '10px 12px', borderRadius: '8px',
+                      border: '1px solid #E5E7EB', fontSize: '13px', resize: 'vertical',
+                      fontFamily: 'inherit', lineHeight: 1.5, boxSizing: 'border-box'
+                    }}
+                  />
+                  <div style={{ fontSize: '11px', color: '#9CA3AF', marginTop: '4px' }}>
+                    Variabili disponibili: {'{{club_nome}}'}, {'{{contatto_nome}}'}, {'{{data_scadenza}}'}, {'{{piano}}'}, {'{{importo}}'}
+                  </div>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                  {editingTemplate && (
+                    <button
+                      onClick={resetTemplateForm}
+                      style={{
+                        padding: '8px 16px', borderRadius: '8px', border: '1px solid #E5E7EB',
+                        background: '#fff', fontSize: '13px', fontWeight: 600,
+                        cursor: 'pointer', color: '#6B7280'
+                      }}
+                    >
+                      Annulla
+                    </button>
+                  )}
+                  <button
+                    onClick={handleSaveTemplate}
+                    disabled={!templateForm.codice || !templateForm.nome || !templateForm.oggetto}
+                    style={{
+                      padding: '8px 20px', borderRadius: '8px', border: 'none',
+                      background: '#1F2937', fontSize: '13px', fontWeight: 600,
+                      cursor: 'pointer', color: '#fff',
+                      opacity: (!templateForm.codice || !templateForm.nome || !templateForm.oggetto) ? 0.5 : 1
+                    }}
+                  >
+                    {editingTemplate ? 'Salva Modifiche' : 'Crea Template'}
+                  </button>
+                </div>
               </div>
             </div>
           </div>

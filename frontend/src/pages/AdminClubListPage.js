@@ -7,7 +7,7 @@ import Toast from '../components/Toast';
 import {
   FaSearch, FaList, FaTh, FaEye, FaPlus,
   FaBuilding, FaCheck, FaTimes, FaPause,
-  FaInbox, FaEuroSign, FaChevronDown,
+  FaInbox, FaChevronDown,
   FaFilter, FaCrown, FaRocket,
   FaChevronLeft, FaChevronRight,
   FaCalendarAlt
@@ -35,7 +35,6 @@ const PLANS = [
 
 function AdminClubListPage() {
   const [clubs, setClubs] = useState([]);
-  const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState({ status: 'all', plan: 'all' });
@@ -85,18 +84,11 @@ function AdminClubListPage() {
     try {
       setLoading(true);
 
-      // Fetch clubs e stats in parallelo
-      const [clubsRes, statsRes] = await Promise.all([
-        axios.get(`${API_URL}/admin/clubs`, {
-          headers: { Authorization: `Bearer ${token}` }
-        }),
-        axios.get(`${API_URL}/admin/clubs/stats`, {
-          headers: { Authorization: `Bearer ${token}` }
-        }).catch(() => ({ data: null }))
-      ]);
+      const clubsRes = await axios.get(`${API_URL}/admin/clubs`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
 
       setClubs(Array.isArray(clubsRes.data) ? clubsRes.data : []);
-      setStats(statsRes.data);
 
     } catch (error) {
       console.error('Errore:', error);
@@ -222,51 +214,6 @@ function AdminClubListPage() {
           </button>
         </div>
       </div>
-
-      {/* KPI Stats */}
-      {stats && (
-        <div className="tp-stats-row" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
-          <div className="tp-stat-card-dark">
-            <div className="tp-stat-icon" style={{ background: '#FFFFFF' }}>
-              <FaBuilding style={{ color: '#1F2937' }} />
-            </div>
-            <div className="tp-stat-content">
-              <div className="tp-stat-value">{stats.active_clubs || 0}</div>
-              <div className="tp-stat-label">Club Attivi</div>
-            </div>
-          </div>
-
-          <div className="tp-stat-card-dark">
-            <div className="tp-stat-icon" style={{ background: '#FFFFFF' }}>
-              <FaRocket style={{ color: '#1F2937' }} />
-            </div>
-            <div className="tp-stat-content">
-              <div className="tp-stat-value">{stats.trial_clubs || 0}</div>
-              <div className="tp-stat-label">In Trial</div>
-            </div>
-          </div>
-
-          <div className="tp-stat-card-dark">
-            <div className="tp-stat-icon" style={{ background: '#FFFFFF' }}>
-              <FaTimes style={{ color: '#1F2937' }} />
-            </div>
-            <div className="tp-stat-content">
-              <div className="tp-stat-value">{stats.expired_subscriptions || 0}</div>
-              <div className="tp-stat-label">Scaduti</div>
-            </div>
-          </div>
-
-          <div className="tp-stat-card-dark">
-            <div className="tp-stat-icon" style={{ background: '#FFFFFF' }}>
-              <FaEuroSign style={{ color: '#1F2937' }} />
-            </div>
-            <div className="tp-stat-content">
-              <div className="tp-stat-value">€{(stats.mrr || 0).toLocaleString()}</div>
-              <div className="tp-stat-label">MRR</div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Main Card with Filters */}
       <div className="tp-card">

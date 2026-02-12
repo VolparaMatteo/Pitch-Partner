@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authAPI } from '../services/api';
 import { setAuth } from '../utils/auth';
+import SplashScreen from '../components/SplashScreen';
 import '../styles/login.css';
 import img1 from '../static/images/christian-garcia-P3yyNuNY8n0-unsplash.jpg';
 import img2 from '../static/images/radission-us-_XeQ8XEWb4Q-unsplash.jpg';
@@ -64,6 +65,7 @@ const ROLE_CONFIG = {
 };
 
 function Login() {
+  const [showSplash, setShowSplash] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
@@ -74,6 +76,10 @@ function Login() {
   const [selectingRole, setSelectingRole] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const navigate = useNavigate();
+
+  const handleSplashFinish = useCallback(() => {
+    setShowSplash(false);
+  }, []);
 
   const slides = [
     {
@@ -205,6 +211,8 @@ function Login() {
   };
 
   return (
+    <>
+    {showSplash && <SplashScreen onFinish={handleSplashFinish} />}
     <div className="modern-login-container">
       {/* Left Side - Testimonial */}
       <div className="login-left-section">
@@ -446,6 +454,7 @@ function Login() {
         </div>
       )}
     </div>
+    </>
   );
 }
 

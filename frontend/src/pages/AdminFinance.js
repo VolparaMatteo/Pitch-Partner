@@ -1,21 +1,17 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { getAuth } from '../utils/auth';
-import { getImageUrl } from '../utils/imageUtils';
 import {
-  FaEuroSign,
   FaFileInvoiceDollar,
   FaPlus,
   FaCheckCircle,
   FaClock,
   FaExclamationCircle,
   FaTimes,
-  FaChartLine,
   FaEye,
   FaTrash,
   FaChevronDown,
   FaBuilding,
-  FaCrown,
   FaChevronLeft,
   FaChevronRight,
   FaInbox
@@ -32,20 +28,14 @@ const STATUS_CONFIG = {
   cancelled: { label: 'Annullata', color: '#6B7280', bg: '#F3F4F6', icon: FaTimes }
 };
 
-const MONTHS = ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
-
 const AdminFinance = () => {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const authData = useMemo(() => getAuth(), []);
   const { user, token } = authData;
 
-  const [dashboard, setDashboard] = useState(null);
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'dashboard');
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
 
   // Detail modal
   const [showDetailModal, setShowDetailModal] = useState(false);
@@ -64,7 +54,7 @@ const AdminFinance = () => {
     if (token) {
       fetchData();
     }
-  }, [token, selectedYear]);
+  }, [token]);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -81,15 +71,7 @@ const AdminFinance = () => {
       setLoading(true);
       const headers = { 'Authorization': `Bearer ${token}` };
 
-      const [dashboardRes, invoicesRes] = await Promise.all([
-        fetch(`${API_URL}/admin/finance/dashboard?year=${selectedYear}`, { headers }),
-        fetch(`${API_URL}/admin/invoices`, { headers })
-      ]);
-
-      if (dashboardRes.ok) {
-        const data = await dashboardRes.json();
-        setDashboard(data);
-      }
+      const invoicesRes = await fetch(`${API_URL}/admin/invoices`, { headers });
 
       if (invoicesRes.ok) {
         const data = await invoicesRes.json();
@@ -174,20 +156,10 @@ const AdminFinance = () => {
     setCurrentPage(1);
   }, [filterStatus]);
 
-  const getMaxCashIn = () => {
-    if (!dashboard?.cash_in?.by_month) return 1;
-    return Math.max(...Object.values(dashboard.cash_in.by_month), 1);
-  };
-
   const getStatusLabel = () => {
     if (filterStatus === 'all') return 'Tutti gli stati';
     return STATUS_CONFIG[filterStatus]?.label || 'Tutti gli stati';
   };
-
-  const tabs = [
-    { id: 'dashboard', label: 'Dashboard', icon: FaChartLine },
-    { id: 'invoices', label: 'Fatture', icon: FaFileInvoiceDollar }
-  ];
 
   if (!user || user.role !== 'admin') {
     return (
@@ -204,7 +176,7 @@ const AdminFinance = () => {
       <div className="tp-page-container">
         <div className="tp-loading-container">
           <div className="tp-loading-spinner"></div>
-          <p className="tp-loading-text">Caricamento Finanze...</p>
+          <p className="tp-loading-text">Caricamento Fatture...</p>
         </div>
       </div>
     );
@@ -214,12 +186,7 @@ const AdminFinance = () => {
     <div className="tp-page-container">
       {/* Page Header */}
       <div className="tp-page-header">
-        <div>
-          <h1 className="tp-page-title">Finanze & Fatturazione</h1>
-          <p style={{ color: '#6B7280', fontSize: '14px', marginTop: '4px' }}>
-            Gestisci ARR, fatture e incassi
-          </p>
-        </div>
+        <h1 className="tp-page-title">Fatturazione</h1>
         <div className="tp-page-actions">
           <button
             className="tp-btn tp-btn-primary"
@@ -230,273 +197,11 @@ const AdminFinance = () => {
         </div>
       </div>
 
-      {/* KPI Stats */}
-      {dashboard && (
-        <div className="tp-stats-row" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
-          <div className="tp-stat-card-dark">
-            <div className="tp-stat-icon" style={{ background: '#FFFFFF' }}>
-              <FaChartLine style={{ color: '#1F2937' }} />
-            </div>
-            <div className="tp-stat-content">
-              <div className="tp-stat-value">{formatCurrency(dashboard.arr?.total)}</div>
-              <div className="tp-stat-label">ARR (MRR: {formatCurrency(dashboard.arr?.mrr)})</div>
-            </div>
-          </div>
-
-          <div className="tp-stat-card-dark">
-            <div className="tp-stat-icon" style={{ background: '#FFFFFF' }}>
-              <FaEuroSign style={{ color: '#1F2937' }} />
-            </div>
-            <div className="tp-stat-content">
-              <div className="tp-stat-value">{formatCurrency(dashboard.cash_in?.year_total)}</div>
-              <div className="tp-stat-label">Cash-in {selectedYear}</div>
-            </div>
-          </div>
-
-          <div className="tp-stat-card-dark">
-            <div className="tp-stat-icon" style={{ background: '#FFFFFF' }}>
-              <FaClock style={{ color: '#1F2937' }} />
-            </div>
-            <div className="tp-stat-content">
-              <div className="tp-stat-value">{formatCurrency(dashboard.pending?.total)}</div>
-              <div className="tp-stat-label">Da Incassare ({dashboard.pending?.count || 0})</div>
-            </div>
-          </div>
-
-          <div className="tp-stat-card-dark">
-            <div className="tp-stat-icon" style={{ background: '#FFFFFF' }}>
-              <FaExclamationCircle style={{ color: '#1F2937' }} />
-            </div>
-            <div className="tp-stat-content">
-              <div className="tp-stat-value" style={{ color: dashboard.pending?.overdue_total > 0 ? '#FCA5A5' : undefined }}>
-                {formatCurrency(dashboard.pending?.overdue_total)}
-              </div>
-              <div className="tp-stat-label">Scadute ({dashboard.pending?.overdue_count || 0})</div>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Main Card */}
       <div className="tp-card">
-        {/* Tabs */}
-        <div style={{ display: 'flex', gap: '8px', padding: '16px 24px', borderBottom: '1px solid #E5E7EB', background: '#FAFAFA' }}>
-          {tabs.map(tab => {
-            const Icon = tab.icon;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  padding: '10px 20px',
-                  borderRadius: '8px',
-                  border: 'none',
-                  background: activeTab === tab.id ? '#1A1A1A' : 'transparent',
-                  color: activeTab === tab.id ? '#FFFFFF' : '#6B7280',
-                  fontSize: '14px',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  transition: 'all 0.2s'
-                }}
-              >
-                <Icon size={14} />
-                {tab.label}
-              </button>
-            );
-          })}
-        </div>
-
         <div className="tp-card-body">
           {error ? (
             <div style={{ textAlign: 'center', padding: '40px', color: '#DC2626' }}>{error}</div>
-          ) : activeTab === 'dashboard' ? (
-            <>
-              {/* ARR by Plan */}
-              {dashboard?.arr?.by_plan && (
-                <div style={{ marginBottom: '24px' }}>
-                  <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#1A1A1A', marginBottom: '16px' }}>ARR per Piano</h3>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
-                    {[
-                      { key: 'basic', label: 'Basic', color: '#6B7280', bg: '#F9FAFB' },
-                      { key: 'premium', label: 'Premium', color: '#3B82F6', bg: '#EFF6FF' },
-                      { key: 'elite', label: 'Elite', color: '#F59E0B', bg: '#FFFBEB' }
-                    ].map(plan => (
-                      <div key={plan.key} style={{
-                        background: plan.bg,
-                        borderRadius: '12px',
-                        padding: '20px',
-                        textAlign: 'center'
-                      }}>
-                        <span style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                          padding: '4px 12px',
-                          borderRadius: '6px',
-                          background: 'white',
-                          fontSize: '12px',
-                          fontWeight: 600,
-                          color: plan.color,
-                          marginBottom: '12px'
-                        }}>
-                          <FaCrown size={10} color={plan.color} />
-                          {plan.label}
-                        </span>
-                        <p style={{ fontSize: '24px', fontWeight: 700, color: '#1A1A1A', margin: '8px 0 0' }}>
-                          {formatCurrency(dashboard.arr.by_plan[plan.key])}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Monthly Cash-in Chart */}
-              {dashboard?.cash_in?.by_month && (
-                <div style={{ marginBottom: '24px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                    <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#1A1A1A' }}>Cash-in Mensile</h3>
-                    <select
-                      value={selectedYear}
-                      onChange={(e) => {
-                        setSelectedYear(parseInt(e.target.value));
-                      }}
-                      style={{
-                        padding: '8px 12px',
-                        border: '2px solid #E5E7EB',
-                        borderRadius: '8px',
-                        fontSize: '14px',
-                        fontWeight: 500,
-                        cursor: 'pointer'
-                      }}
-                    >
-                      <option value={2024}>2024</option>
-                      <option value={2025}>2025</option>
-                      <option value={2026}>2026</option>
-                    </select>
-                  </div>
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'flex-end',
-                    gap: '8px',
-                    height: '200px',
-                    padding: '20px',
-                    background: '#FAFAFA',
-                    borderRadius: '12px'
-                  }}>
-                    {MONTHS.map((month, idx) => {
-                      const value = dashboard.cash_in.by_month[idx + 1] || 0;
-                      const maxValue = getMaxCashIn();
-                      const height = maxValue > 0 ? (value / maxValue) * 100 : 0;
-                      const currentMonth = new Date().getMonth();
-                      const isPast = idx < currentMonth;
-                      const isCurrent = idx === currentMonth;
-
-                      return (
-                        <div key={month} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                          <div style={{ fontSize: '10px', color: '#6B7280', marginBottom: '4px', height: '16px' }}>
-                            {value > 0 ? `€${(value / 1000).toFixed(0)}k` : ''}
-                          </div>
-                          <div
-                            style={{
-                              width: '100%',
-                              height: `${Math.max(height, 4)}%`,
-                              borderRadius: '4px 4px 0 0',
-                              background: isCurrent ? '#85FF00' : isPast ? '#059669' : '#E5E7EB',
-                              transition: 'all 0.3s'
-                            }}
-                            title={`${month}: ${formatCurrency(value)}`}
-                          />
-                          <div style={{
-                            fontSize: '11px',
-                            marginTop: '8px',
-                            fontWeight: isCurrent ? 700 : 500,
-                            color: isCurrent ? '#1A1A1A' : '#6B7280'
-                          }}>
-                            {month}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* Club Balance Table */}
-              {dashboard?.by_club?.length > 0 && (
-                <div>
-                  <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#1A1A1A', marginBottom: '16px' }}>
-                    Situazione per Club
-                  </h3>
-                  <div className="tp-table-container">
-                    <table className="tp-table">
-                      <thead>
-                        <tr>
-                          <th>Club</th>
-                          <th>Piano</th>
-                          <th style={{ textAlign: 'right' }}>Valore Contratto</th>
-                          <th style={{ textAlign: 'right' }}>Pagato</th>
-                          <th style={{ textAlign: 'right' }}>Da Pagare</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {dashboard.by_club.map((club, idx) => {
-                          const planColors = {
-                            basic: { bg: '#F9FAFB', color: '#6B7280' },
-                            premium: { bg: '#EFF6FF', color: '#3B82F6' },
-                            elite: { bg: '#FFFBEB', color: '#F59E0B' }
-                          };
-                          const colors = planColors[club.plan?.toLowerCase()] || planColors.basic;
-
-                          return (
-                            <tr key={idx}>
-                              <td>
-                                <div className="tp-table-user">
-                                  <div className="tp-table-avatar" style={{ borderRadius: '50%', overflow: 'hidden' }}>
-                                    {club.club_logo_url ? (
-                                      <img
-                                        src={getImageUrl(club.club_logo_url)}
-                                        alt={club.club_name}
-                                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                      />
-                                    ) : (
-                                      <FaBuilding size={16} color="#9CA3AF" />
-                                    )}
-                                  </div>
-                                  <span className="tp-table-name">{club.club_name}</span>
-                                </div>
-                              </td>
-                              <td>
-                                <span style={{
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '6px',
-                                  padding: '4px 10px',
-                                  borderRadius: '6px',
-                                  background: colors.bg,
-                                  fontSize: '12px',
-                                  fontWeight: 500,
-                                  color: colors.color
-                                }}>
-                                  <FaCrown size={10} color={colors.color} />
-                                  {club.plan?.charAt(0).toUpperCase() + club.plan?.slice(1)}
-                                </span>
-                              </td>
-                              <td style={{ textAlign: 'right', fontWeight: 600 }}>{formatCurrency(club.contract_value)}</td>
-                              <td style={{ textAlign: 'right', color: '#059669', fontWeight: 600 }}>{formatCurrency(club.paid)}</td>
-                              <td style={{ textAlign: 'right', color: '#F59E0B', fontWeight: 600 }}>{formatCurrency(club.pending)}</td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-            </>
           ) : (
             <>
               {/* Invoice Filters */}

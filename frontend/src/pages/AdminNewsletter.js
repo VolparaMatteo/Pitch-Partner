@@ -16,7 +16,6 @@ import {
   HiOutlineChevronLeft,
   HiOutlineChevronRight,
   HiOutlineMagnifyingGlass,
-  HiOutlineCalendarDays,
   HiOutlineEye
 } from 'react-icons/hi2';
 
@@ -32,7 +31,6 @@ function AdminNewsletter() {
   const { user } = getAuth();
 
   const [activeTab, setActiveTab] = useState('gruppi');
-  const [stats, setStats] = useState(null);
 
   // Groups
   const [groups, setGroups] = useState([]);
@@ -68,7 +66,6 @@ function AdminNewsletter() {
 
   useEffect(() => {
     if (!user || user.role !== 'admin') { navigate('/admin/login'); return; }
-    fetchStats();
     fetchAccounts();
   }, [user, navigate]);
 
@@ -78,9 +75,6 @@ function AdminNewsletter() {
   }, [activeTab]);
 
   // ------------------------------------------------------------------ Fetchers
-  const fetchStats = async () => {
-    try { const res = await adminNewsletterAPI.getStats(); setStats(res.data); } catch (e) { console.error(e); }
-  };
   const fetchAccounts = async () => {
     try { const res = await adminEmailAPI.getAccounts(); setEmailAccounts(res.data.accounts || []); } catch (e) { console.error(e); }
   };
@@ -120,14 +114,12 @@ function AdminNewsletter() {
     try {
       if (editingGroup) await adminNewsletterAPI.updateGroup(editingGroup.id, groupForm);
       else await adminNewsletterAPI.createGroup(groupForm);
-      setShowGroupModal(false); fetchGroups(); fetchStats();
-    } catch (e) { console.error(e); }
+      setShowGroupModal(false); fetchGroups();    } catch (e) { console.error(e); }
   };
   const deleteGroup = async (groupId) => {
     if (!window.confirm('Eliminare questo gruppo e tutti i suoi destinatari?')) return;
     try {
-      await adminNewsletterAPI.deleteGroup(groupId); fetchGroups(); fetchStats();
-      if (selectedGroup === groupId) { setSelectedGroup(null); setGroupDetail(null); }
+      await adminNewsletterAPI.deleteGroup(groupId); fetchGroups();      if (selectedGroup === groupId) { setSelectedGroup(null); setGroupDetail(null); }
     } catch (e) { console.error(e); }
   };
   const openGroupDetail = (group) => {
@@ -152,8 +144,7 @@ function AdminNewsletter() {
       const res = await adminNewsletterAPI.addRecipients(selectedGroup, recipients);
       setNewRecipientsText('');
       fetchRecipients(selectedGroup, recipientsPage, recipientSearch);
-      fetchGroupDetail(selectedGroup); fetchGroups(); fetchStats();
-      alert(`Aggiunti: ${res.data.added}, Duplicati saltati: ${res.data.skipped}`);
+      fetchGroupDetail(selectedGroup); fetchGroups();      alert(`Aggiunti: ${res.data.added}, Duplicati saltati: ${res.data.skipped}`);
     } catch (e) { console.error(e); }
     setAddingRecipients(false);
   };
@@ -161,8 +152,7 @@ function AdminNewsletter() {
     try {
       await adminNewsletterAPI.removeRecipient(recipientId);
       fetchRecipients(selectedGroup, recipientsPage, recipientSearch);
-      fetchGroupDetail(selectedGroup); fetchGroups(); fetchStats();
-    } catch (e) { console.error(e); }
+      fetchGroupDetail(selectedGroup); fetchGroups();    } catch (e) { console.error(e); }
   };
 
   // ------------------------------------------------------------------ Campaign actions
@@ -181,12 +171,11 @@ function AdminNewsletter() {
     try {
       if (editingCampaign) await adminNewsletterAPI.updateCampaign(editingCampaign.id, campaignForm);
       else await adminNewsletterAPI.createCampaign(campaignForm);
-      setShowCampaignModal(false); fetchCampaigns(campaignsPage); fetchStats();
-    } catch (e) { console.error(e); }
+      setShowCampaignModal(false); fetchCampaigns(campaignsPage);    } catch (e) { console.error(e); }
   };
   const deleteCampaign = async (campaignId) => {
     if (!window.confirm('Eliminare questa campagna?')) return;
-    try { await adminNewsletterAPI.deleteCampaign(campaignId); fetchCampaigns(campaignsPage); fetchStats(); } catch (e) { console.error(e); }
+    try { await adminNewsletterAPI.deleteCampaign(campaignId); fetchCampaigns(campaignsPage); } catch (e) { console.error(e); }
   };
   const sendCampaign = async (campaign) => {
     const selectedGroupNames = campaign.groups?.map(g => g.nome).join(', ') || '';
@@ -194,7 +183,7 @@ function AdminNewsletter() {
     const accountEmail = accountInfo?.email || campaign.account_key;
     if (!window.confirm(`Stai per inviare la campagna "${campaign.titolo}" da ${accountEmail} ai gruppi: ${selectedGroupNames}.\n\nConfermi l'invio?`)) return;
     setSendingCampaign(campaign.id);
-    try { await adminNewsletterAPI.sendCampaign(campaign.id); fetchCampaigns(campaignsPage); fetchStats(); }
+    try { await adminNewsletterAPI.sendCampaign(campaign.id); fetchCampaigns(campaignsPage); }
     catch (e) { console.error(e); alert('Errore durante l\'invio: ' + (e.response?.data?.error || e.message)); }
     setSendingCampaign(false);
   };
@@ -220,26 +209,6 @@ function AdminNewsletter() {
           </h1>
           <p className="tp-page-subtitle">Gestisci gruppi e invii massivi</p>
         </div>
-      </div>
-
-      {/* Stats Row */}
-      <div className="tp-stats-row" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
-        {[
-          { label: 'Totale Gruppi', value: stats?.total_groups || 0, icon: <HiOutlineUserGroup />, color: 'blue' },
-          { label: 'Destinatari Unici', value: stats?.total_unique_recipients || 0, icon: <HiOutlineEnvelope />, color: 'green' },
-          { label: 'Campagne Inviate', value: stats?.campaigns_sent || 0, icon: <HiOutlinePaperAirplane />, color: 'purple' },
-          { label: 'Ultima Campagna', value: stats?.last_campaign ? new Date(stats.last_campaign.sent_at).toLocaleDateString('it-IT') : '—', icon: <HiOutlineCalendarDays />, color: 'orange' },
-        ].map((item, i) => (
-          <div key={i} className="tp-stat-card-dark">
-            <div className="tp-stat-icon" style={{ background: '#FFFFFF' }}>
-              <span style={{ color: '#1F2937', fontSize: '20px', display: 'flex' }}>{item.icon}</span>
-            </div>
-            <div className="tp-stat-content">
-              <div className="tp-stat-value">{item.value}</div>
-              <div className="tp-stat-label">{item.label}</div>
-            </div>
-          </div>
-        ))}
       </div>
 
       {/* Main Card with Tabs */}

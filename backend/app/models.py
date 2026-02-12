@@ -21,6 +21,9 @@ class Admin(db.Model):
     last_login = db.Column(db.DateTime, nullable=True)
     is_active = db.Column(db.Boolean, default=True)
 
+    # Google Calendar
+    google_refresh_token = db.Column(db.Text, nullable=True)
+
     def set_password(self, password):
         self.password_hash = generate_password_hash(password, method='pbkdf2:sha256')
 
@@ -6580,6 +6583,149 @@ class AdminInvoice(db.Model):
 
 
 # ============================================================
+# Contract Document Models (Template PDF + Firma Digitale)
+# ============================================================
+
+class ContractTemplate(db.Model):
+    """Template HTML per generazione contratti PDF"""
+    __tablename__ = 'contract_templates'
+
+    id = db.Column(db.Integer, primary_key=True)
+    nome = db.Column(db.String(200), nullable=False)
+    codice = db.Column(db.String(100), unique=True, nullable=False)
+    descrizione = db.Column(db.Text)
+    corpo_html = db.Column(db.Text, nullable=False)
+    stile_css = db.Column(db.Text)
+    variabili = db.Column(db.Text)  # JSON documentazione merge fields
+    plan_type = db.Column(db.String(50), nullable=True)  # auto-select per piano
+    attivo = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_by = db.Column(db.Integer)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'nome': self.nome,
+            'codice': self.codice,
+            'descrizione': self.descrizione,
+            'corpo_html': self.corpo_html,
+            'stile_css': self.stile_css,
+            'variabili': self.variabili,
+            'plan_type': self.plan_type,
+            'attivo': self.attivo,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'created_by': self.created_by
+        }
+
+
+class ContractDocument(db.Model):
+    """Versione specifica di un documento PDF generato"""
+    __tablename__ = 'contract_documents'
+
+    id = db.Column(db.Integer, primary_key=True)
+    contract_id = db.Column(db.Integer, db.ForeignKey('admin_contracts.id'), nullable=False)
+    template_id = db.Column(db.Integer, db.ForeignKey('contract_templates.id'), nullable=True)
+    versione = db.Column(db.Integer, default=1)
+    token = db.Column(db.String(100), unique=True, nullable=False)
+    file_url = db.Column(db.String(500))
+    file_name = db.Column(db.String(300))
+    file_size = db.Column(db.Integer)
+    document_hash = db.Column(db.String(64))
+    status = db.Column(db.String(50), default='draft')  # draft, sent, viewed, signed, expired, revoked
+    html_snapshot = db.Column(db.Text)
+    merge_data_snapshot = db.Column(db.Text)
+    sent_at = db.Column(db.DateTime)
+    sent_to_email = db.Column(db.String(200))
+    expires_at = db.Column(db.DateTime)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_by = db.Column(db.Integer)
+
+    contract = db.relationship('AdminContract', backref=db.backref('documents', lazy='dynamic'))
+    template = db.relationship('ContractTemplate', backref='documents')
+
+    def to_dict(self):
+        views_count = self.views.count() if self.views else 0
+        return {
+            'id': self.id,
+            'contract_id': self.contract_id,
+            'template_id': self.template_id,
+            'template_name': self.template.nome if self.template else None,
+            'versione': self.versione,
+            'token': self.token,
+            'file_url': self.file_url,
+            'file_name': self.file_name,
+            'file_size': self.file_size,
+            'document_hash': self.document_hash,
+            'status': self.status,
+            'sent_at': self.sent_at.isoformat() if self.sent_at else None,
+            'sent_to_email': self.sent_to_email,
+            'expires_at': self.expires_at.isoformat() if self.expires_at else None,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'created_by': self.created_by,
+            'views_count': views_count,
+            'signature': self.signature.to_dict() if self.signature else None
+        }
+
+
+class ContractDocumentView(db.Model):
+    """Tracking aperture documento"""
+    __tablename__ = 'contract_document_views'
+
+    id = db.Column(db.Integer, primary_key=True)
+    document_id = db.Column(db.Integer, db.ForeignKey('contract_documents.id'), nullable=False)
+    ip_address = db.Column(db.String(50))
+    user_agent = db.Column(db.String(500))
+    viewed_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    document = db.relationship('ContractDocument', backref=db.backref('views', lazy='dynamic'))
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'document_id': self.document_id,
+            'ip_address': self.ip_address,
+            'user_agent': self.user_agent,
+            'viewed_at': self.viewed_at.isoformat() if self.viewed_at else None
+        }
+
+
+class ContractSignature(db.Model):
+    """Firma digitale + audit trail"""
+    __tablename__ = 'contract_signatures'
+
+    id = db.Column(db.Integer, primary_key=True)
+    document_id = db.Column(db.Integer, db.ForeignKey('contract_documents.id'), unique=True, nullable=False)
+    signer_name = db.Column(db.String(200))
+    signer_email = db.Column(db.String(200))
+    signer_role = db.Column(db.String(100))
+    signature_image = db.Column(db.Text)  # base64 PNG
+    document_hash_at_signing = db.Column(db.String(64))
+    ip_address = db.Column(db.String(50))
+    user_agent = db.Column(db.String(500))
+    signed_file_url = db.Column(db.String(500))
+    signed_document_hash = db.Column(db.String(64))
+    signed_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    document = db.relationship('ContractDocument', backref=db.backref('signature', uselist=False))
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'document_id': self.document_id,
+            'signer_name': self.signer_name,
+            'signer_email': self.signer_email,
+            'signer_role': self.signer_role,
+            'document_hash_at_signing': self.document_hash_at_signing,
+            'ip_address': self.ip_address,
+            'signed_file_url': self.signed_file_url,
+            'signed_document_hash': self.signed_document_hash,
+            'signed_at': self.signed_at.isoformat() if self.signed_at else None
+        }
+
+
+# ============================================================
 # Newsletter Models
 # ============================================================
 
@@ -6674,4 +6820,381 @@ class NewsletterCampaign(db.Model):
             'sent_at': self.sent_at.isoformat() if self.sent_at else None,
             'group_ids': [g.id for g in self.groups],
             'groups': [{'id': g.id, 'nome': g.nome, 'colore': g.colore} for g in self.groups],
+        }
+
+
+class AdminTask(db.Model):
+    """Task/To-Do interni per il pannello admin"""
+    __tablename__ = 'admin_tasks'
+
+    id = db.Column(db.Integer, primary_key=True)
+    admin_id = db.Column(db.Integer, db.ForeignKey('admins.id'), nullable=True)
+    titolo = db.Column(db.String(255), nullable=False)
+    descrizione = db.Column(db.Text, nullable=True)
+    tipo = db.Column(db.String(50), default='generale')  # generale, lead_followup, club_onboarding, rinnovo_contratto, fattura, supporto
+    priorita = db.Column(db.String(10), default='media')  # bassa, media, alta, urgente
+    stato = db.Column(db.String(20), default='da_fare')  # da_fare, in_corso, completato
+    lead_id = db.Column(db.Integer, db.ForeignKey('crm_leads.id'), nullable=True)
+    club_id = db.Column(db.Integer, db.ForeignKey('clubs.id'), nullable=True)
+    contract_id = db.Column(db.Integer, db.ForeignKey('admin_contracts.id'), nullable=True)
+    data_scadenza = db.Column(db.DateTime, nullable=True)
+    completato_il = db.Column(db.DateTime, nullable=True)
+    tags = db.Column(db.String(500), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationships
+    admin = db.relationship('Admin', backref=db.backref('tasks', lazy='dynamic'))
+    lead = db.relationship('CRMLead', backref=db.backref('tasks', lazy='dynamic'))
+    club = db.relationship('Club', backref=db.backref('admin_tasks', lazy='dynamic'))
+    contract = db.relationship('AdminContract', backref=db.backref('tasks', lazy='dynamic'))
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'admin_id': self.admin_id,
+            'admin_nome': f"{self.admin.nome} {self.admin.cognome}" if self.admin else None,
+            'titolo': self.titolo,
+            'descrizione': self.descrizione,
+            'tipo': self.tipo,
+            'priorita': self.priorita,
+            'stato': self.stato,
+            'lead_id': self.lead_id,
+            'club_id': self.club_id,
+            'contract_id': self.contract_id,
+            'lead_nome': self.lead.nome_club if self.lead else None,
+            'club_nome': self.club.nome if self.club else None,
+            'contract_nome': self.contract.club.nome if self.contract and self.contract.club else None,
+            'data_scadenza': self.data_scadenza.isoformat() if self.data_scadenza else None,
+            'completato_il': self.completato_il.isoformat() if self.completato_il else None,
+            'tags': self.tags,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+        }
+
+
+class AdminCalendarEvent(db.Model):
+    """Eventi calendario admin (appuntamenti, demo, meeting, ecc.)"""
+    __tablename__ = 'admin_calendar_events'
+
+    id = db.Column(db.Integer, primary_key=True)
+    admin_id = db.Column(db.Integer, db.ForeignKey('admins.id'), nullable=True)
+    titolo = db.Column(db.String(255), nullable=False)
+    descrizione = db.Column(db.Text, nullable=True)
+    tipo = db.Column(db.String(30), default='appuntamento')  # appuntamento, demo, meeting, personale, follow_up
+    data_inizio = db.Column(db.DateTime, nullable=False)
+    data_fine = db.Column(db.DateTime, nullable=False)
+    tutto_il_giorno = db.Column(db.Boolean, default=False)
+    colore = db.Column(db.String(7), default='#6366F1')
+    lead_id = db.Column(db.Integer, db.ForeignKey('crm_leads.id'), nullable=True)
+    club_id = db.Column(db.Integer, db.ForeignKey('clubs.id'), nullable=True)
+    booking_id = db.Column(db.Integer, db.ForeignKey('demo_bookings.id'), nullable=True)
+    google_event_id = db.Column(db.String(255), nullable=True)
+    note = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationships
+    admin = db.relationship('Admin', backref=db.backref('admin_calendar_events', lazy='dynamic'))
+    lead = db.relationship('CRMLead', backref=db.backref('admin_calendar_events', lazy='dynamic'))
+    club = db.relationship('Club', backref=db.backref('admin_calendar_events', lazy='dynamic'))
+    booking = db.relationship('DemoBooking', backref=db.backref('calendar_event', uselist=False))
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'admin_id': self.admin_id,
+            'titolo': self.titolo,
+            'descrizione': self.descrizione,
+            'tipo': self.tipo,
+            'data_inizio': self.data_inizio.isoformat() if self.data_inizio else None,
+            'data_fine': self.data_fine.isoformat() if self.data_fine else None,
+            'tutto_il_giorno': self.tutto_il_giorno,
+            'colore': self.colore,
+            'lead_id': self.lead_id,
+            'club_id': self.club_id,
+            'booking_id': self.booking_id,
+            'google_event_id': self.google_event_id,
+            'note': self.note,
+            'lead_nome': self.lead.nome_club if self.lead else None,
+            'club_nome': self.club.nome if self.club else None,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+        }
+
+
+class AdminAvailability(db.Model):
+    """Disponibilita settimanale admin per booking demo"""
+    __tablename__ = 'admin_availability'
+
+    id = db.Column(db.Integer, primary_key=True)
+    admin_id = db.Column(db.Integer, db.ForeignKey('admins.id'), nullable=True)
+    giorno_settimana = db.Column(db.Integer, nullable=False)  # 0=Lunedi ... 6=Domenica
+    ora_inizio = db.Column(db.String(5), nullable=False)  # "09:00"
+    ora_fine = db.Column(db.String(5), nullable=False)  # "18:00"
+    attivo = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    __table_args__ = (
+        db.UniqueConstraint('admin_id', 'giorno_settimana', 'ora_inizio', name='uq_admin_availability'),
+    )
+
+    admin = db.relationship('Admin', backref=db.backref('availability_slots', lazy='dynamic'))
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'admin_id': self.admin_id,
+            'giorno_settimana': self.giorno_settimana,
+            'ora_inizio': self.ora_inizio,
+            'ora_fine': self.ora_fine,
+            'attivo': self.attivo,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+        }
+
+
+class DemoBooking(db.Model):
+    """Prenotazioni demo pubbliche (stile Calendly)"""
+    __tablename__ = 'demo_bookings'
+
+    id = db.Column(db.Integer, primary_key=True)
+    token = db.Column(db.String(64), unique=True, nullable=False, default=lambda: str(uuid.uuid4()))
+    nome = db.Column(db.String(100), nullable=False)
+    cognome = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(255), nullable=False)
+    telefono = db.Column(db.String(30), nullable=True)
+    nome_club = db.Column(db.String(255), nullable=True)
+    sport_tipo = db.Column(db.String(100), nullable=True)
+    messaggio = db.Column(db.Text, nullable=True)
+    data_ora = db.Column(db.DateTime, nullable=False)
+    durata = db.Column(db.Integer, default=30)
+    stato = db.Column(db.String(20), default='confermato')  # confermato, completato, annullato, no_show
+    google_event_id = db.Column(db.String(255), nullable=True)
+    admin_id = db.Column(db.Integer, db.ForeignKey('admins.id'), nullable=True)
+    annullato_il = db.Column(db.DateTime, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    admin = db.relationship('Admin', backref=db.backref('demo_bookings', lazy='dynamic'))
+
+    def to_dict(self):
+        data_fine = self.data_ora + timedelta(minutes=self.durata) if self.data_ora else None
+        return {
+            'id': self.id,
+            'token': self.token,
+            'nome': self.nome,
+            'cognome': self.cognome,
+            'email': self.email,
+            'telefono': self.telefono,
+            'nome_club': self.nome_club,
+            'sport_tipo': self.sport_tipo,
+            'messaggio': self.messaggio,
+            'data_ora': self.data_ora.isoformat() if self.data_ora else None,
+            'data_fine': data_fine.isoformat() if data_fine else None,
+            'durata': self.durata,
+            'stato': self.stato,
+            'google_event_id': self.google_event_id,
+            'admin_id': self.admin_id,
+            'annullato_il': self.annullato_il.isoformat() if self.annullato_il else None,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+        }
+
+
+# ==================== ADMIN WORKFLOW / AUTOMATION ENGINE ====================
+
+class AdminWorkflow(db.Model):
+    """Workflow e sequenze email automatiche per il pannello admin"""
+    __tablename__ = 'admin_workflows'
+
+    id = db.Column(db.Integer, primary_key=True)
+    nome = db.Column(db.String(200), nullable=False)
+    descrizione = db.Column(db.Text, nullable=True)
+    abilitata = db.Column(db.Boolean, default=False)
+    tipo = db.Column(db.String(30), default='workflow')  # workflow | email_sequence
+
+    # Trigger
+    trigger_type = db.Column(db.String(50), nullable=False)
+    # lead_stage_changed, lead_created, lead_inactive, contract_expiring,
+    # contract_expired, invoice_overdue, club_created, task_overdue,
+    # booking_created, scheduled
+    trigger_config = db.Column(db.JSON, nullable=True)  # {from_stage, to_stage, days, ...}
+
+    # Steps (JSON array)
+    steps = db.Column(db.JSON, nullable=True)
+    # [{id, type, config, order, branch, parent_condition_id}, ...]
+
+    # Sequence-specific settings
+    sequence_exit_on_reply = db.Column(db.Boolean, default=True)
+    sequence_exit_on_convert = db.Column(db.Boolean, default=True)
+
+    # Stats
+    last_run = db.Column(db.DateTime, nullable=True)
+    next_run = db.Column(db.DateTime, nullable=True)
+    executions_count = db.Column(db.Integer, default=0)
+    last_status = db.Column(db.String(30), nullable=True)
+
+    # Ownership
+    created_by = db.Column(db.Integer, db.ForeignKey('admins.id'), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationships
+    creator = db.relationship('Admin', backref=db.backref('workflows', lazy='dynamic'))
+    executions = db.relationship('AdminWorkflowExecution', backref='workflow',
+                                 lazy='dynamic', cascade='all, delete-orphan')
+    enrollments = db.relationship('AdminWorkflowEnrollment', backref='workflow',
+                                  lazy='dynamic', cascade='all, delete-orphan')
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'nome': self.nome,
+            'descrizione': self.descrizione,
+            'abilitata': self.abilitata,
+            'tipo': self.tipo,
+            'trigger_type': self.trigger_type,
+            'trigger_config': self.trigger_config,
+            'steps': self.steps or [],
+            'sequence_exit_on_reply': self.sequence_exit_on_reply,
+            'sequence_exit_on_convert': self.sequence_exit_on_convert,
+            'last_run': self.last_run.isoformat() if self.last_run else None,
+            'next_run': self.next_run.isoformat() if self.next_run else None,
+            'executions_count': self.executions_count or 0,
+            'last_status': self.last_status,
+            'created_by': self.created_by,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+        }
+
+
+class AdminWorkflowExecution(db.Model):
+    """Singola esecuzione di un workflow admin"""
+    __tablename__ = 'admin_workflow_executions'
+
+    id = db.Column(db.Integer, primary_key=True)
+    workflow_id = db.Column(db.Integer, db.ForeignKey('admin_workflows.id'), nullable=False)
+    status = db.Column(db.String(20), default='running')
+    # running, completed, failed, partial, cancelled
+    trigger_data = db.Column(db.JSON, nullable=True)
+    started_at = db.Column(db.DateTime, default=datetime.utcnow)
+    completed_at = db.Column(db.DateTime, nullable=True)
+    error_message = db.Column(db.Text, nullable=True)
+
+    step_executions = db.relationship('AdminWorkflowStepExecution', backref='execution',
+                                      lazy='dynamic', cascade='all, delete-orphan')
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'workflow_id': self.workflow_id,
+            'status': self.status,
+            'trigger_data': self.trigger_data,
+            'started_at': self.started_at.isoformat() if self.started_at else None,
+            'completed_at': self.completed_at.isoformat() if self.completed_at else None,
+            'error_message': self.error_message,
+        }
+
+
+class AdminWorkflowStepExecution(db.Model):
+    """Esecuzione singolo step di un workflow admin"""
+    __tablename__ = 'admin_workflow_step_executions'
+
+    id = db.Column(db.Integer, primary_key=True)
+    execution_id = db.Column(db.Integer, db.ForeignKey('admin_workflow_executions.id'), nullable=False)
+    step_index = db.Column(db.Integer, nullable=False)
+    step_type = db.Column(db.String(50), nullable=False)
+    step_id = db.Column(db.String(50), nullable=True)  # ID dallo step JSON
+    status = db.Column(db.String(20), default='pending')
+    # pending, running, completed, failed, skipped
+    input_data = db.Column(db.JSON, nullable=True)
+    output_data = db.Column(db.JSON, nullable=True)
+    scheduled_for = db.Column(db.DateTime, nullable=True)  # per delay
+    error_message = db.Column(db.Text, nullable=True)
+    started_at = db.Column(db.DateTime, nullable=True)
+    completed_at = db.Column(db.DateTime, nullable=True)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'execution_id': self.execution_id,
+            'step_index': self.step_index,
+            'step_type': self.step_type,
+            'step_id': self.step_id,
+            'status': self.status,
+            'input_data': self.input_data,
+            'output_data': self.output_data,
+            'scheduled_for': self.scheduled_for.isoformat() if self.scheduled_for else None,
+            'error_message': self.error_message,
+            'started_at': self.started_at.isoformat() if self.started_at else None,
+            'completed_at': self.completed_at.isoformat() if self.completed_at else None,
+        }
+
+
+class AdminWorkflowEnrollment(db.Model):
+    """Enrollment lead in sequenze email admin"""
+    __tablename__ = 'admin_workflow_enrollments'
+
+    id = db.Column(db.Integer, primary_key=True)
+    workflow_id = db.Column(db.Integer, db.ForeignKey('admin_workflows.id'), nullable=False)
+    lead_id = db.Column(db.Integer, db.ForeignKey('crm_leads.id'), nullable=False)
+    status = db.Column(db.String(30), default='active')
+    # active, completed, exited_reply, exited_convert, removed
+    current_step_index = db.Column(db.Integer, default=0)
+    next_send_at = db.Column(db.DateTime, nullable=True)
+    execution_id = db.Column(db.Integer, db.ForeignKey('admin_workflow_executions.id'), nullable=True)
+    enrolled_at = db.Column(db.DateTime, default=datetime.utcnow)
+    exited_at = db.Column(db.DateTime, nullable=True)
+    exit_reason = db.Column(db.String(100), nullable=True)
+
+    lead = db.relationship('CRMLead', backref=db.backref('workflow_enrollments', lazy='dynamic'))
+
+    def to_dict(self):
+        lead_data = None
+        if self.lead:
+            lead_data = {
+                'id': self.lead.id,
+                'nome_club': self.lead.nome_club,
+                'contatto_email': self.lead.contatto_email,
+                'stage': self.lead.stage,
+            }
+        return {
+            'id': self.id,
+            'workflow_id': self.workflow_id,
+            'lead_id': self.lead_id,
+            'lead': lead_data,
+            'status': self.status,
+            'current_step_index': self.current_step_index,
+            'next_send_at': self.next_send_at.isoformat() if self.next_send_at else None,
+            'execution_id': self.execution_id,
+            'enrolled_at': self.enrolled_at.isoformat() if self.enrolled_at else None,
+            'exited_at': self.exited_at.isoformat() if self.exited_at else None,
+            'exit_reason': self.exit_reason,
+        }
+
+
+class AdminCredential(db.Model):
+    """Vault credenziali admin per servizi esterni"""
+    __tablename__ = 'admin_credentials'
+
+    id = db.Column(db.Integer, primary_key=True)
+    nome_servizio = db.Column(db.String(200), nullable=False)
+    categoria = db.Column(db.String(100), default='altro')  # email, api, cloud, social, database, hosting, altro
+    username = db.Column(db.String(200))
+    password_encrypted = db.Column(db.Text)
+    url = db.Column(db.String(500))
+    note = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_by = db.Column(db.Integer, db.ForeignKey('admins.id'), nullable=True)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'nome_servizio': self.nome_servizio,
+            'categoria': self.categoria,
+            'username': self.username,
+            'url': self.url,
+            'note': self.note,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'created_by': self.created_by,
         }
