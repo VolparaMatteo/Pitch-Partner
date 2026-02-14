@@ -233,7 +233,6 @@ firebase-adminsdk*.json
 # Excluded Folders (not needed in repo)
 # ===================
 template/
-website/
 mobile/
 
 # ===================
