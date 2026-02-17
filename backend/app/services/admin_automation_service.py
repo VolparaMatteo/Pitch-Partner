@@ -8,7 +8,7 @@ from app.models import (
     AdminWorkflow, AdminWorkflowExecution, AdminWorkflowStepExecution,
     AdminWorkflowEnrollment, CRMLead, CRMLeadActivity, AdminContract,
     AdminInvoice, AdminTask, DemoBooking, Club, AdminEmailTemplate,
-    Notification
+    Notification, AdminCalendarEvent
 )
 import requests
 import json
@@ -271,12 +271,22 @@ class AdminAutomationService:
                     'contatto_cognome': lead.contatto_cognome,
                     'contatto_email': lead.contatto_email,
                     'contatto_telefono': lead.contatto_telefono,
+                    'contatto_ruolo': getattr(lead, 'contatto_ruolo', None),
+                    'referente_nome': getattr(lead, 'referente_nome', None),
+                    'referente_email': getattr(lead, 'referente_email', None),
                     'stage': lead.stage,
                     'temperatura': lead.temperatura,
                     'valore_stimato': lead.valore_stimato,
+                    'probabilita': getattr(lead, 'probabilita', None),
                     'tipologia_sport': lead.tipologia_sport,
                     'citta': lead.citta,
+                    'provincia': getattr(lead, 'provincia', None),
+                    'regione': getattr(lead, 'regione', None),
                     'fonte': lead.fonte,
+                    'score': getattr(lead, 'score', None),
+                    'priorita': getattr(lead, 'priorita', None),
+                    'prossima_azione': getattr(lead, 'prossima_azione', None),
+                    'data_prossima_azione': lead.data_prossima_azione.isoformat() if getattr(lead, 'data_prossima_azione', None) else None,
                 }
 
         elif entity_type == 'contract' and entity_id:
@@ -286,10 +296,15 @@ class AdminAutomationService:
                     'id': contract.id,
                     'club_id': contract.club_id,
                     'plan_type': contract.plan_type,
+                    'plan_price': contract.plan_price,
                     'total_value': contract.total_value,
+                    'vat_rate': contract.vat_rate,
                     'start_date': contract.start_date.isoformat() if contract.start_date else None,
                     'end_date': contract.end_date.isoformat() if contract.end_date else None,
+                    'renewal_date': contract.renewal_date.isoformat() if getattr(contract, 'renewal_date', None) else None,
                     'status': contract.status,
+                    'payment_terms': getattr(contract, 'payment_terms', None),
+                    'signed_by': getattr(contract, 'signed_by', None),
                 }
                 # Carica anche il club
                 club = Club.query.get(contract.club_id)
@@ -305,10 +320,26 @@ class AdminAutomationService:
             if invoice:
                 context['invoice'] = {
                     'id': invoice.id,
-                    'numero': invoice.numero,
-                    'importo': invoice.importo,
-                    'stato': invoice.stato,
+                    'invoice_number': invoice.invoice_number,
+                    'amount': invoice.amount,
+                    'vat_amount': invoice.vat_amount,
+                    'total_amount': invoice.total_amount,
+                    'status': invoice.status,
+                    'issue_date': invoice.issue_date.isoformat() if invoice.issue_date else None,
+                    'due_date': invoice.due_date.isoformat() if invoice.due_date else None,
+                    'payment_date': invoice.payment_date.isoformat() if invoice.payment_date else None,
+                    'contract_id': invoice.contract_id,
+                    'club_id': invoice.club_id,
                 }
+                # Carica club associato
+                if invoice.club_id:
+                    club = Club.query.get(invoice.club_id)
+                    if club:
+                        context['club'] = {
+                            'id': club.id,
+                            'nome': club.nome,
+                            'email': club.email,
+                        }
 
         elif entity_type == 'booking' and entity_id:
             booking = DemoBooking.query.get(entity_id)
@@ -319,6 +350,10 @@ class AdminAutomationService:
                     'cognome': booking.cognome,
                     'email': booking.email,
                     'nome_club': booking.nome_club,
+                    'telefono': getattr(booking, 'telefono', None),
+                    'sport_tipo': getattr(booking, 'sport_tipo', None),
+                    'stato': getattr(booking, 'stato', None),
+                    'durata': getattr(booking, 'durata', None),
                     'data_ora': booking.data_ora.isoformat() if booking.data_ora else None,
                 }
 
@@ -329,6 +364,11 @@ class AdminAutomationService:
                     'id': club.id,
                     'nome': club.nome,
                     'email': club.email,
+                    'tipologia': getattr(club, 'tipologia', None),
+                    'telefono': getattr(club, 'telefono', None),
+                    'citta': getattr(club, 'citta', None),
+                    'referente_nome': getattr(club, 'referente_nome', None),
+                    'account_attivo': getattr(club, 'account_attivo', None),
                 }
 
         elif entity_type == 'task' and entity_id:
@@ -337,9 +377,27 @@ class AdminAutomationService:
                 context['task'] = {
                     'id': task.id,
                     'titolo': task.titolo,
+                    'descrizione': task.descrizione,
                     'tipo': task.tipo,
                     'priorita': task.priorita,
                     'stato': task.stato,
+                    'lead_id': task.lead_id,
+                    'club_id': task.club_id,
+                    'data_scadenza': task.data_scadenza.isoformat() if task.data_scadenza else None,
+                }
+
+        elif entity_type == 'calendar_event' and entity_id:
+            event = AdminCalendarEvent.query.get(entity_id)
+            if event:
+                context['calendar_event'] = {
+                    'id': event.id,
+                    'titolo': event.titolo,
+                    'tipo': event.tipo,
+                    'descrizione': getattr(event, 'descrizione', None),
+                    'data_inizio': event.data_inizio.isoformat() if event.data_inizio else None,
+                    'data_fine': event.data_fine.isoformat() if event.data_fine else None,
+                    'lead_id': event.lead_id,
+                    'club_id': event.club_id,
                 }
 
         # Aggiungi dati extra dal trigger
@@ -628,3 +686,208 @@ def handle_webhook(config, context):
         'status_code': response.status_code,
         'response': response.text[:500] if response.text else None
     }
+
+
+@AdminAutomationService.register_handler('update_contract_status')
+def handle_update_contract_status(config, context):
+    """Aggiorna stato contratto"""
+    trigger_data = context.get('trigger_data', {})
+    contract_id = config.get('contract_id') or trigger_data.get('entity_id')
+    new_status = config.get('new_status')
+
+    if not contract_id or not new_status:
+        raise ValueError("contract_id e new_status sono richiesti")
+
+    contract = AdminContract.query.get(contract_id)
+    if not contract:
+        raise ValueError(f"Contratto {contract_id} non trovato")
+
+    old_status = contract.status
+    contract.status = new_status
+    db.session.commit()
+
+    return {'contract_id': contract_id, 'old_status': old_status, 'new_status': new_status}
+
+
+@AdminAutomationService.register_handler('update_task_status')
+def handle_update_task_status(config, context):
+    """Aggiorna stato task"""
+    trigger_data = context.get('trigger_data', {})
+    task_id = config.get('task_id') or trigger_data.get('entity_id')
+    new_status = config.get('new_status')
+
+    if not task_id or not new_status:
+        raise ValueError("task_id e new_status sono richiesti")
+
+    task = AdminTask.query.get(task_id)
+    if not task:
+        raise ValueError(f"Task {task_id} non trovato")
+
+    old_status = task.stato
+    task.stato = new_status
+    if new_status == 'completato':
+        task.completato_il = datetime.utcnow()
+    db.session.commit()
+
+    return {'task_id': task_id, 'old_status': old_status, 'new_status': new_status}
+
+
+@AdminAutomationService.register_handler('create_calendar_event')
+def handle_create_calendar_event(config, context):
+    """Crea evento calendario"""
+    titolo = AdminAutomationService.render_template(config.get('titolo', ''), context)
+    descrizione = AdminAutomationService.render_template(config.get('descrizione', ''), context)
+    days_offset = config.get('days_offset', 0)
+    durata_ore = config.get('durata_ore', 1)
+    data_inizio = datetime.utcnow() + timedelta(days=days_offset)
+
+    event = AdminCalendarEvent(
+        admin_id=1,
+        titolo=titolo,
+        descrizione=descrizione,
+        tipo=config.get('tipo', 'appuntamento'),
+        data_inizio=data_inizio,
+        data_fine=data_inizio + timedelta(hours=durata_ore),
+    )
+
+    trigger_data = context.get('trigger_data', {})
+    if trigger_data.get('entity_type') == 'lead':
+        event.lead_id = trigger_data.get('entity_id')
+    elif trigger_data.get('entity_type') == 'club':
+        event.club_id = trigger_data.get('entity_id')
+    # Usa lead_id/club_id dai dati trigger extra se presenti
+    if trigger_data.get('lead_id'):
+        event.lead_id = trigger_data.get('lead_id')
+    if trigger_data.get('club_id'):
+        event.club_id = trigger_data.get('club_id')
+
+    db.session.add(event)
+    db.session.commit()
+
+    return {'event_id': event.id, 'titolo': titolo}
+
+
+@AdminAutomationService.register_handler('log_lead_activity')
+def handle_log_lead_activity(config, context):
+    """Registra attivita lead"""
+    trigger_data = context.get('trigger_data', {})
+    lead_id = config.get('lead_id') or trigger_data.get('entity_id')
+
+    if not lead_id:
+        raise ValueError("lead_id richiesto")
+
+    titolo = AdminAutomationService.render_template(config.get('titolo', ''), context)
+    descrizione = AdminAutomationService.render_template(config.get('descrizione', ''), context)
+
+    activity = CRMLeadActivity(
+        lead_id=lead_id,
+        tipo=config.get('tipo', 'nota'),
+        titolo=titolo,
+        descrizione=descrizione
+    )
+    db.session.add(activity)
+    db.session.commit()
+
+    return {'activity_id': activity.id}
+
+
+@AdminAutomationService.register_handler('update_lead_field')
+def handle_update_lead_field(config, context):
+    """Aggiorna campo lead"""
+    trigger_data = context.get('trigger_data', {})
+    lead_id = config.get('lead_id') or trigger_data.get('entity_id')
+
+    if not lead_id:
+        raise ValueError("lead_id richiesto")
+
+    lead = CRMLead.query.get(lead_id)
+    if not lead:
+        raise ValueError(f"Lead {lead_id} non trovato")
+
+    field_name = config.get('field_name')
+    value = config.get('value')
+
+    ALLOWED_FIELDS = ['valore_stimato', 'probabilita', 'fonte', 'temperatura',
+                      'prossima_azione', 'data_prossimo_contatto', 'tags', 'note', 'priorita']
+    if field_name not in ALLOWED_FIELDS:
+        raise ValueError(f"Campo non consentito: {field_name}")
+
+    old_value = getattr(lead, field_name, None)
+    setattr(lead, field_name, value)
+    db.session.commit()
+
+    return {'field': field_name, 'old_value': str(old_value), 'new_value': str(value)}
+
+
+@AdminAutomationService.register_handler('enroll_in_sequence')
+def handle_enroll_in_sequence(config, context):
+    """Iscrivi lead a sequenza email"""
+    trigger_data = context.get('trigger_data', {})
+    lead_id = trigger_data.get('entity_id')
+    workflow_id = config.get('workflow_id')
+
+    if not lead_id or not workflow_id:
+        raise ValueError("lead_id e workflow_id sono richiesti")
+
+    existing = AdminWorkflowEnrollment.query.filter_by(
+        workflow_id=workflow_id, lead_id=lead_id, status='active').first()
+    if existing:
+        return {'already_enrolled': True}
+
+    enrollment = AdminWorkflowEnrollment(
+        workflow_id=workflow_id,
+        lead_id=lead_id,
+        status='active',
+        current_step_index=0,
+        next_send_at=datetime.utcnow(),
+        enrolled_at=datetime.utcnow()
+    )
+    db.session.add(enrollment)
+    db.session.commit()
+
+    return {'enrollment_id': enrollment.id}
+
+
+@AdminAutomationService.register_handler('remove_from_sequence')
+def handle_remove_from_sequence(config, context):
+    """Rimuovi lead da sequenza email"""
+    trigger_data = context.get('trigger_data', {})
+    lead_id = trigger_data.get('entity_id')
+    workflow_id = config.get('workflow_id')
+
+    if not lead_id or not workflow_id:
+        raise ValueError("lead_id e workflow_id sono richiesti")
+
+    enrollment = AdminWorkflowEnrollment.query.filter_by(
+        workflow_id=workflow_id, lead_id=lead_id, status='active').first()
+    if enrollment:
+        enrollment.status = 'removed'
+        enrollment.exited_at = datetime.utcnow()
+        enrollment.exit_reason = 'Rimosso da automazione'
+        db.session.commit()
+        return {'removed': True}
+    return {'removed': False}
+
+
+@AdminAutomationService.register_handler('send_whatsapp')
+def handle_send_whatsapp(config, context):
+    """Invia messaggio WhatsApp tramite sidecar Node.js"""
+    import re
+
+    to = AdminAutomationService.render_template(config.get('to', ''), context)
+    messaggio = AdminAutomationService.render_template(config.get('messaggio', ''), context)
+
+    if not to or not messaggio:
+        raise ValueError("Numero destinatario e messaggio sono richiesti")
+
+    # Normalizza numero: rimuovi +, spazi, trattini
+    to_normalized = re.sub(r'[\s\-\+]', '', to)
+
+    resp = requests.post('http://localhost:3200/send', json={
+        'to': to_normalized,
+        'message': messaggio
+    }, timeout=30)
+    resp.raise_for_status()
+    data = resp.json()
+
+    return {'to': to_normalized, 'message_id': data.get('message_id'), 'sent': True}

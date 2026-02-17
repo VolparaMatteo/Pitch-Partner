@@ -256,6 +256,150 @@
 }
 
 /* ============================================
+   Search Results
+   ============================================ */
+.search-results-container {
+    max-height: 440px;
+    overflow-y: auto;
+    padding: 4px 0;
+}
+
+.search-results-container::-webkit-scrollbar {
+    width: 4px;
+}
+
+.search-results-container::-webkit-scrollbar-thumb {
+    background: #D1D5DB;
+    border-radius: 4px;
+}
+
+.search-category {
+    padding: 4px 0;
+}
+
+.search-category + .search-category {
+    border-top: 1px solid #F3F4F6;
+}
+
+.search-category-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px 6px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--topbar-text-muted);
+}
+
+.search-category-icon {
+    font-size: 14px;
+}
+
+.search-category-label {
+    flex: 1;
+}
+
+.search-category-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 10px;
+    background: #F3F4F6;
+    font-size: 10px;
+    font-weight: 700;
+    color: #6B7280;
+}
+
+.search-result-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 10px 16px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    transition: background 0.15s ease;
+    text-align: left;
+}
+
+.search-result-item:hover {
+    background: #F9FAFB;
+}
+
+.search-result-content {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.search-result-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: #1F2937;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.search-result-subtitle {
+    font-size: 12px;
+    color: #9CA3AF;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.search-result-badge {
+    flex-shrink: 0;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.search-footer {
+    padding: 10px 16px;
+    font-size: 12px;
+    color: var(--topbar-text-muted);
+    text-align: center;
+    border-top: 1px solid #F3F4F6;
+    margin-top: 4px;
+}
+
+.search-status {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 24px 16px;
+    text-align: center;
+    color: var(--topbar-text-muted);
+    font-size: 13px;
+}
+
+.search-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid #E5E7EB;
+    border-top-color: #6B7280;
+    border-radius: 50%;
+    animation: searchSpin 0.6s linear infinite;
+}
+
+@keyframes searchSpin {
+    to { transform: rotate(360deg); }
+}
+
+/* ============================================
    Quick Actions
    ============================================ */
 .topbar-quick-actions {

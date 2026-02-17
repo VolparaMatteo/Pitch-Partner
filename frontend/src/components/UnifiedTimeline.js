@@ -4,7 +4,7 @@ import {
   FaFileInvoice, FaFileContract, FaCrown, FaExchangeAlt,
   FaUserTie, FaPause, FaPlay, FaRocket, FaHandshake,
   FaChevronDown, FaChevronUp, FaFilter, FaStar, FaFileAlt,
-  FaCheck, FaTimes
+  FaCheck, FaTimes, FaWhatsapp
 } from 'react-icons/fa';
 
 // Event type configuration
@@ -34,6 +34,9 @@ const EVENT_CONFIG = {
   // Emails from conversation
   email_inbound: { icon: <FaEnvelope />, label: 'Email Ricevuta', color: '#6B7280', bg: '#F3F4F6', category: 'email' },
   email_outbound: { icon: <FaEnvelope />, label: 'Email Inviata', color: '#4F46E5', bg: '#EEF2FF', category: 'email' },
+  // WhatsApp messages
+  wa_inbound: { icon: <FaWhatsapp />, label: 'WhatsApp Ricevuto', color: '#25D366', bg: '#F0FFF4', category: 'whatsapp' },
+  wa_outbound: { icon: <FaWhatsapp />, label: 'WhatsApp Inviato', color: '#25D366', bg: '#F0FFF4', category: 'whatsapp' },
 };
 
 const ESITO_BADGE = {
@@ -76,9 +79,10 @@ const CATEGORY_FILTERS = [
   { id: 'invoice', label: 'Fatture' },
   { id: 'contract', label: 'Contratti' },
   { id: 'subscription', label: 'Abbonamento' },
+  { id: 'whatsapp', label: 'WhatsApp' },
 ];
 
-function UnifiedTimeline({ activities = [], invoices = [], contracts = [], subscriptionEvents = [], emails = [] }) {
+function UnifiedTimeline({ activities = [], invoices = [], contracts = [], subscriptionEvents = [], emails = [], whatsappMessages = [] }) {
   const [timelineItems, setTimelineItems] = useState([]);
   const [filter, setFilter] = useState('all');
   const [expandedId, setExpandedId] = useState(null);
@@ -187,6 +191,18 @@ function UnifiedTimeline({ activities = [], invoices = [], contracts = [], subsc
       });
     });
 
+    // 6. WhatsApp messages
+    whatsappMessages.forEach(msg => {
+      items.push({
+        id: `wa-${msg.id}`,
+        type: msg.fromMe ? 'wa_outbound' : 'wa_inbound',
+        category: 'whatsapp',
+        date: new Date(msg.timestamp * 1000),
+        title: msg.body || (msg.hasMedia ? '(media)' : '(messaggio)'),
+        description: msg.fromMe ? 'Inviato via WhatsApp' : 'Ricevuto via WhatsApp',
+      });
+    });
+
     // Sort by date (newest first)
     items.sort((a, b) => {
       const dateA = a.date ? new Date(a.date).getTime() : 0;
@@ -195,7 +211,7 @@ function UnifiedTimeline({ activities = [], invoices = [], contracts = [], subsc
     });
 
     setTimelineItems(items);
-  }, [activities, invoices, contracts, subscriptionEvents, emails]);
+  }, [activities, invoices, contracts, subscriptionEvents, emails, whatsappMessages]);
 
   const filteredItems = filter === 'all'
     ? timelineItems
@@ -318,10 +334,10 @@ function UnifiedTimeline({ activities = [], invoices = [], contracts = [], subsc
   let lastDateGroup = '';
 
   return (
-    <div ref={timelineRef}>
+    <div ref={timelineRef} style={{ display: 'flex', flexDirection: 'column', height: '600px' }}>
       {/* Filters */}
       <div style={{
-        display: 'flex', gap: '6px', marginBottom: '16px', flexWrap: 'wrap', alignItems: 'center'
+        display: 'flex', gap: '6px', marginBottom: '0', padding: '0 0 12px 0', flexWrap: 'wrap', alignItems: 'center', flexShrink: 0
       }}>
         <FaFilter size={12} style={{ color: '#9CA3AF', marginRight: '4px' }} />
         {CATEGORY_FILTERS.map(f => {
@@ -353,7 +369,8 @@ function UnifiedTimeline({ activities = [], invoices = [], contracts = [], subsc
         })}
       </div>
 
-      {/* Timeline */}
+      {/* Timeline (scrollable) */}
+      <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
       {filteredItems.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '40px 0', color: '#9CA3AF' }}>
           <FaStickyNote size={24} style={{ marginBottom: '8px', opacity: 0.5 }} />
@@ -496,6 +513,7 @@ function UnifiedTimeline({ activities = [], invoices = [], contracts = [], subsc
           )}
         </div>
       )}
+      </div>
     </div>
   );
 }

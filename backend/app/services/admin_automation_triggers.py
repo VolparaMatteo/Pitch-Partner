@@ -61,6 +61,14 @@ class AdminAutomationTriggers:
             if to_stage and entity_data.get('new_stage') != to_stage:
                 return False
 
+        if workflow.trigger_type == 'contract_status_changed':
+            from_status = trigger_config.get('from_status')
+            to_status = trigger_config.get('to_status')
+            if from_status and entity_data.get('old_status') != from_status:
+                return False
+            if to_status and entity_data.get('new_status') != to_status:
+                return False
+
         # Filtri generici
         filters = trigger_config.get('filters', {})
         for field, expected_value in filters.items():
@@ -174,3 +182,96 @@ def trigger_admin_club_created(club):
         'email': club.email,
     }
     return AdminAutomationTriggers.fire_trigger('club_created', entity_data)
+
+
+def trigger_admin_task_created(task):
+    """Trigger: Nuovo task admin creato"""
+    entity_data = {
+        'entity_type': 'task',
+        'entity_id': task.id,
+        'titolo': task.titolo,
+        'tipo': task.tipo,
+        'priorita': task.priorita,
+        'lead_id': task.lead_id,
+        'club_id': task.club_id,
+    }
+    return AdminAutomationTriggers.fire_trigger('task_created', entity_data)
+
+
+def trigger_admin_task_completed(task):
+    """Trigger: Task admin completato"""
+    entity_data = {
+        'entity_type': 'task',
+        'entity_id': task.id,
+        'titolo': task.titolo,
+        'tipo': task.tipo,
+    }
+    return AdminAutomationTriggers.fire_trigger('task_completed', entity_data)
+
+
+def trigger_admin_invoice_created(invoice):
+    """Trigger: Nuova fattura creata"""
+    entity_data = {
+        'entity_type': 'invoice',
+        'entity_id': invoice.id,
+        'invoice_number': invoice.invoice_number,
+        'amount': invoice.amount,
+        'total_amount': invoice.total_amount,
+        'club_id': invoice.club_id,
+        'status': invoice.status,
+    }
+    return AdminAutomationTriggers.fire_trigger('invoice_created', entity_data)
+
+
+def trigger_admin_invoice_paid(invoice):
+    """Trigger: Fattura pagata"""
+    entity_data = {
+        'entity_type': 'invoice',
+        'entity_id': invoice.id,
+        'invoice_number': invoice.invoice_number,
+        'amount': invoice.amount,
+        'total_amount': invoice.total_amount,
+        'club_id': invoice.club_id,
+    }
+    return AdminAutomationTriggers.fire_trigger('invoice_paid', entity_data)
+
+
+def trigger_admin_contract_status_changed(contract, old_status, new_status):
+    """Trigger: Cambio stato contratto"""
+    entity_data = {
+        'entity_type': 'contract',
+        'entity_id': contract.id,
+        'club_id': contract.club_id,
+        'plan_type': contract.plan_type,
+        'total_value': contract.total_value,
+        'old_status': old_status,
+        'new_status': new_status,
+    }
+    return AdminAutomationTriggers.fire_trigger('contract_status_changed', entity_data)
+
+
+def trigger_admin_calendar_event_created(event):
+    """Trigger: Nuovo evento calendario creato"""
+    entity_data = {
+        'entity_type': 'calendar_event',
+        'entity_id': event.id,
+        'titolo': event.titolo,
+        'tipo': event.tipo,
+        'lead_id': event.lead_id,
+        'club_id': event.club_id,
+    }
+    return AdminAutomationTriggers.fire_trigger('calendar_event_created', entity_data)
+
+
+def trigger_admin_booking_confirmed(booking):
+    """Trigger: Demo confermata"""
+    entity_data = {
+        'entity_type': 'booking',
+        'entity_id': booking.id,
+        'nome': booking.nome,
+        'cognome': booking.cognome,
+        'email': booking.email,
+        'nome_club': booking.nome_club,
+        'data_ora': booking.data_ora.isoformat() if booking.data_ora else None,
+    }
+    return AdminAutomationTriggers.fire_trigger('booking_confirmed', entity_data)

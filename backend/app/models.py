@@ -6854,6 +6854,7 @@ class AdminTask(db.Model):
             'id': self.id,
             'admin_id': self.admin_id,
             'admin_nome': f"{self.admin.nome} {self.admin.cognome}" if self.admin else None,
+            'admin_avatar': self.admin.avatar if self.admin else None,
             'titolo': self.titolo,
             'descrizione': self.descrizione,
             'tipo': self.tipo,
@@ -6890,6 +6891,7 @@ class AdminCalendarEvent(db.Model):
     club_id = db.Column(db.Integer, db.ForeignKey('clubs.id'), nullable=True)
     booking_id = db.Column(db.Integer, db.ForeignKey('demo_bookings.id'), nullable=True)
     google_event_id = db.Column(db.String(255), nullable=True)
+    meet_link = db.Column(db.String(500), nullable=True)
     note = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -6915,6 +6917,7 @@ class AdminCalendarEvent(db.Model):
             'club_id': self.club_id,
             'booking_id': self.booking_id,
             'google_event_id': self.google_event_id,
+            'meet_link': self.meet_link,
             'note': self.note,
             'lead_nome': self.lead.nome_club if self.lead else None,
             'club_nome': self.club.nome if self.club else None,
@@ -6970,6 +6973,7 @@ class DemoBooking(db.Model):
     durata = db.Column(db.Integer, default=30)
     stato = db.Column(db.String(20), default='confermato')  # confermato, completato, annullato, no_show
     google_event_id = db.Column(db.String(255), nullable=True)
+    meet_link = db.Column(db.String(500), nullable=True)
     admin_id = db.Column(db.Integer, db.ForeignKey('admins.id'), nullable=True)
     annullato_il = db.Column(db.DateTime, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -6993,6 +6997,7 @@ class DemoBooking(db.Model):
             'durata': self.durata,
             'stato': self.stato,
             'google_event_id': self.google_event_id,
+            'meet_link': self.meet_link,
             'admin_id': self.admin_id,
             'annullato_il': self.annullato_il.isoformat() if self.annullato_il else None,
             'created_at': self.created_at.isoformat() if self.created_at else None,

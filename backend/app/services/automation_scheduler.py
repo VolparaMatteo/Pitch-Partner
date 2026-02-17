@@ -309,16 +309,17 @@ class AutomationScheduler:
                 overdue_date = (now - timedelta(days=days)).date()
 
                 invoices = AdminInvoice.query.filter(
-                    AdminInvoice.stato.in_(['emessa', 'inviata']),
-                    AdminInvoice.data_scadenza <= overdue_date
+                    AdminInvoice.status.in_(['pending', 'overdue']),
+                    AdminInvoice.due_date <= overdue_date
                 ).all()
 
                 for invoice in invoices:
                     entity_data = {
                         'entity_type': 'invoice',
                         'entity_id': invoice.id,
-                        'numero': invoice.numero,
-                        'importo': invoice.importo,
+                        'invoice_number': invoice.invoice_number,
+                        'amount': invoice.amount,
+                        'total_amount': invoice.total_amount,
                     }
                     try:
                         AdminAutomationTriggers.fire_trigger('invoice_overdue', entity_data)

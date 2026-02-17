@@ -128,47 +128,52 @@
 .cc-calendar-card {
   background: #FFFFFF;
   border: 1px solid #E5E7EB;
-  border-radius: 12px;
-  padding: 20px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  border-radius: 14px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
 }
 
 /* Toolbar */
 .cc-calendar-card .rbc-toolbar {
-  margin-bottom: 16px;
+  margin-bottom: 20px;
   flex-wrap: wrap;
   gap: 8px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #F3F4F6;
 }
 
 .cc-calendar-card .rbc-toolbar button {
-  background: #F9FAFB;
+  background: #FFFFFF;
   border: 1px solid #E5E7EB;
   color: #374151;
   border-radius: 8px;
-  padding: 6px 16px;
+  padding: 6px 14px;
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
   font-family: inherit;
+  line-height: 1.4;
 }
 
 .cc-calendar-card .rbc-toolbar button:hover {
   background: #F3F4F6;
   color: #1F2937;
+  border-color: #D1D5DB;
 }
 
 .cc-calendar-card .rbc-toolbar button.rbc-active {
-  background: #6366F1;
-  border-color: #6366F1;
+  background: #1A1A1A;
+  border-color: #1A1A1A;
   color: #fff;
 }
 
 .cc-calendar-card .rbc-toolbar-label {
   color: #1F2937;
-  font-weight: 600;
-  font-size: 18px;
+  font-weight: 700;
+  font-size: 17px;
   text-transform: capitalize;
+  letter-spacing: -0.01em;
 }
 
 /* Header */

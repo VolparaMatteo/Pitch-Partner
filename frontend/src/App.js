@@ -16,9 +16,11 @@ import AdminContractForm from './pages/AdminContractForm';
 import AdminFinance from './pages/AdminFinance';
 import AdminInvoiceForm from './pages/AdminInvoiceForm';
 import AdminDashboard from './pages/AdminDashboard';
+import AdminAnalyticsPage from './pages/AdminAnalyticsPage';
 import AdminNotifications from './pages/AdminNotifications';
 import AdminEmail from './pages/AdminEmail';
 import AdminNewsletter from './pages/AdminNewsletter';
+import AdminWhatsApp from './pages/AdminWhatsApp';
 import AdminTasks from './pages/AdminTasks';
 import AdminCalendar from './pages/AdminCalendar';
 import AdminWorkflows from './pages/AdminWorkflows';
@@ -156,6 +158,7 @@ function App() {
                                         <Route path="/login" element={<Login />} />
                                         <Route path="/admin/login" element={<Login />} />
                                         <Route path="/admin/dashboard" element={<AdminDashboard />} />
+                                        <Route path="/admin/analytics" element={<AdminAnalyticsPage />} />
                                         <Route path="/admin/profile" element={<AdminProfile />} />
                                         <Route path="/admin/leads" element={<AdminLeadListPage />} />
                                         <Route path="/admin/leads/new" element={<AdminLeadForm />} />
@@ -179,6 +182,7 @@ function App() {
                                         <Route path="/admin/notifiche" element={<AdminNotifications />} />
                                         <Route path="/admin/email" element={<AdminEmail />} />
                                         <Route path="/admin/newsletter" element={<AdminNewsletter />} />
+                                        <Route path="/admin/whatsapp" element={<AdminWhatsApp />} />
                                         <Route path="/admin/tasks" element={<AdminTasks />} />
                                         <Route path="/admin/calendario" element={<AdminCalendar />} />
                                         <Route path="/admin/workflows" element={<AdminWorkflows />} />

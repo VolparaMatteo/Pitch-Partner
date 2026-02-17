@@ -132,19 +132,22 @@ def reserve_booking():
     )
     db.session.add(event)
 
-    # Google Calendar sync
+    # Google Calendar sync (sempre con Meet per le demo)
     try:
         from app.services.google_calendar_service import google_calendar_service
         if admin and google_calendar_service.is_connected(admin):
-            g_id = google_calendar_service.create_event(admin, {
+            result = google_calendar_service.create_event(admin, {
                 'titolo': event.titolo,
                 'descrizione': event.descrizione,
                 'data_inizio': data_ora.isoformat(),
                 'data_fine': (data_ora + timedelta(minutes=30)).isoformat(),
-            })
-            if g_id:
-                event.google_event_id = g_id
-                booking.google_event_id = g_id
+            }, genera_meet=True)
+            if result:
+                event.google_event_id = result.get('google_event_id')
+                booking.google_event_id = result.get('google_event_id')
+                if result.get('meet_link'):
+                    event.meet_link = result['meet_link']
+                    booking.meet_link = result['meet_link']
     except Exception as e:
         print(f"Google sync on booking: {e}")
 

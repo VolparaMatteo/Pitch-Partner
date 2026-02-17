@@ -163,7 +163,7 @@ function AdminProfile() {
         <div style={styles.page}>
             {/* Header */}
             <div style={styles.header}>
-                <button style={styles.backButton} onClick={() => navigate('/admin/dashboard')}>
+                <button style={styles.backButton} onClick={() => navigate('/admin/analytics')}>
                     <FaArrowLeft />
                     <span>Dashboard</span>
                 </button>

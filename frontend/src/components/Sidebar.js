@@ -20,7 +20,6 @@ import {
     HiOutlineCalendar,
     HiOutlineBookOpen,
     HiOutlineAcademicCap,
-    HiOutlineSquares2X2,
     HiOutlineChartBar,
     HiOutlineUserGroup,
     HiOutlineCreditCard,
@@ -42,7 +41,9 @@ import {
     HiOutlineEnvelope,
     HiOutlineMegaphone,
     HiOutlineClipboardDocumentList,
-    HiOutlineKey
+    HiOutlineKey,
+    HiOutlineChartBarSquare,
+    HiOutlineChatBubbleBottomCenterText
 } from 'react-icons/hi2';
 
 function Sidebar() {
@@ -180,7 +181,7 @@ function Sidebar() {
 
     // Get dashboard link
     const getDashboardLink = () => {
-        if (user?.role === 'admin') return '/admin/dashboard';
+        if (user?.role === 'admin') return '/admin/analytics';
         if (user?.role === 'club') return '/club/dashboard';
         if (user?.role === 'sponsor') return '/sponsor/dashboard';
         return '/';
@@ -309,7 +310,7 @@ function Sidebar() {
                 {
                     id: 'main',
                     items: [
-                        { id: 'dashboard', label: 'Dashboard', path: '/admin/dashboard', icon: HiOutlineSquares2X2 },
+                        { id: 'analytics', label: 'Analytics', path: '/admin/analytics', icon: HiOutlineChartBarSquare },
                         { id: 'obiettivi', label: 'Obiettivi 2026', path: '/admin/obiettivi-2026', icon: HiOutlineFlag },
                         { id: 'andamento', label: 'Andamento', path: '/admin/andamento', icon: HiOutlineChartBar },
                     ]
@@ -320,6 +321,7 @@ function Sidebar() {
                     items: [
                         { id: 'calendario', label: 'Calendario', path: '/admin/calendario', icon: HiOutlineCalendarDays },
                         { id: 'tasks', label: 'Task', path: '/admin/tasks', icon: HiOutlineClipboardDocumentList },
+                        { id: 'automazioni', label: 'Automazioni', path: '/admin/workflows', icon: HiOutlineBolt },
                     ]
                 },
                 {
@@ -328,7 +330,6 @@ function Sidebar() {
                     items: [
                         { id: 'clubs', label: 'Club', path: '/admin/clubs', icon: HiOutlineUserGroup },
                         { id: 'leads', label: 'Lead', path: '/admin/leads', icon: HiOutlineCursorArrowRays },
-                        { id: 'automazioni', label: 'Automazioni', path: '/admin/workflows', icon: HiOutlineBolt },
                     ]
                 },
                 {
@@ -345,6 +346,7 @@ function Sidebar() {
                     items: [
                         { id: 'email', label: 'Email', path: '/admin/email', icon: HiOutlineEnvelope },
                         { id: 'newsletter', label: 'Newsletter', path: '/admin/newsletter', icon: HiOutlineMegaphone },
+                        { id: 'whatsapp', label: 'WhatsApp', path: '/admin/whatsapp', icon: HiOutlineChatBubbleBottomCenterText },
                         { id: 'notifiche', label: 'Notifiche', path: '/admin/notifiche', icon: HiOutlineBell },
                     ]
                 },

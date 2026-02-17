@@ -102,7 +102,7 @@ function AdminLogin() {
     try {
       const response = await adminAPI.login(email, password);
       setAuth(response.data.access_token, { ...response.data.admin, role: 'admin' });
-      navigate('/admin/dashboard');
+      navigate('/admin/analytics');
     } catch (err) {
       const errorDetails = getErrorDetails(err);
       setError(errorDetails);

@@ -184,6 +184,9 @@ def update_contract(contract_id):
     contract = AdminContract.query.get_or_404(contract_id)
     data = request.get_json()
 
+    # Track status change per trigger
+    old_status = contract.status
+
     # Aggiorna campi
     if 'plan_type' in data:
         contract.plan_type = data['plan_type'].lower()
@@ -220,6 +223,14 @@ def update_contract(contract_id):
     contract.total_value = contract.plan_price + addon_total
 
     db.session.commit()
+
+    # Trigger automazione se lo status e cambiato
+    if contract.status != old_status:
+        try:
+            from app.services.admin_automation_triggers import trigger_admin_contract_status_changed
+            trigger_admin_contract_status_changed(contract, old_status, contract.status)
+        except Exception as e:
+            print(f"[Trigger] contract_status_changed error: {e}")
 
     return jsonify({
         'message': 'Contratto aggiornato con successo',

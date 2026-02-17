@@ -81,6 +81,8 @@ def create_event():
 
     admin_id = get_jwt_identity()
 
+    genera_meet = data.get('genera_meet', False)
+
     event = AdminCalendarEvent(
         admin_id=int(admin_id) if admin_id else None,
         titolo=data['titolo'],
@@ -98,19 +100,28 @@ def create_event():
     db.session.add(event)
     db.session.commit()
 
-    # Google Calendar sync
+    # Google Calendar sync (con Meet opzionale)
     try:
         from app.services.google_calendar_service import google_calendar_service
         admin = Admin.query.get(int(admin_id))
         if admin and google_calendar_service.is_connected(admin):
-            g_id = google_calendar_service.create_event(admin, data)
-            if g_id:
-                event.google_event_id = g_id
+            result = google_calendar_service.create_event(admin, data, genera_meet=genera_meet)
+            if result:
+                event.google_event_id = result.get('google_event_id')
+                if result.get('meet_link'):
+                    event.meet_link = result['meet_link']
                 db.session.commit()
     except Exception as e:
         print(f"Google sync on create: {e}")
 
     log_action('create', 'calendar_event', event.id, f"Creato evento: {event.titolo}")
+
+    # Trigger automazione
+    try:
+        from app.services.admin_automation_triggers import trigger_admin_calendar_event_created
+        trigger_admin_calendar_event_created(event)
+    except Exception as e:
+        print(f"[Trigger] calendar_event_created error: {e}")
 
     return jsonify(event.to_dict()), 201
 
@@ -310,6 +321,14 @@ def update_booking_stato(booking_id):
     db.session.commit()
 
     log_action('update', 'booking', booking.id, f"Stato booking cambiato a: {nuovo_stato}")
+
+    # Trigger automazione booking confermato
+    if nuovo_stato == 'confermato':
+        try:
+            from app.services.admin_automation_triggers import trigger_admin_booking_confirmed
+            trigger_admin_booking_confirmed(booking)
+        except Exception as e:
+            print(f"[Trigger] booking_confirmed error: {e}")
 
     return jsonify(booking.to_dict()), 200
 

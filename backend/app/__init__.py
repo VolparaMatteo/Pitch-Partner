@@ -135,6 +135,7 @@ def create_app():
     from app.routes.auth_routes import auth_bp
     from app.routes.admin_automation_routes import admin_automation_bp
     from app.routes.admin_pitchy_routes import admin_pitchy_bp
+    from app.routes.admin_whatsapp_routes import admin_whatsapp_bp
     from app.routes.admin_document_routes import admin_document_bp
     from app.routes.contract_signing_routes import contract_signing_bp
     from app.routes.admin_credential_routes import admin_credential_bp
@@ -151,6 +152,7 @@ def create_app():
     app.register_blueprint(admin_calendar_bp, url_prefix='/api/admin')
     app.register_blueprint(admin_automation_bp, url_prefix='/api/admin')
     app.register_blueprint(admin_pitchy_bp, url_prefix='/api/admin')
+    app.register_blueprint(admin_whatsapp_bp, url_prefix='/api/admin')
     app.register_blueprint(admin_document_bp, url_prefix='/api/admin')
     app.register_blueprint(admin_credential_bp, url_prefix='/api/admin')
     app.register_blueprint(contract_signing_bp, url_prefix='/api')
@@ -223,6 +225,10 @@ def create_app():
         from app.services.automation_scheduler import scheduler
         scheduler.init_app(app)
         # Lo scheduler verrà avviato manualmente o dal run.py
+
+    # Start WhatsApp Node.js sidecar
+    from app.services.whatsapp_manager import init_app as init_whatsapp
+    init_whatsapp(app)
 
     # Test endpoint
     @app.route('/api/test')

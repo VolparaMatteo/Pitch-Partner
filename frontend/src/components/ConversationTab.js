@@ -1,9 +1,9 @@
-import { useState, useEffect, useRef } from 'react';
-import { adminEmailAPI } from '../services/api';
-import { FaRedo, FaPaperPlane, FaTimes, FaSpinner, FaEnvelope, FaReply } from 'react-icons/fa';
+import { useState, useEffect, useRef, useMemo } from 'react';
+import { adminEmailAPI, adminWhatsAppAPI } from '../services/api';
+import { FaRedo, FaPaperPlane, FaTimes, FaSpinner, FaEnvelope, FaReply, FaWhatsapp } from 'react-icons/fa';
 
-function ConversationTab({ contactEmail, contactName }) {
-  const [messages, setMessages] = useState([]);
+function ConversationTab({ contactEmail, contactName, contactPhone, whatsappMessages = [], whatsappConnected = false, onRefreshWhatsApp }) {
+  const [emailMessages, setEmailMessages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchTime, setSearchTime] = useState(null);
   const [accounts, setAccounts] = useState([]);
@@ -11,8 +11,12 @@ function ConversationTab({ contactEmail, contactName }) {
   const [expandedDetail, setExpandedDetail] = useState(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
 
+  // Channel filter: 'all', 'email', 'whatsapp'
+  const [channelFilter, setChannelFilter] = useState('all');
+
   // Compose state
   const [showCompose, setShowCompose] = useState(false);
+  const [composeChannel, setComposeChannel] = useState('email'); // 'email' or 'whatsapp'
   const [composeAccount, setComposeAccount] = useState('');
   const [composeSubject, setComposeSubject] = useState('');
   const [composeBody, setComposeBody] = useState('');
@@ -21,6 +25,10 @@ function ConversationTab({ contactEmail, contactName }) {
 
   const messagesEndRef = useRef(null);
   const hasLoadedRef = useRef(false);
+
+  const hasEmail = !!contactEmail;
+  const hasPhone = !!contactPhone;
+  const showChannelFilter = hasEmail || hasPhone;
 
   useEffect(() => {
     if (contactEmail && !hasLoadedRef.current) {
@@ -31,6 +39,44 @@ function ConversationTab({ contactEmail, contactName }) {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [contactEmail]);
+
+  // Unified messages: merge email + WA, sorted by date
+  const unifiedMessages = useMemo(() => {
+    const items = [];
+
+    // Email messages
+    emailMessages.forEach(msg => {
+      items.push({
+        ...msg,
+        channel: 'email',
+        sortDate: new Date(msg.date).getTime(),
+        key: `email-${msg.account_key}-${msg.uid}-${msg.folder}`,
+      });
+    });
+
+    // WhatsApp messages
+    whatsappMessages.forEach(msg => {
+      items.push({
+        ...msg,
+        channel: 'whatsapp',
+        sortDate: msg.timestamp * 1000,
+        key: `wa-${msg.id}`,
+      });
+    });
+
+    // Sort chronologically (oldest first for chat view)
+    items.sort((a, b) => a.sortDate - b.sortDate);
+
+    return items;
+  }, [emailMessages, whatsappMessages]);
+
+  const filteredMessages = useMemo(() => {
+    if (channelFilter === 'all') return unifiedMessages;
+    return unifiedMessages.filter(m => m.channel === channelFilter);
+  }, [unifiedMessages, channelFilter]);
+
+  const emailCount = emailMessages.length;
+  const waCount = whatsappMessages.length;
 
   const scrollToBottom = () => {
     setTimeout(() => {
@@ -67,17 +113,23 @@ function ConversationTab({ contactEmail, contactName }) {
     setLoading(true);
     try {
       const res = await adminEmailAPI.getConversation(contactEmail, refresh);
-      setMessages(res.data.messages || []);
+      setEmailMessages(res.data.messages || []);
       setSearchTime(res.data.search_time_ms);
       scrollToBottom();
     } catch {
-      setMessages([]);
+      setEmailMessages([]);
     } finally {
       setLoading(false);
     }
   };
 
+  const handleRefresh = () => {
+    if (contactEmail) fetchConversation(true);
+    if (onRefreshWhatsApp) onRefreshWhatsApp();
+  };
+
   const handleExpandMessage = async (msg) => {
+    if (msg.channel === 'whatsapp') return; // WA messages don't expand
     const key = `${msg.account_key}:${msg.uid}:${msg.folder}`;
     if (expandedUid === key) {
       setExpandedUid(null);
@@ -99,7 +151,7 @@ function ConversationTab({ contactEmail, contactName }) {
     }
   };
 
-  const handleSend = async () => {
+  const handleSendEmail = async () => {
     if (!composeAccount || !composeSubject.trim() || !composeBody.trim()) return;
 
     setSending(true);
@@ -113,7 +165,6 @@ function ConversationTab({ contactEmail, contactName }) {
       setShowCompose(false);
       setComposeSubject('');
       setComposeBody('');
-      // Refresh conversation
       fetchConversation(true);
     } catch {
       // Error handled silently
@@ -122,14 +173,44 @@ function ConversationTab({ contactEmail, contactName }) {
     }
   };
 
-  const openCompose = () => {
-    // Default subject: Re: last subject
-    const lastMsg = messages.length > 0 ? messages[messages.length - 1] : null;
-    if (lastMsg && lastMsg.subject) {
-      const subj = lastMsg.subject.startsWith('Re:') ? lastMsg.subject : `Re: ${lastMsg.subject}`;
-      setComposeSubject(subj);
+  const handleSendWhatsApp = async () => {
+    if (!composeBody.trim() || !contactPhone) return;
+
+    setSending(true);
+    try {
+      await adminWhatsAppAPI.send({
+        to: contactPhone,
+        message: composeBody
+      });
+      setShowCompose(false);
+      setComposeBody('');
+      if (onRefreshWhatsApp) {
+        setTimeout(() => onRefreshWhatsApp(), 1500);
+      }
+    } catch {
+      // Error handled silently
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const handleSend = () => {
+    if (composeChannel === 'whatsapp') {
+      handleSendWhatsApp();
     } else {
-      setComposeSubject('');
+      handleSendEmail();
+    }
+  };
+
+  const openCompose = () => {
+    if (composeChannel === 'email') {
+      const lastEmailMsg = emailMessages.length > 0 ? emailMessages[emailMessages.length - 1] : null;
+      if (lastEmailMsg && lastEmailMsg.subject) {
+        const subj = lastEmailMsg.subject.startsWith('Re:') ? lastEmailMsg.subject : `Re: ${lastEmailMsg.subject}`;
+        setComposeSubject(subj);
+      } else {
+        setComposeSubject('');
+      }
     }
     setComposeBody('');
     setShowCompose(true);
@@ -146,19 +227,44 @@ function ConversationTab({ contactEmail, contactName }) {
     }
   };
 
+  const formatWaDate = (timestamp) => {
+    if (!timestamp) return '';
+    try {
+      const d = new Date(timestamp * 1000);
+      return d.toLocaleDateString('it-IT', { day: 'numeric', month: 'short', year: 'numeric' }) +
+        ', ' + d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+    } catch {
+      return '';
+    }
+  };
+
   const getAccountLabel = (key) => {
     const acc = accounts.find(a => a.key === key);
     return acc ? acc.email : key;
   };
 
-  if (!contactEmail) {
+  const getMediaLabel = (msg) => {
+    if (!msg.hasMedia) return null;
+    const type = msg.mediaType || msg.type;
+    if (type === 'image') return '(immagine)';
+    if (type === 'video') return '(video)';
+    if (type === 'document' || type === 'ptt') return '(documento)';
+    if (type === 'audio') return '(audio)';
+    if (type === 'sticker') return '(sticker)';
+    return '(media)';
+  };
+
+  if (!contactEmail && !contactPhone) {
     return (
       <div style={{ padding: '40px', textAlign: 'center', color: '#9CA3AF' }}>
         <FaEnvelope size={32} style={{ marginBottom: '12px', opacity: 0.5 }} />
-        <p>Nessuna email associata a questo contatto.</p>
+        <p>Nessuna email o telefono associato a questo contatto.</p>
       </div>
     );
   }
+
+  const canSendEmail = hasEmail && accounts.length > 0;
+  const canSendWhatsApp = hasPhone && whatsappConnected;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '600px' }}>
@@ -168,16 +274,16 @@ function ConversationTab({ contactEmail, contactName }) {
         padding: '12px 20px', borderBottom: '1px solid #E5E7EB', background: '#FAFAFA'
       }}>
         <div style={{ fontSize: '14px', fontWeight: 600, color: '#374151' }}>
-          Conversazioni con <span style={{ color: '#4F46E5' }}>{contactName || contactEmail}</span>
+          Conversazioni con <span style={{ color: '#4F46E5' }}>{contactName || contactEmail || contactPhone}</span>
           {searchTime !== null && !loading && (
             <span style={{ fontSize: '12px', color: '#9CA3AF', marginLeft: '8px', fontWeight: 400 }}>
-              ({messages.length} messaggi, {(searchTime / 1000).toFixed(1)}s)
+              ({unifiedMessages.length} messaggi)
             </span>
           )}
         </div>
         <div style={{ display: 'flex', gap: '8px' }}>
           <button
-            onClick={() => fetchConversation(true)}
+            onClick={handleRefresh}
             disabled={loading}
             style={{
               display: 'flex', alignItems: 'center', gap: '6px',
@@ -202,6 +308,48 @@ function ConversationTab({ contactEmail, contactName }) {
         </div>
       </div>
 
+      {/* Channel Filter Bar */}
+      {showChannelFilter && (
+        <div style={{
+          display: 'flex', gap: '6px', padding: '8px 20px',
+          borderBottom: '1px solid #E5E7EB', background: '#FFFFFF', alignItems: 'center'
+        }}>
+          {[
+            { id: 'all', label: 'Tutto', count: unifiedMessages.length },
+            ...(hasEmail ? [{ id: 'email', label: 'Email', count: emailCount, icon: <FaEnvelope size={11} /> }] : []),
+            ...(hasPhone ? [{ id: 'whatsapp', label: 'WhatsApp', count: waCount, icon: <FaWhatsapp size={11} /> }] : []),
+          ].map(f => (
+            <button
+              key={f.id}
+              onClick={() => setChannelFilter(f.id)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '5px',
+                padding: '5px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 600,
+                border: channelFilter === f.id ? '1px solid #4F46E5' : '1px solid #E5E7EB',
+                background: channelFilter === f.id ? '#EEF2FF' : '#FFFFFF',
+                color: channelFilter === f.id ? '#4F46E5' : '#6B7280',
+                cursor: 'pointer'
+              }}
+            >
+              {f.icon}
+              {f.label}
+              <span style={{
+                fontSize: '10px', padding: '1px 5px', borderRadius: '8px',
+                background: channelFilter === f.id ? '#C7D2FE' : '#F3F4F6',
+                color: channelFilter === f.id ? '#4338CA' : '#9CA3AF'
+              }}>
+                {f.count}
+              </span>
+            </button>
+          ))}
+          {hasPhone && !whatsappConnected && (
+            <span style={{ fontSize: '11px', color: '#D97706', marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <FaWhatsapp size={11} /> WA non connesso
+            </span>
+          )}
+        </div>
+      )}
+
       {/* Messages Area */}
       <div style={{
         flex: 1, overflowY: 'auto', padding: '16px 20px',
@@ -210,22 +358,77 @@ function ConversationTab({ contactEmail, contactName }) {
         {loading ? (
           <div style={{ textAlign: 'center', padding: '60px 0', color: '#6B7280' }}>
             <FaSpinner size={24} style={{ animation: 'spin 1s linear infinite', marginBottom: '12px' }} />
-            <p style={{ fontSize: '14px' }}>Ricerca conversazioni in 7 account email...</p>
+            <p style={{ fontSize: '14px' }}>Ricerca conversazioni...</p>
           </div>
-        ) : messages.length === 0 ? (
+        ) : filteredMessages.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '60px 0', color: '#9CA3AF' }}>
             <FaEnvelope size={28} style={{ marginBottom: '12px', opacity: 0.5 }} />
-            <p style={{ fontSize: '14px' }}>Nessuna conversazione trovata con {contactEmail}</p>
+            <p style={{ fontSize: '14px' }}>Nessuna conversazione trovata</p>
           </div>
         ) : (
           <>
-            {messages.map((msg) => {
+            {filteredMessages.map((msg) => {
+              // WhatsApp bubble
+              if (msg.channel === 'whatsapp') {
+                const isOutbound = msg.fromMe;
+                const mediaLabel = getMediaLabel(msg);
+                return (
+                  <div
+                    key={msg.key}
+                    style={{
+                      display: 'flex',
+                      justifyContent: isOutbound ? 'flex-end' : 'flex-start',
+                      maxWidth: '100%'
+                    }}
+                  >
+                    <div style={{
+                      maxWidth: '75%',
+                      minWidth: '200px',
+                      padding: '10px 14px',
+                      borderRadius: isOutbound ? '12px 12px 4px 12px' : '12px 12px 12px 4px',
+                      background: isOutbound ? '#DCF8C6' : '#FFFFFF',
+                      border: '1px solid ' + (isOutbound ? '#B4E6A0' : '#E5E7EB'),
+                    }}>
+                      {/* Channel indicator */}
+                      <div style={{
+                        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                        marginBottom: '4px'
+                      }}>
+                        <span style={{ fontSize: '12px', fontWeight: 700, color: '#25D366', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <FaWhatsapp size={12} /> {isOutbound ? 'Tu' : (contactName || contactPhone)}
+                        </span>
+                      </div>
+
+                      {/* Message body */}
+                      {msg.body && (
+                        <div style={{ fontSize: '13px', color: '#1F2937', lineHeight: '1.5', whiteSpace: 'pre-wrap' }}>
+                          {msg.body}
+                        </div>
+                      )}
+                      {mediaLabel && (
+                        <div style={{ fontSize: '12px', color: '#6B7280', fontStyle: 'italic', marginTop: msg.body ? '4px' : '0' }}>
+                          {mediaLabel}
+                        </div>
+                      )}
+
+                      {/* Date */}
+                      <div style={{ marginTop: '6px' }}>
+                        <span style={{ fontSize: '11px', color: '#9CA3AF' }}>
+                          {formatWaDate(msg.timestamp)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
+
+              // Email bubble (existing style)
               const isOutbound = msg.direction === 'outbound';
               const isExpanded = expandedUid === `${msg.account_key}:${msg.uid}:${msg.folder}`;
 
               return (
                 <div
-                  key={`${msg.account_key}-${msg.uid}-${msg.folder}`}
+                  key={msg.key}
                   style={{
                     display: 'flex',
                     justifyContent: isOutbound ? 'flex-end' : 'flex-start',
@@ -250,8 +453,8 @@ function ConversationTab({ contactEmail, contactName }) {
                       display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                       marginBottom: '4px'
                     }}>
-                      <span style={{ fontSize: '12px', fontWeight: 700, color: isOutbound ? '#1E40AF' : '#374151' }}>
-                        {isOutbound ? 'Pitch Partner' : (msg.from_name || msg.from_email)}
+                      <span style={{ fontSize: '12px', fontWeight: 700, color: isOutbound ? '#1E40AF' : '#374151', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <FaEnvelope size={11} style={{ color: '#6B7280' }} /> {isOutbound ? 'Pitch Partner' : (msg.from_name || msg.from_email)}
                       </span>
                       {isOutbound && (
                         <span style={{
@@ -301,7 +504,7 @@ function ConversationTab({ contactEmail, contactName }) {
                         {formatDate(msg.date)}
                       </span>
                       {msg.has_attachments && (
-                        <span style={{ fontSize: '11px', color: '#6B7280' }}>📎</span>
+                        <span style={{ fontSize: '11px', color: '#6B7280' }}>Allegati</span>
                       )}
                     </div>
                   </div>
@@ -318,50 +521,108 @@ function ConversationTab({ contactEmail, contactName }) {
         <div style={{
           borderTop: '2px solid #E5E7EB', padding: '16px 20px', background: '#FFFFFF'
         }}>
-          <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
-            <select
-              value={composeAccount}
-              onChange={(e) => setComposeAccount(e.target.value)}
-              style={{
-                flex: '0 0 auto', padding: '8px 12px', borderRadius: '6px',
-                border: '1px solid #D1D5DB', fontSize: '13px', background: '#F9FAFB'
-              }}
-            >
-              {accounts.map(acc => (
-                <option key={acc.key} value={acc.key}>{acc.label} ({acc.email})</option>
-              ))}
-            </select>
-            {templates.length > 0 && (
-              <select
-                onChange={(e) => { if (e.target.value) handleApplyTemplate(e.target.value); e.target.value = ''; }}
-                style={{
-                  flex: '0 0 auto', padding: '8px 12px', borderRadius: '6px',
-                  border: '1px solid #D1D5DB', fontSize: '13px', background: '#FEF9C3',
-                  cursor: 'pointer'
-                }}
-              >
-                <option value="">Template...</option>
-                {templates.map(t => (
-                  <option key={t.id} value={t.id}>{t.nome}</option>
-                ))}
-              </select>
-            )}
-            <input
-              type="text"
-              value={composeSubject}
-              onChange={(e) => setComposeSubject(e.target.value)}
-              placeholder="Oggetto..."
-              style={{
-                flex: 1, padding: '8px 12px', borderRadius: '6px',
-                border: '1px solid #D1D5DB', fontSize: '13px'
-              }}
-            />
-          </div>
+          {/* Channel selector */}
+          {(canSendEmail || canSendWhatsApp) && (
+            <div style={{ display: 'flex', gap: '6px', marginBottom: '10px' }}>
+              {canSendEmail && (
+                <button
+                  onClick={() => setComposeChannel('email')}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '5px',
+                    padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: 600,
+                    border: composeChannel === 'email' ? '2px solid #4F46E5' : '1px solid #E5E7EB',
+                    background: composeChannel === 'email' ? '#EEF2FF' : '#FFFFFF',
+                    color: composeChannel === 'email' ? '#4F46E5' : '#6B7280',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <FaEnvelope size={11} /> Email
+                </button>
+              )}
+              {canSendWhatsApp && (
+                <button
+                  onClick={() => setComposeChannel('whatsapp')}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '5px',
+                    padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: 600,
+                    border: composeChannel === 'whatsapp' ? '2px solid #25D366' : '1px solid #E5E7EB',
+                    background: composeChannel === 'whatsapp' ? '#F0FFF4' : '#FFFFFF',
+                    color: composeChannel === 'whatsapp' ? '#25D366' : '#6B7280',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <FaWhatsapp size={11} /> WhatsApp
+                </button>
+              )}
+              {hasPhone && !whatsappConnected && (
+                <span style={{ fontSize: '11px', color: '#D97706', display: 'flex', alignItems: 'center', gap: '4px', marginLeft: '8px' }}>
+                  <FaWhatsapp size={11} /> WA non connesso
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* Email compose */}
+          {composeChannel === 'email' && (
+            <>
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
+                <select
+                  value={composeAccount}
+                  onChange={(e) => setComposeAccount(e.target.value)}
+                  style={{
+                    flex: '0 0 auto', padding: '8px 12px', borderRadius: '6px',
+                    border: '1px solid #D1D5DB', fontSize: '13px', background: '#F9FAFB'
+                  }}
+                >
+                  {accounts.map(acc => (
+                    <option key={acc.key} value={acc.key}>{acc.label} ({acc.email})</option>
+                  ))}
+                </select>
+                {templates.length > 0 && (
+                  <select
+                    onChange={(e) => { if (e.target.value) handleApplyTemplate(e.target.value); e.target.value = ''; }}
+                    style={{
+                      flex: '0 0 auto', padding: '8px 12px', borderRadius: '6px',
+                      border: '1px solid #D1D5DB', fontSize: '13px', background: '#FEF9C3',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <option value="">Template...</option>
+                    {templates.map(t => (
+                      <option key={t.id} value={t.id}>{t.nome}</option>
+                    ))}
+                  </select>
+                )}
+                <input
+                  type="text"
+                  value={composeSubject}
+                  onChange={(e) => setComposeSubject(e.target.value)}
+                  placeholder="Oggetto..."
+                  style={{
+                    flex: 1, padding: '8px 12px', borderRadius: '6px',
+                    border: '1px solid #D1D5DB', fontSize: '13px'
+                  }}
+                />
+              </div>
+            </>
+          )}
+
+          {/* WhatsApp compose - destination info */}
+          {composeChannel === 'whatsapp' && (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '6px',
+              padding: '6px 12px', marginBottom: '10px',
+              borderRadius: '6px', background: '#F0FFF4', fontSize: '12px', color: '#25D366'
+            }}>
+              <FaWhatsapp size={12} /> Invia a {contactPhone}
+            </div>
+          )}
+
           <textarea
             value={composeBody}
             onChange={(e) => setComposeBody(e.target.value)}
-            placeholder="Scrivi un messaggio..."
-            rows={4}
+            placeholder={composeChannel === 'whatsapp' ? 'Scrivi un messaggio WhatsApp...' : 'Scrivi un messaggio...'}
+            rows={composeChannel === 'whatsapp' ? 3 : 4}
             style={{
               width: '100%', padding: '10px 12px', borderRadius: '6px',
               border: '1px solid #D1D5DB', fontSize: '13px', resize: 'vertical',
@@ -381,17 +642,18 @@ function ConversationTab({ contactEmail, contactName }) {
             </button>
             <button
               onClick={handleSend}
-              disabled={sending || !composeSubject.trim() || !composeBody.trim()}
+              disabled={sending || !composeBody.trim() || (composeChannel === 'email' && !composeSubject.trim())}
               style={{
                 display: 'flex', alignItems: 'center', gap: '6px',
                 padding: '8px 16px', borderRadius: '6px', border: 'none',
-                background: sending ? '#9CA3AF' : '#1A1A1A', color: '#FFFFFF',
+                background: sending ? '#9CA3AF' : (composeChannel === 'whatsapp' ? '#25D366' : '#1A1A1A'),
+                color: '#FFFFFF',
                 fontSize: '13px', fontWeight: 600,
                 cursor: sending ? 'not-allowed' : 'pointer'
               }}
             >
               {sending ? <FaSpinner size={11} style={{ animation: 'spin 1s linear infinite' }} /> : <FaPaperPlane size={11} />}
-              {sending ? 'Invio...' : 'Invia'}
+              {sending ? 'Invio...' : (composeChannel === 'whatsapp' ? 'Invia WA' : 'Invia')}
             </button>
           </div>
         </div>

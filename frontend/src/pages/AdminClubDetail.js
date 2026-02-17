@@ -16,7 +16,7 @@ import {
 } from 'react-icons/fa';
 import ConversationTab from '../components/ConversationTab';
 import UnifiedTimeline from '../components/UnifiedTimeline';
-import { adminEmailAPI } from '../services/api';
+import { adminEmailAPI, adminWhatsAppAPI } from '../services/api';
 import '../styles/sponsor-detail.css';
 import '../styles/template-style.css';
 
@@ -79,6 +79,8 @@ function AdminClubDetail() {
   const [activities, setActivities] = useState([]);
   const [contracts, setContracts] = useState([]);
   const [timelineEmails, setTimelineEmails] = useState([]);
+  const [whatsappMessages, setWhatsappMessages] = useState([]);
+  const [whatsappConnected, setWhatsappConnected] = useState(false);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState(null);
   const [activeTab, setActiveTab] = useState('timeline');
@@ -142,11 +144,31 @@ function AdminClubDetail() {
           setTimelineEmails(res.data?.messages || []);
         }).catch(() => {});
       }
+
+      // Fetch WhatsApp messages (non-blocking)
+      if (clubRes.data?.telefono) {
+        adminWhatsAppAPI.getStatus().then(statusRes => {
+          setWhatsappConnected(statusRes.data.connected);
+          if (statusRes.data.connected) {
+            adminWhatsAppAPI.getMessagesByPhone(clubRes.data.telefono).then(waRes => {
+              setWhatsappMessages(waRes.data.messages || []);
+            }).catch(() => {});
+          }
+        }).catch(() => {});
+      }
     } catch (error) {
       console.error('Errore caricamento club:', error);
       setToast({ message: 'Errore nel caricamento del club', type: 'error' });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchWhatsApp = () => {
+    if (club?.telefono) {
+      adminWhatsAppAPI.getMessagesByPhone(club.telefono).then(waRes => {
+        setWhatsappMessages(waRes.data.messages || []);
+      }).catch(() => {});
     }
   };
 
@@ -550,6 +572,7 @@ function AdminClubDetail() {
                   contracts={contracts}
                   subscriptionEvents={subscriptionEvents}
                   emails={timelineEmails}
+                  whatsappMessages={whatsappMessages}
                 />
               </div>
             )}
@@ -1195,7 +1218,14 @@ function AdminClubDetail() {
             {/* CONVERSATIONS TAB */}
             {activeTab === 'conversations' && (
               <div className="sd-tab-grid">
-                <ConversationTab contactEmail={club.email} contactName={club.nome} />
+                <ConversationTab
+                  contactEmail={club.email}
+                  contactName={club.nome}
+                  contactPhone={club.telefono}
+                  whatsappMessages={whatsappMessages}
+                  whatsappConnected={whatsappConnected}
+                  onRefreshWhatsApp={fetchWhatsApp}
+                />
               </div>
             )}
 

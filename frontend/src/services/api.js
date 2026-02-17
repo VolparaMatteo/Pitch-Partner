@@ -1120,6 +1120,20 @@ export const adminNewsletterAPI = {
     api.post(`/admin/newsletter/campaigns/${id}/send`),
 };
 
+// Admin WhatsApp API
+export const adminWhatsAppAPI = {
+  getStatus: () => api.get('/admin/whatsapp/status'),
+  getQR: () => api.get('/admin/whatsapp/qr'),
+  send: (data) => api.post('/admin/whatsapp/send', data),
+  getContacts: () => api.get('/admin/whatsapp/contacts'),
+  getChats: (params) => api.get(`/admin/whatsapp/chats${params || ''}`),
+  getChatMessages: (chatId) => api.get(`/admin/whatsapp/chats/${chatId}/messages`),
+  getMedia: (msgId) => api.get(`/admin/whatsapp/media/${msgId}`),
+  disconnect: () => api.post('/admin/whatsapp/disconnect'),
+  getDBContacts: () => api.get('/admin/whatsapp/db-contacts'),
+  getMessagesByPhone: (phone) => api.get(`/admin/whatsapp/messages-by-phone/${encodeURIComponent(phone)}`),
+};
+
 // Admin Workflow / Automation API
 export const workflowAPI = {
   getMeta: () => api.get('/admin/workflows/meta'),

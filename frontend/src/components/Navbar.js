@@ -80,7 +80,7 @@ function Navbar() {
   };
 
   const getDashboardLink = () => {
-    if (user.role === 'admin') return '/admin/dashboard';
+    if (user.role === 'admin') return '/admin/analytics';
     if (user.role === 'club') return '/club/dashboard';
     if (user.role === 'sponsor') return '/sponsor/dashboard';
     return '/';

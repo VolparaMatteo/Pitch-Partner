@@ -3,7 +3,7 @@ from flask_jwt_extended import jwt_required, get_jwt
 from app import db
 from app.models import (
     KPIMonthlyData, KPIMilestone, KPIProductMetrics, KPICredibility,
-    Club, Subscription, CRMLead, Sponsor, AdminContract, AdminInvoice
+    Club, Subscription, CRMLead, CRMLeadActivity, Sponsor, AdminContract, AdminInvoice
 )
 from datetime import datetime, date
 from sqlalchemy import func, extract
@@ -62,24 +62,28 @@ def get_kpi_dashboard():
     # Contattati: leads that reached stage 'contattato' or beyond (not nuovo, not perso)
     contacted_stages = ['contattato', 'qualificato', 'demo', 'proposta', 'negoziazione', 'vinto']
     funnel_contacts = CRMLead.query.filter(
-        CRMLead.stage.in_(contacted_stages)
+        CRMLead.stage.in_(contacted_stages),
+        extract('year', CRMLead.created_at) == year
     ).count()
 
     # Demo: leads that reached stage 'demo' or beyond
     demo_stages = ['demo', 'proposta', 'negoziazione', 'vinto']
     funnel_demos = CRMLead.query.filter(
-        CRMLead.stage.in_(demo_stages)
+        CRMLead.stage.in_(demo_stages),
+        extract('year', CRMLead.created_at) == year
     ).count()
 
     # Proposte: leads that reached stage 'proposta' or beyond
     proposal_stages = ['proposta', 'negoziazione', 'vinto']
     funnel_proposals = CRMLead.query.filter(
-        CRMLead.stage.in_(proposal_stages)
+        CRMLead.stage.in_(proposal_stages),
+        extract('year', CRMLead.created_at) == year
     ).count()
 
     # Contratti vinti
     funnel_contracts = CRMLead.query.filter(
-        CRMLead.stage == 'vinto'
+        CRMLead.stage == 'vinto',
+        extract('year', CRMLead.created_at) == year
     ).count()
 
     # ===== ARR & REVENUE - 100% AUTOMATIC FROM CONTRACTS =====
@@ -204,17 +208,36 @@ def get_kpi_dashboard():
         'clubs_elite': 3,
         'quarterly': {
             'Q1': {'clubs': 1, 'arr': 15000, 'demos': 12, 'contracts': 1},
-            'Q2': {'clubs': 3, 'arr': 60000, 'demos': 12, 'contracts': 3},
+            'Q2': {'clubs': 3, 'arr': 60000, 'demos': 12, 'contracts': 4},
             'Q3': {'clubs': 7, 'arr': 120000, 'demos': 11, 'contracts': 4},
-            'Q4': {'clubs': 15, 'arr': 225000, 'demos': 10, 'contracts': 5}
+            'Q4': {'clubs': 15, 'arr': 225000, 'demos': 10, 'contracts': 6}
         }
     }
 
     # ===== CALCOLA MONTHLY ACTUALS (100% AUTOMATICO) =====
     # Aggregazione mensile automatica da Lead, Contratti e Fatture
 
+    # Verifica se esistono attività stage_change per usare date accurate
+    has_stage_activities = db.session.query(
+        CRMLeadActivity.id
+    ).filter(
+        CRMLeadActivity.tipo == 'stage_change'
+    ).first() is not None
+
+    def get_monthly_stage_entries(target_stage, month):
+        """Conta lead unici che sono entrati in uno stage specifico nel mese dato
+        Usa CRMLeadActivity per date accurate di transizione stage"""
+        return db.session.query(
+            func.count(func.distinct(CRMLeadActivity.lead_id))
+        ).filter(
+            CRMLeadActivity.tipo == 'stage_change',
+            CRMLeadActivity.new_stage == target_stage,
+            extract('year', CRMLeadActivity.created_at) == year,
+            extract('month', CRMLeadActivity.created_at) == month
+        ).scalar() or 0
+
     def get_monthly_leads_count(stages, month):
-        """Conta lead in determinati stages creati nel mese specificato"""
+        """Fallback: conta lead in determinati stages creati nel mese specificato"""
         return CRMLead.query.filter(
             CRMLead.stage.in_(stages),
             extract('year', CRMLead.created_at) == year,
@@ -265,10 +288,17 @@ def get_kpi_dashboard():
     # Calcola dati mensili automatici per tutti i 12 mesi
     monthly_auto_data = []
     for month in range(1, 13):
-        m_contacts = get_monthly_leads_count(contacted_stages, month)
-        m_demos = get_monthly_leads_count(demo_stages, month)
-        m_proposals = get_monthly_leads_count(proposal_stages, month)
-        m_contracts = get_monthly_leads_count(['vinto'], month)
+        # Usa stage_change activities per date accurate, fallback a created_at
+        if has_stage_activities:
+            m_contacts = get_monthly_stage_entries('contattato', month)
+            m_demos = get_monthly_stage_entries('demo', month)
+            m_proposals = get_monthly_stage_entries('proposta', month)
+            m_contracts = get_monthly_stage_entries('vinto', month)
+        else:
+            m_contacts = get_monthly_leads_count(contacted_stages, month)
+            m_demos = get_monthly_leads_count(demo_stages, month)
+            m_proposals = get_monthly_leads_count(proposal_stages, month)
+            m_contracts = get_monthly_leads_count(['vinto'], month)
         m_contract_data = get_monthly_contracts_data(month)
         m_cash_in = cash_in_by_month.get(month, 0)
 
@@ -299,9 +329,22 @@ def get_kpi_dashboard():
 
     # ===== CALCOLA QUARTERLY ACTUALS (100% AUTOMATICO) =====
     # Basato sulla data di creazione/conversione dei lead e contratti
+    # I target club e ARR sono CUMULATIVI (1,3,7,15 e 15k,60k,120k,225k)
+    # I target contratti e demo sono PER-TRIMESTRE
+
+    def get_quarterly_stage_entries(target_stage, q_months):
+        """Conta lead unici che sono entrati in uno stage nel trimestre"""
+        return db.session.query(
+            func.count(func.distinct(CRMLeadActivity.lead_id))
+        ).filter(
+            CRMLeadActivity.tipo == 'stage_change',
+            CRMLeadActivity.new_stage == target_stage,
+            extract('year', CRMLeadActivity.created_at) == year,
+            extract('month', CRMLeadActivity.created_at).in_(q_months)
+        ).scalar() or 0
 
     def get_quarterly_leads_count(stages, q_months):
-        """Conta lead in determinati stages creati nei mesi specificati"""
+        """Fallback: conta lead in determinati stages creati nei mesi specificati"""
         return CRMLead.query.filter(
             CRMLead.stage.in_(stages),
             extract('year', CRMLead.created_at) == year,
@@ -331,30 +374,39 @@ def get_kpi_dashboard():
         return sum(inv.total_amount for inv in invoices)
 
     quarterly_actuals = {}
+    cumulative_clubs = 0
+    cumulative_arr = 0
+    cumulative_booking = 0
+
     for q in ['Q1', 'Q2', 'Q3', 'Q4']:
         q_months = {'Q1': [1, 2, 3], 'Q2': [4, 5, 6], 'Q3': [7, 8, 9], 'Q4': [10, 11, 12]}[q]
 
-        # Dati dal funnel lead
-        q_contacts = get_quarterly_leads_count(contacted_stages, q_months)
-        q_demos = get_quarterly_leads_count(demo_stages, q_months)
-        q_proposals = get_quarterly_leads_count(proposal_stages, q_months)
-        q_contracts_leads = get_quarterly_leads_count(['vinto'], q_months)
+        # Demo e contratti per-trimestre (usa stage_change se disponibile)
+        if has_stage_activities:
+            q_demos = get_quarterly_stage_entries('demo', q_months)
+            q_contracts_leads = get_quarterly_stage_entries('vinto', q_months)
+        else:
+            q_demos = get_quarterly_leads_count(demo_stages, q_months)
+            q_contracts_leads = get_quarterly_leads_count(['vinto'], q_months)
 
-        # Dati dai contratti firmati
+        # Dati dai contratti firmati (per-trimestre)
         q_contract_data = get_quarterly_contracts_arr(q_months)
 
-        # Cash-in
+        # Cash-in per-trimestre
         q_cash_in = get_quarterly_cash_in(q_months)
 
+        # Club e ARR cumulativi (per confronto con target cumulativi: 1,3,7,15)
+        cumulative_clubs += q_contract_data['count']
+        cumulative_arr += q_contract_data['arr']
+        cumulative_booking += q_cash_in
+
         quarterly_actuals[q] = {
-            'contacts': q_contacts,
             'demos': q_demos,
-            'proposals': q_proposals,
             'contracts': q_contracts_leads,
-            'booking': q_cash_in,
-            'arr_new': q_contract_data['arr'],
+            'booking': cumulative_booking,
+            'arr_new': cumulative_arr,
             'addon_total': q_contract_data['addon'],
-            'new_clubs': q_contract_data['count']
+            'new_clubs': cumulative_clubs
         }
 
     # ===== CONVERSION RATES (100% AUTOMATICO) =====

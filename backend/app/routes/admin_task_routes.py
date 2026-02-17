@@ -43,7 +43,7 @@ def get_admin_users():
 
     admins = Admin.query.filter_by(is_active=True).order_by(Admin.nome).all()
     return jsonify([
-        {'id': a.id, 'nome': a.nome, 'cognome': a.cognome, 'email': a.email}
+        {'id': a.id, 'nome': a.nome, 'cognome': a.cognome, 'email': a.email, 'avatar': a.avatar}
         for a in admins
     ]), 200
 
@@ -210,6 +210,13 @@ def create_task():
 
     log_action('create', 'task', task.id, f"Creato task: {task.titolo}")
 
+    # Trigger automazione
+    try:
+        from app.services.admin_automation_triggers import trigger_admin_task_created
+        trigger_admin_task_created(task)
+    except Exception as e:
+        print(f"[Trigger] task_created error: {e}")
+
     return jsonify(task.to_dict()), 201
 
 
@@ -286,6 +293,14 @@ def update_task_stato(task_id):
     db.session.commit()
 
     log_action('update', 'task', task.id, f"Stato task cambiato a: {nuovo_stato}")
+
+    # Trigger automazione task completato
+    if nuovo_stato == 'completato':
+        try:
+            from app.services.admin_automation_triggers import trigger_admin_task_completed
+            trigger_admin_task_completed(task)
+        except Exception as e:
+            print(f"[Trigger] task_completed error: {e}")
 
     return jsonify(task.to_dict()), 200
 

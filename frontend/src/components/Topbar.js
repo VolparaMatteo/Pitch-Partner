@@ -126,6 +126,23 @@ function Topbar() {
         setSearchResults([]);
     }, [location.pathname]);
 
+    // Keyboard shortcut: Ctrl+K / Cmd+K to open search, Escape to close
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+                e.preventDefault();
+                setShowSearch(prev => !prev);
+            }
+            if (e.key === 'Escape' && showSearch) {
+                setShowSearch(false);
+                setSearchQuery('');
+                setSearchResults([]);
+            }
+        };
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, [showSearch]);
+
     // Get page info
     const getPageInfo = () => {
         const path = location.pathname;
@@ -239,7 +256,12 @@ function Topbar() {
         lead: { label: 'Lead', icon: '🎯', color: '#3B82F6' },
         club: { label: 'Club', icon: '🏟️', color: '#059669' },
         contratto: { label: 'Contratto', icon: '📄', color: '#F59E0B' },
-        fattura: { label: 'Fattura', icon: '💶', color: '#DC2626' }
+        fattura: { label: 'Fattura', icon: '💶', color: '#DC2626' },
+        task: { label: 'Task', icon: '📋', color: '#F97316' },
+        automazione: { label: 'Automazione', icon: '⚡', color: '#8B5CF6' },
+        email: { label: 'Email', icon: '📧', color: '#06B6D4' },
+        newsletter: { label: 'Newsletter', icon: '📰', color: '#EC4899' },
+        whatsapp: { label: 'WhatsApp', icon: '💬', color: '#25D366' }
     };
 
     const pageInfo = getPageInfo();
@@ -302,7 +324,7 @@ function Topbar() {
                                     <HiOutlineMagnifyingGlass size={20} />
                                     <input
                                         type="text"
-                                        placeholder={user?.role === 'admin' ? 'Cerca lead, club, contratti, fatture...' : 'Cerca sponsor, contratti, eventi...'}
+                                        placeholder={user?.role === 'admin' ? 'Cerca lead, club, contratti, email, newsletter...' : 'Cerca sponsor, contratti, eventi...'}
                                         value={searchQuery}
                                         onChange={(e) => handleSearchChange(e.target.value)}
                                         autoFocus
@@ -311,14 +333,14 @@ function Topbar() {
                             </form>
 
                             {user?.role === 'admin' && searchQuery.length >= 2 ? (
-                                <div style={{ maxHeight: '360px', overflowY: 'auto' }}>
+                                <div className="search-results-container">
                                     {searchLoading ? (
-                                        <div style={{ padding: '20px', textAlign: 'center', color: '#9CA3AF', fontSize: '13px' }}>
+                                        <div className="search-status">
+                                            <div className="search-spinner" />
                                             Ricerca in corso...
                                         </div>
                                     ) : searchResults.length > 0 ? (
                                         <>
-                                            {/* Group results by type */}
                                             {Object.entries(
                                                 searchResults.reduce((acc, r) => {
                                                     if (!acc[r.type]) acc[r.type] = [];
@@ -326,47 +348,46 @@ function Topbar() {
                                                     return acc;
                                                 }, {})
                                             ).map(([type, items]) => (
-                                                <div key={type}>
-                                                    <div style={{
-                                                        padding: '8px 16px 4px',
-                                                        fontSize: '11px',
-                                                        fontWeight: 600,
-                                                        textTransform: 'uppercase',
-                                                        letterSpacing: '0.5px',
-                                                        color: '#9CA3AF'
-                                                    }}>
-                                                        {SEARCH_TYPE_CONFIG[type]?.icon} {SEARCH_TYPE_CONFIG[type]?.label || type}
+                                                <div key={type} className="search-category">
+                                                    <div className="search-category-header">
+                                                        <span className="search-category-icon" style={{ color: SEARCH_TYPE_CONFIG[type]?.color }}>
+                                                            {SEARCH_TYPE_CONFIG[type]?.icon}
+                                                        </span>
+                                                        <span className="search-category-label">
+                                                            {SEARCH_TYPE_CONFIG[type]?.label || type}
+                                                        </span>
+                                                        <span className="search-category-count">{items.length}</span>
                                                     </div>
                                                     {items.map((result, idx) => (
                                                         <button
                                                             key={`${type}-${idx}`}
-                                                            className="dropdown-item"
+                                                            className="search-result-item"
                                                             onClick={() => handleSearchResultClick(result)}
-                                                            style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '2px' }}
                                                         >
-                                                            <span style={{ fontSize: '14px', fontWeight: 500, color: '#1F2937' }}>
-                                                                {result.title}
-                                                            </span>
-                                                            <span style={{ fontSize: '12px', color: '#9CA3AF' }}>
-                                                                {result.subtitle}
+                                                            <div className="search-result-content">
+                                                                <span className="search-result-title">
+                                                                    {result.title}
+                                                                </span>
+                                                                <span className="search-result-subtitle">
+                                                                    {result.subtitle}
+                                                                </span>
+                                                            </div>
+                                                            <span className="search-result-badge" style={{
+                                                                background: `${SEARCH_TYPE_CONFIG[type]?.color}15`,
+                                                                color: SEARCH_TYPE_CONFIG[type]?.color
+                                                            }}>
+                                                                {SEARCH_TYPE_CONFIG[type]?.label}
                                                             </span>
                                                         </button>
                                                     ))}
                                                 </div>
                                             ))}
-                                            <div style={{
-                                                padding: '8px 16px',
-                                                fontSize: '12px',
-                                                color: '#9CA3AF',
-                                                textAlign: 'center',
-                                                borderTop: '1px solid #E5E7EB',
-                                                marginTop: '4px'
-                                            }}>
+                                            <div className="search-footer">
                                                 {searchResults.length} risultati trovati
                                             </div>
                                         </>
                                     ) : (
-                                        <div style={{ padding: '20px', textAlign: 'center', color: '#9CA3AF', fontSize: '13px' }}>
+                                        <div className="search-status">
                                             Nessun risultato per "{searchQuery}"
                                         </div>
                                     )}
@@ -378,7 +399,7 @@ function Topbar() {
                                         <span>Premi <kbd>Esc</kbd> per chiudere</span>
                                     </div>
                                     {searchQuery.length > 0 && searchQuery.length < 2 && (
-                                        <div style={{ padding: '12px 16px', textAlign: 'center', color: '#9CA3AF', fontSize: '13px' }}>
+                                        <div className="search-status">
                                             Digita almeno 2 caratteri...
                                         </div>
                                     )}

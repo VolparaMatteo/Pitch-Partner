@@ -18,7 +18,7 @@ const ROLE_CONFIG = {
       </svg>
     ),
     label: 'Amministratore',
-    redirect: '/admin/dashboard',
+    redirect: '/admin/analytics',
     setAuthData: (data) => ({ ...data.admin, role: 'admin' })
   },
   club: {

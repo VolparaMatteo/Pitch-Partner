@@ -148,6 +148,13 @@ def create_invoice():
     db.session.add(invoice)
     db.session.commit()
 
+    # Trigger automazione
+    try:
+        from app.services.admin_automation_triggers import trigger_admin_invoice_created
+        trigger_admin_invoice_created(invoice)
+    except Exception as e:
+        print(f"[Trigger] invoice_created error: {e}")
+
     return jsonify({
         'message': 'Fattura creata con successo',
         'invoice': invoice.to_dict()
@@ -220,6 +227,13 @@ def mark_invoice_paid(invoice_id):
     invoice.payment_reference = data.get('payment_reference')
 
     db.session.commit()
+
+    # Trigger automazione
+    try:
+        from app.services.admin_automation_triggers import trigger_admin_invoice_paid
+        trigger_admin_invoice_paid(invoice)
+    except Exception as e:
+        print(f"[Trigger] invoice_paid error: {e}")
 
     return jsonify({
         'message': 'Fattura segnata come pagata',

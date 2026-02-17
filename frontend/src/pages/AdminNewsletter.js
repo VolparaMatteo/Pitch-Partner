@@ -266,7 +266,7 @@ function AdminNewsletter() {
             <p style={{ fontSize: '13px' }}>Caricamento...</p>
           </div>
         ) : groups.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 20px' }}>
             <HiOutlineUserGroup size={40} style={{ color: '#D1D5DB', marginBottom: '12px' }} />
             <h3 style={{ color: '#6B7280', fontWeight: 600, margin: '0 0 4px', fontSize: '15px' }}>Nessun gruppo</h3>
             <p style={{ color: '#9CA3AF', fontSize: '13px', margin: 0 }}>Crea il primo gruppo per iniziare</p>
@@ -450,7 +450,7 @@ function AdminNewsletter() {
             <p style={{ fontSize: '13px' }}>Caricamento...</p>
           </div>
         ) : campaigns.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 20px' }}>
             <HiOutlinePaperAirplane size={40} style={{ color: '#D1D5DB', marginBottom: '12px' }} />
             <h3 style={{ color: '#6B7280', fontWeight: 600, margin: '0 0 4px', fontSize: '15px' }}>Nessuna campagna</h3>
             <p style={{ color: '#9CA3AF', fontSize: '13px', margin: 0 }}>Crea la prima campagna per iniziare</p>

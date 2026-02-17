@@ -13,7 +13,8 @@ import {
   HiOutlineCog6Tooth,
   HiOutlineArrowPath,
   HiOutlineLink,
-  HiOutlineClipboardDocument
+  HiOutlineVideoCameraSlash,
+  HiOutlineVideoCamera
 } from 'react-icons/hi2';
 import '../styles/crm-calendar.css';
 import '../styles/template-style.css';
@@ -69,7 +70,6 @@ function AdminCalendar() {
   // State
   const [events, setEvents] = useState([]);
   const [bookings, setBookings] = useState([]);
-  const [stats, setStats] = useState({});
   const [googleStatus, setGoogleStatus] = useState({ configured: false, connected: false });
   const [loading, setLoading] = useState(true);
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -84,7 +84,8 @@ function AdminCalendar() {
   const [eventForm, setEventForm] = useState({
     titolo: '', descrizione: '', tipo: 'appuntamento',
     data_inizio: '', data_fine: '', tutto_il_giorno: false,
-    colore: '#6366F1', lead_id: null, club_id: null, note: ''
+    colore: '#6366F1', lead_id: null, club_id: null, note: '',
+    genera_meet: false
   });
 
   // Availability
@@ -121,13 +122,6 @@ function AdminCalendar() {
     } catch (e) { console.error('Fetch bookings error:', e); }
   }, [headers]);
 
-  const fetchStats = useCallback(async () => {
-    try {
-      const res = await fetch(`${API_URL}/admin/calendar/stats`, { headers });
-      if (res.ok) setStats(await res.json());
-    } catch (e) { console.error('Fetch stats error:', e); }
-  }, [headers]);
-
   const fetchGoogleStatus = useCallback(async () => {
     try {
       const res = await fetch(`${API_URL}/admin/calendar/google/status`, { headers });
@@ -144,9 +138,9 @@ function AdminCalendar() {
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
-    await Promise.all([fetchEvents(), fetchBookings(), fetchStats(), fetchGoogleStatus(), fetchAvailability()]);
+    await Promise.all([fetchEvents(), fetchBookings(), fetchGoogleStatus(), fetchAvailability()]);
     setLoading(false);
-  }, [fetchEvents, fetchBookings, fetchStats, fetchGoogleStatus, fetchAvailability]);
+  }, [fetchEvents, fetchBookings, fetchGoogleStatus, fetchAvailability]);
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
   useEffect(() => { fetchEvents(); }, [currentDate, fetchEvents]);
@@ -155,11 +149,10 @@ function AdminCalendar() {
   useEffect(() => {
     const interval = setInterval(() => {
       fetchEvents();
-      fetchStats();
       fetchBookings();
     }, 60000);
     return () => clearInterval(interval);
-  }, [fetchEvents, fetchStats, fetchBookings]);
+  }, [fetchEvents, fetchBookings]);
 
   // ==================== CALENDAR EVENTS ====================
 
@@ -200,7 +193,7 @@ function AdminCalendar() {
       data_inizio: format(start, "yyyy-MM-dd'T'HH:mm"),
       data_fine: format(end, "yyyy-MM-dd'T'HH:mm"),
       tutto_il_giorno: false, colore: '#6366F1',
-      lead_id: null, club_id: null, note: ''
+      lead_id: null, club_id: null, note: '', genera_meet: false
     });
     setShowEventModal(true);
   }, []);
@@ -218,7 +211,9 @@ function AdminCalendar() {
       colore: e.colore || '#6366F1',
       lead_id: e.lead_id || null,
       club_id: e.club_id || null,
-      note: e.note || ''
+      note: e.note || '',
+      genera_meet: false,
+      meet_link: e.meet_link || null
     });
     setShowEventModal(true);
   }, []);
@@ -244,7 +239,6 @@ function AdminCalendar() {
         showToast(editingEvent ? 'Evento aggiornato' : 'Evento creato');
         setShowEventModal(false);
         fetchEvents();
-        fetchStats();
       } else {
         const err = await res.json();
         showToast(err.error || 'Errore', 'error');
@@ -266,7 +260,6 @@ function AdminCalendar() {
         showToast('Evento eliminato');
         setShowEventModal(false);
         fetchEvents();
-        fetchStats();
       }
     } catch (e) {
       showToast('Errore', 'error');
@@ -365,7 +358,6 @@ function AdminCalendar() {
       if (res.ok) {
         showToast(`Booking ${stato}`);
         fetchBookings();
-        fetchStats();
       }
     } catch (e) {
       showToast('Errore', 'error');
@@ -386,6 +378,19 @@ function AdminCalendar() {
       else next.add(tipo);
       return next;
     });
+  };
+
+  // ==================== HELPERS ====================
+
+  const openNewEvent = () => {
+    setEditingEvent(null);
+    setEventForm({
+      titolo: '', descrizione: '', tipo: 'appuntamento',
+      data_inizio: '', data_fine: '', tutto_il_giorno: false,
+      colore: '#6366F1', lead_id: null, club_id: null, note: '',
+      genera_meet: false
+    });
+    setShowEventModal(true);
   };
 
   // ==================== RENDER ====================
@@ -423,8 +428,7 @@ function AdminCalendar() {
           <p className="tp-page-subtitle">Gestisci appuntamenti, demo e impegni</p>
         </div>
         <div className="tp-page-actions">
-          <button className="tp-btn tp-btn-sm" onClick={() => { setEditingEvent(null); setEventForm({ titolo: '', descrizione: '', tipo: 'appuntamento', data_inizio: '', data_fine: '', tutto_il_giorno: false, colore: '#6366F1', lead_id: null, club_id: null, note: '' }); setShowEventModal(true); }}
-            style={{ background: '#6366F1', color: '#fff', border: 'none' }}>
+          <button className="tp-btn tp-btn-sm tp-btn-primary" onClick={openNewEvent}>
             <HiOutlinePlusCircle size={15} /> Evento
           </button>
           <button className="tp-btn tp-btn-sm tp-btn-outline" onClick={() => setShowAvailModal(true)}>
@@ -436,111 +440,89 @@ function AdminCalendar() {
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="cc-stats-row" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
-        <div className="cc-stat-card">
-          <div className="cc-stat-icon" style={{ background: '#EEF2FF', color: '#6366F1' }}>
-            <HiOutlineCalendarDays size={22} />
-          </div>
-          <div>
-            <div style={{ fontSize: 12, color: '#6B7280' }}>Oggi</div>
-            <div style={{ fontSize: 22, fontWeight: 700 }}>{stats.appuntamenti_oggi || 0}</div>
-          </div>
-        </div>
-        <div className="cc-stat-card">
-          <div className="cc-stat-icon" style={{ background: '#FFFBEB', color: '#F59E0B' }}>
-            <HiOutlineClock size={22} />
-          </div>
-          <div>
-            <div style={{ fontSize: 12, color: '#6B7280' }}>Demo Settimana</div>
-            <div style={{ fontSize: 22, fontWeight: 700 }}>{stats.demo_settimana || 0}</div>
-          </div>
-        </div>
-        <div className="cc-stat-card">
-          <div className="cc-stat-icon" style={{ background: '#ECFDF5', color: '#10B981' }}>
-            <HiOutlineCheck size={22} />
-          </div>
-          <div>
-            <div style={{ fontSize: 12, color: '#6B7280' }}>Bookings Pendenti</div>
-            <div style={{ fontSize: 22, fontWeight: 700 }}>{stats.bookings_pendenti || 0}</div>
-          </div>
-        </div>
-        <div className="cc-stat-card">
-          <div className="cc-stat-icon" style={{ background: '#F3F4F6', color: '#6B7280' }}>
-            <HiOutlineCalendarDays size={22} />
-          </div>
-          <div>
-            <div style={{ fontSize: 12, color: '#6B7280' }}>Prossimo</div>
-            <div style={{ fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 150 }}>
-              {stats.prossimo_evento?.titolo || 'Nessuno'}
-            </div>
-          </div>
-        </div>
-      </div>
 
       {/* Google Calendar */}
       {googleStatus.configured && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, padding: '10px 16px', background: '#F9FAFB', borderRadius: 10, border: '1px solid #E5E7EB' }}>
-          <span style={{ fontSize: 13, fontWeight: 600, color: '#374151' }}>Google Calendar:</span>
-          {googleStatus.connected ? (
-            <>
-              <span className="tp-badge tp-badge-success" style={{ fontSize: 12 }}>Connesso</span>
-              <button className="tp-btn tp-btn-sm tp-btn-outline" onClick={syncGoogle} style={{ marginLeft: 'auto' }}>
-                <HiOutlineArrowPath size={14} /> Sync
+        <div className="tp-card" style={{ marginBottom: 20, padding: '14px 20px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <span style={{ fontSize: 13, fontWeight: 600, color: '#374151' }}>Google Calendar:</span>
+            {googleStatus.connected ? (
+              <>
+                <span className="tp-badge tp-badge-success">Connesso</span>
+                <button className="tp-btn tp-btn-sm tp-btn-outline" onClick={syncGoogle} style={{ marginLeft: 'auto' }}>
+                  <HiOutlineArrowPath size={14} /> Sync
+                </button>
+                <button className="tp-btn tp-btn-sm" onClick={disconnectGoogle}
+                  style={{ background: '#FEF2F2', color: '#DC2626', border: '1px solid #FECACA' }}>
+                  Disconnetti
+                </button>
+              </>
+            ) : (
+              <button className="tp-btn tp-btn-sm tp-btn-primary" onClick={connectGoogle} style={{ marginLeft: 'auto' }}>
+                Connetti Google Calendar
               </button>
-              <button className="tp-btn tp-btn-sm" onClick={disconnectGoogle}
-                style={{ background: '#FEE2E2', color: '#DC2626', border: 'none', fontSize: 12 }}>
-                Disconnetti
-              </button>
-            </>
-          ) : (
-            <button className="tp-btn tp-btn-sm" onClick={connectGoogle}
-              style={{ background: '#4285F4', color: '#fff', border: 'none', fontSize: 12 }}>
-              Connetti Google Calendar
-            </button>
-          )}
+            )}
+          </div>
         </div>
       )}
 
       {/* Filters */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
         {TIPO_OPTIONS.map(t => (
-          <button key={t.value} onClick={() => toggleFilter(t.value)}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 6,
-              padding: '6px 14px', borderRadius: 20, border: '1px solid #E5E7EB',
-              background: activeFilters.has(t.value) ? `${t.color}15` : '#F9FAFB',
-              color: activeFilters.has(t.value) ? t.color : '#9CA3AF',
-              fontSize: 13, fontWeight: 500, cursor: 'pointer'
-            }}>
-            <span style={{ width: 8, height: 8, borderRadius: '50%', background: activeFilters.has(t.value) ? t.color : '#D1D5DB' }} />
+          <button
+            key={t.value}
+            onClick={() => toggleFilter(t.value)}
+            className={`tp-filter-chip${activeFilters.has(t.value) ? ' active' : ''}`}
+            style={activeFilters.has(t.value) ? { background: t.color, borderColor: t.color } : {}}
+          >
+            <span style={{
+              width: 8, height: 8, borderRadius: '50%',
+              background: activeFilters.has(t.value) ? '#fff' : t.color
+            }} />
             {t.label}
           </button>
         ))}
       </div>
 
-      {/* Tabs */}
-      <div style={{ display: 'flex', gap: 0, marginBottom: 20, borderBottom: '2px solid #E5E7EB' }}>
+      {/* Tabs - dark pill style like AdminClubDetail */}
+      <div style={{
+        display: 'flex', gap: 8, padding: '12px 16px', marginBottom: 20,
+        background: '#FAFAFA', borderRadius: 10, border: '1px solid #E5E7EB'
+      }}>
         {[
-          { id: 'calendario', label: 'Calendario' },
-          { id: 'bookings', label: `Prenotazioni Demo (${bookings.filter(b => b.stato === 'confermato').length})` }
+          { id: 'calendario', label: 'Calendario', icon: <HiOutlineCalendarDays size={14} /> },
+          { id: 'bookings', label: 'Prenotazioni Demo', count: bookings.filter(b => b.stato === 'confermato').length },
+          { id: 'disponibilita', label: 'Disponibilita', icon: <HiOutlineCog6Tooth size={14} /> }
         ].map(tab => (
-          <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+          <button
+            key={tab.id}
+            onClick={() => tab.id === 'disponibilita' ? setShowAvailModal(true) : setActiveTab(tab.id)}
             style={{
-              padding: '10px 20px', fontSize: 14, fontWeight: 600, cursor: 'pointer',
-              background: 'none', border: 'none',
-              borderBottom: activeTab === tab.id ? '2px solid #6366F1' : '2px solid transparent',
-              color: activeTab === tab.id ? '#6366F1' : '#6B7280',
-              marginBottom: -2
-            }}>
+              display: 'flex', alignItems: 'center', gap: 8,
+              padding: '10px 20px', borderRadius: 8, border: 'none',
+              background: activeTab === tab.id ? '#1A1A1A' : 'transparent',
+              color: activeTab === tab.id ? '#FFFFFF' : '#6B7280',
+              fontSize: 14, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap'
+            }}
+          >
+            {tab.icon}
             {tab.label}
+            {tab.count !== undefined && (
+              <span style={{
+                background: activeTab === tab.id ? '#FFFFFF' : '#E5E7EB',
+                color: activeTab === tab.id ? '#1A1A1A' : '#6B7280',
+                padding: '2px 8px', borderRadius: 12, fontSize: 12, fontWeight: 700
+              }}>
+                {tab.count}
+              </span>
+            )}
           </button>
         ))}
       </div>
 
       {/* Calendar View */}
       {activeTab === 'calendario' && (
-        <div className="cc-calendar-wrapper">
+        <div className="cc-calendar-card cc-calendar-wrapper">
           <Calendar
             localizer={localizer}
             events={calendarEvents}
@@ -568,54 +550,60 @@ function AdminCalendar() {
       {/* Bookings Tab */}
       {activeTab === 'bookings' && (
         <div className="tp-card">
-          <div className="tp-card-body" style={{ padding: 0 }}>
+          <div className="tp-table-wrapper">
             {bookings.length === 0 ? (
               <div style={{ textAlign: 'center', padding: 40, color: '#9CA3AF' }}>
                 Nessuna prenotazione demo
               </div>
             ) : (
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <table className="tp-table">
                 <thead>
-                  <tr style={{ borderBottom: '1px solid #E5E7EB' }}>
-                    {['Data/Ora', 'Nome', 'Email', 'Club', 'Sport', 'Stato', 'Azioni'].map(h => (
-                      <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: 12, color: '#6B7280', fontWeight: 600 }}>{h}</th>
-                    ))}
+                  <tr>
+                    <th>Data/Ora</th>
+                    <th>Nome</th>
+                    <th>Email</th>
+                    <th>Club</th>
+                    <th>Sport</th>
+                    <th>Meet</th>
+                    <th>Stato</th>
+                    <th>Azioni</th>
                   </tr>
                 </thead>
                 <tbody>
                   {bookings.map(b => {
                     const statoInfo = BOOKING_STATI[b.stato] || BOOKING_STATI.confermato;
                     return (
-                      <tr key={b.id} style={{ borderBottom: '1px solid #F3F4F6' }}>
-                        <td style={{ padding: '12px 16px', fontSize: 13 }}>
-                          {b.data_ora ? new Date(b.data_ora).toLocaleString('it-IT', { dateStyle: 'short', timeStyle: 'short' }) : '-'}
+                      <tr key={b.id}>
+                        <td>{b.data_ora ? new Date(b.data_ora).toLocaleString('it-IT', { dateStyle: 'short', timeStyle: 'short' }) : '-'}</td>
+                        <td style={{ fontWeight: 600 }}>{b.nome} {b.cognome}</td>
+                        <td>{b.email}</td>
+                        <td>{b.nome_club || '-'}</td>
+                        <td>{b.sport_tipo || '-'}</td>
+                        <td>
+                          {b.meet_link ? (
+                            <a href={b.meet_link} target="_blank" rel="noopener noreferrer" className="tp-badge tp-badge-success" style={{ textDecoration: 'none', fontSize: 11, padding: '4px 10px' }}>
+                              <HiOutlineVideoCamera size={14} /> Meet
+                            </a>
+                          ) : (
+                            <span style={{ fontSize: 12, color: '#9CA3AF' }}>-</span>
+                          )}
                         </td>
-                        <td style={{ padding: '12px 16px', fontSize: 13, fontWeight: 600 }}>{b.nome} {b.cognome}</td>
-                        <td style={{ padding: '12px 16px', fontSize: 13 }}>{b.email}</td>
-                        <td style={{ padding: '12px 16px', fontSize: 13 }}>{b.nome_club || '-'}</td>
-                        <td style={{ padding: '12px 16px', fontSize: 13 }}>{b.sport_tipo || '-'}</td>
-                        <td style={{ padding: '12px 16px' }}>
-                          <span style={{
-                            padding: '4px 10px', borderRadius: 20, fontSize: 11, fontWeight: 600,
-                            background: statoInfo.bg, color: statoInfo.color
-                          }}>
+                        <td>
+                          <span className="tp-badge" style={{ background: statoInfo.bg, color: statoInfo.color, border: `1px solid ${statoInfo.color}20` }}>
                             {statoInfo.label}
                           </span>
                         </td>
-                        <td style={{ padding: '12px 16px' }}>
+                        <td>
                           {b.stato === 'confermato' && (
-                            <div style={{ display: 'flex', gap: 6 }}>
-                              <button onClick={() => updateBookingStato(b.id, 'completato')}
-                                style={{ padding: '4px 10px', borderRadius: 6, border: '1px solid #10B981', background: '#ECFDF5', color: '#10B981', fontSize: 11, cursor: 'pointer', fontWeight: 600 }}>
-                                Completato
+                            <div className="tp-table-actions">
+                              <button className="tp-btn-icon tp-btn-icon-restore" title="Completato" onClick={() => updateBookingStato(b.id, 'completato')}>
+                                <HiOutlineCheck size={16} />
                               </button>
-                              <button onClick={() => updateBookingStato(b.id, 'annullato')}
-                                style={{ padding: '4px 10px', borderRadius: 6, border: '1px solid #EF4444', background: '#FEF2F2', color: '#EF4444', fontSize: 11, cursor: 'pointer', fontWeight: 600 }}>
-                                Annulla
+                              <button className="tp-btn-icon tp-btn-icon-delete" title="Annulla" onClick={() => updateBookingStato(b.id, 'annullato')}>
+                                <HiOutlineXMark size={16} />
                               </button>
-                              <button onClick={() => updateBookingStato(b.id, 'no_show')}
-                                style={{ padding: '4px 10px', borderRadius: 6, border: '1px solid #F59E0B', background: '#FFFBEB', color: '#F59E0B', fontSize: 11, cursor: 'pointer', fontWeight: 600 }}>
-                                No Show
+                              <button className="tp-btn-icon tp-btn-icon-archive" title="No Show" onClick={() => updateBookingStato(b.id, 'no_show')}>
+                                <HiOutlineClock size={16} />
                               </button>
                             </div>
                           )}
@@ -638,99 +626,139 @@ function AdminCalendar() {
               <h3>{editingEvent ? 'Modifica Evento' : 'Nuovo Evento'}</h3>
               <button className="cc-modal-close" onClick={() => setShowEventModal(false)}><HiOutlineXMark size={20} /></button>
             </div>
-            <div className="cc-modal-body">
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                {/* Titolo */}
-                <div>
-                  <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 4, display: 'block' }}>Titolo *</label>
-                  <input type="text" value={eventForm.titolo} onChange={e => setEventForm(p => ({ ...p, titolo: e.target.value }))}
-                    style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid #D1D5DB', fontSize: 14 }}
-                    placeholder="Titolo evento" />
-                </div>
+            <div className="cc-modal-body" style={{ gap: 0 }}>
+              {/* Titolo */}
+              <div className="tp-form-group" style={{ marginBottom: 16 }}>
+                <label className="tp-form-label">Titolo <span className="required">*</span></label>
+                <input className="tp-form-input" type="text" value={eventForm.titolo}
+                  onChange={e => setEventForm(p => ({ ...p, titolo: e.target.value }))}
+                  placeholder="Titolo evento" />
+              </div>
 
-                {/* Tipo */}
-                <div>
-                  <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 4, display: 'block' }}>Tipo</label>
-                  <select value={eventForm.tipo} onChange={e => {
-                    const tipo = e.target.value;
-                    const color = TIPO_MAP[tipo]?.color || '#6366F1';
-                    setEventForm(p => ({ ...p, tipo, colore: color }));
+              {/* Tipo */}
+              <div className="tp-form-group" style={{ marginBottom: 16 }}>
+                <label className="tp-form-label">Tipo</label>
+                <select className="tp-form-select" value={eventForm.tipo} onChange={e => {
+                  const tipo = e.target.value;
+                  const color = TIPO_MAP[tipo]?.color || '#6366F1';
+                  setEventForm(p => ({ ...p, tipo, colore: color }));
+                }}>
+                  {TIPO_OPTIONS.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                </select>
+              </div>
+
+              {/* Date */}
+              <div className="tp-form-row tp-form-row-2" style={{ marginBottom: 16 }}>
+                <div className="tp-form-group">
+                  <label className="tp-form-label">Inizio <span className="required">*</span></label>
+                  <input className="tp-form-input" type="datetime-local" value={eventForm.data_inizio}
+                    onChange={e => setEventForm(p => ({ ...p, data_inizio: e.target.value }))} />
+                </div>
+                <div className="tp-form-group">
+                  <label className="tp-form-label">Fine <span className="required">*</span></label>
+                  <input className="tp-form-input" type="datetime-local" value={eventForm.data_fine}
+                    onChange={e => setEventForm(p => ({ ...p, data_fine: e.target.value }))} />
+                </div>
+              </div>
+
+              {/* Tutto il giorno */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+                <input type="checkbox" id="tutto-giorno" checked={eventForm.tutto_il_giorno}
+                  onChange={e => setEventForm(p => ({ ...p, tutto_il_giorno: e.target.checked }))}
+                  style={{ accentColor: '#111827' }} />
+                <label htmlFor="tutto-giorno" style={{ fontSize: 14, color: '#374151', cursor: 'pointer' }}>Tutto il giorno</label>
+              </div>
+
+              {/* Google Meet toggle */}
+              {googleStatus.connected && !eventForm.meet_link && (
+                <div
+                  onClick={() => setEventForm(p => ({ ...p, genera_meet: !p.genera_meet }))}
+                  className="tp-card"
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    padding: '10px 14px', marginBottom: 16, cursor: 'pointer',
+                    borderColor: eventForm.genera_meet ? '#6366F1' : undefined,
+                    background: eventForm.genera_meet ? '#EEF2FF' : undefined
                   }}
-                    style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid #D1D5DB', fontSize: 14 }}>
-                    {TIPO_OPTIONS.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-                  </select>
+                >
+                  {eventForm.genera_meet
+                    ? <HiOutlineVideoCamera size={18} style={{ color: '#6366F1' }} />
+                    : <HiOutlineVideoCameraSlash size={18} style={{ color: '#9CA3AF' }} />
+                  }
+                  <span style={{ fontSize: 13, fontWeight: 600, color: eventForm.genera_meet ? '#6366F1' : '#6B7280' }}>
+                    Google Meet
+                  </span>
+                  <span style={{ fontSize: 12, color: '#9CA3AF', marginLeft: 'auto' }}>
+                    {eventForm.genera_meet ? 'Link generato automaticamente' : 'Nessun link Meet'}
+                  </span>
                 </div>
+              )}
 
-                {/* Date */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                  <div>
-                    <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 4, display: 'block' }}>Inizio *</label>
-                    <input type="datetime-local" value={eventForm.data_inizio}
-                      onChange={e => setEventForm(p => ({ ...p, data_inizio: e.target.value }))}
-                      style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid #D1D5DB', fontSize: 14 }} />
-                  </div>
-                  <div>
-                    <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 4, display: 'block' }}>Fine *</label>
-                    <input type="datetime-local" value={eventForm.data_fine}
-                      onChange={e => setEventForm(p => ({ ...p, data_fine: e.target.value }))}
-                      style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid #D1D5DB', fontSize: 14 }} />
-                  </div>
+              {/* Meet Link esistente (in edit) */}
+              {eventForm.meet_link && (
+                <div className="tp-card" style={{
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '10px 14px', marginBottom: 16,
+                  borderColor: '#6366F1', background: '#EEF2FF'
+                }}>
+                  <HiOutlineVideoCamera size={18} style={{ color: '#6366F1' }} />
+                  <a href={eventForm.meet_link} target="_blank" rel="noopener noreferrer"
+                    style={{ fontSize: 13, fontWeight: 600, color: '#6366F1', textDecoration: 'none' }}>
+                    Apri Google Meet
+                  </a>
+                  <button onClick={(e) => {
+                    e.stopPropagation();
+                    navigator.clipboard.writeText(eventForm.meet_link).then(() => showToast('Link Meet copiato!'));
+                  }}
+                    className="tp-btn tp-btn-sm tp-btn-outline"
+                    style={{ marginLeft: 'auto' }}>
+                    Copia link
+                  </button>
                 </div>
+              )}
 
-                {/* Tutto il giorno */}
-                <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13 }}>
-                  <input type="checkbox" checked={eventForm.tutto_il_giorno}
-                    onChange={e => setEventForm(p => ({ ...p, tutto_il_giorno: e.target.checked }))} />
-                  Tutto il giorno
-                </label>
-
-                {/* Colore */}
-                <div>
-                  <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 4, display: 'block' }}>Colore</label>
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    {COLOR_OPTIONS.map(c => (
-                      <button key={c} onClick={() => setEventForm(p => ({ ...p, colore: c }))}
-                        style={{
-                          width: 28, height: 28, borderRadius: '50%', background: c, border: eventForm.colore === c ? '3px solid #1F2937' : '2px solid #E5E7EB',
-                          cursor: 'pointer'
-                        }} />
-                    ))}
-                  </div>
+              {/* Colore */}
+              <div className="tp-form-group" style={{ marginBottom: 16 }}>
+                <label className="tp-form-label">Colore</label>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  {COLOR_OPTIONS.map(c => (
+                    <button key={c} onClick={() => setEventForm(p => ({ ...p, colore: c }))}
+                      style={{
+                        width: 28, height: 28, borderRadius: '50%', background: c,
+                        border: eventForm.colore === c ? '3px solid #1F2937' : '2px solid #E5E7EB',
+                        cursor: 'pointer', padding: 0
+                      }} />
+                  ))}
                 </div>
+              </div>
 
-                {/* Descrizione */}
-                <div>
-                  <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 4, display: 'block' }}>Descrizione</label>
-                  <textarea value={eventForm.descrizione} onChange={e => setEventForm(p => ({ ...p, descrizione: e.target.value }))}
-                    rows={3} style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid #D1D5DB', fontSize: 14, resize: 'vertical' }}
-                    placeholder="Note o descrizione..." />
-                </div>
+              {/* Descrizione */}
+              <div className="tp-form-group" style={{ marginBottom: 16 }}>
+                <label className="tp-form-label">Descrizione</label>
+                <textarea className="tp-form-textarea" value={eventForm.descrizione}
+                  onChange={e => setEventForm(p => ({ ...p, descrizione: e.target.value }))}
+                  rows={3} placeholder="Note o descrizione..." />
+              </div>
 
-                {/* Note */}
-                <div>
-                  <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 4, display: 'block' }}>Note interne</label>
-                  <textarea value={eventForm.note} onChange={e => setEventForm(p => ({ ...p, note: e.target.value }))}
-                    rows={2} style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid #D1D5DB', fontSize: 14, resize: 'vertical' }}
-                    placeholder="Note interne..." />
-                </div>
+              {/* Note */}
+              <div className="tp-form-group">
+                <label className="tp-form-label">Note interne</label>
+                <textarea className="tp-form-textarea" value={eventForm.note}
+                  onChange={e => setEventForm(p => ({ ...p, note: e.target.value }))}
+                  rows={2} placeholder="Note interne..." style={{ minHeight: 60 }} />
               </div>
             </div>
 
             <div className="cc-modal-footer">
               {editingEvent && (
-                <button onClick={deleteEvent} style={{
-                  padding: '10px 16px', borderRadius: 8, border: '1px solid #EF4444',
-                  background: '#FEF2F2', color: '#EF4444', fontSize: 14, fontWeight: 600, cursor: 'pointer', marginRight: 'auto'
-                }}>
-                  <HiOutlineTrash size={16} style={{ marginRight: 4, verticalAlign: 'middle' }} /> Elimina
+                <button onClick={deleteEvent} className="tp-btn tp-btn-sm" style={{ background: '#FEF2F2', color: '#DC2626', border: '1px solid #FECACA', marginRight: 'auto' }}>
+                  <HiOutlineTrash size={16} /> Elimina
                 </button>
               )}
-              <button onClick={() => setShowEventModal(false)}
-                style={{ padding: '10px 20px', borderRadius: 8, border: '1px solid #D1D5DB', background: '#fff', fontSize: 14, cursor: 'pointer' }}>
+              <button onClick={() => setShowEventModal(false)} className="tp-btn tp-btn-sm tp-btn-outline">
                 Annulla
               </button>
-              <button onClick={saveEvent}
-                style={{ padding: '10px 20px', borderRadius: 8, border: 'none', background: '#6366F1', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
+              <button onClick={saveEvent} className="tp-btn tp-btn-sm tp-btn-primary">
                 {editingEvent ? 'Salva' : 'Crea Evento'}
               </button>
             </div>
@@ -746,39 +774,40 @@ function AdminCalendar() {
               <h3>Gestisci Disponibilita</h3>
               <button className="cc-modal-close" onClick={() => setShowAvailModal(false)}><HiOutlineXMark size={20} /></button>
             </div>
-            <div className="cc-modal-body">
+            <div className="cc-modal-body" style={{ gap: 0 }}>
               <p style={{ fontSize: 13, color: '#6B7280', marginBottom: 16 }}>
                 Imposta le fasce orarie in cui sei disponibile per le demo. I prospect potranno prenotare solo negli slot attivi.
               </p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
                 {GIORNI.map((giorno, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 0', borderBottom: '1px solid #F3F4F6' }}>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: 8, width: 120, fontSize: 13, fontWeight: 600 }}>
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: '1px solid #F3F4F6' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 8, width: 120, cursor: 'pointer' }}>
                       <input type="checkbox" checked={availForm[i].attivo}
                         onChange={e => {
                           const nf = [...availForm];
                           nf[i] = { ...nf[i], attivo: e.target.checked };
                           setAvailForm(nf);
-                        }} />
-                      {giorno}
+                        }}
+                        style={{ accentColor: '#111827' }} />
+                      <span style={{ fontSize: 14, fontWeight: 600, color: '#374151' }}>{giorno}</span>
                     </label>
                     {availForm[i].attivo && (
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <input type="time" value={availForm[i].ora_inizio}
+                        <input className="tp-form-input" type="time" value={availForm[i].ora_inizio}
                           onChange={e => {
                             const nf = [...availForm];
                             nf[i] = { ...nf[i], ora_inizio: e.target.value };
                             setAvailForm(nf);
                           }}
-                          style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid #D1D5DB', fontSize: 13 }} />
+                          style={{ width: 'auto', height: 36 }} />
                         <span style={{ color: '#6B7280' }}>-</span>
-                        <input type="time" value={availForm[i].ora_fine}
+                        <input className="tp-form-input" type="time" value={availForm[i].ora_fine}
                           onChange={e => {
                             const nf = [...availForm];
                             nf[i] = { ...nf[i], ora_fine: e.target.value };
                             setAvailForm(nf);
                           }}
-                          style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid #D1D5DB', fontSize: 13 }} />
+                          style={{ width: 'auto', height: 36 }} />
                       </div>
                     )}
                     {!availForm[i].attivo && (
@@ -789,12 +818,10 @@ function AdminCalendar() {
               </div>
             </div>
             <div className="cc-modal-footer">
-              <button onClick={() => setShowAvailModal(false)}
-                style={{ padding: '10px 20px', borderRadius: 8, border: '1px solid #D1D5DB', background: '#fff', fontSize: 14, cursor: 'pointer' }}>
+              <button onClick={() => setShowAvailModal(false)} className="tp-btn tp-btn-sm tp-btn-outline">
                 Annulla
               </button>
-              <button onClick={saveAvailability}
-                style={{ padding: '10px 20px', borderRadius: 8, border: 'none', background: '#6366F1', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
+              <button onClick={saveAvailability} className="tp-btn tp-btn-sm tp-btn-primary">
                 Salva Disponibilita
               </button>
             </div>

@@ -5,11 +5,14 @@ from app.models import (
     Admin, Club, Pagamento, Fattura, Sponsor, Proposal,
     SubscriptionPlan, Subscription, SubscriptionEvent,
     CRMLead, CRMLeadActivity, AuditLog, AdminEmailTemplate, EmailLog, PlatformMetrics,
-    ClubInvoice, ClubActivity, AdminContract, AdminInvoice
+    ClubInvoice, ClubActivity, AdminContract, AdminInvoice,
+    AdminWorkflow, NewsletterCampaign, AdminTask
 )
 from datetime import datetime, timedelta
 from sqlalchemy import func, and_, or_
 import json
+import os
+import requests as req_lib
 
 
 def verify_admin():
@@ -2620,6 +2623,95 @@ def admin_global_search():
             'subtitle': f'{inv.status} | {inv.total_amount:.2f}€',
             'link': '/admin/finanze'
         })
+
+    # Search Tasks (AdminTask)
+    tasks = AdminTask.query.filter(
+        or_(
+            AdminTask.titolo.ilike(search_term),
+            AdminTask.descrizione.ilike(search_term),
+            AdminTask.tags.ilike(search_term)
+        )
+    ).order_by(AdminTask.id.desc()).limit(limit_per_type).all()
+
+    for task in tasks:
+        results.append({
+            'type': 'task',
+            'id': task.id,
+            'title': task.titolo,
+            'subtitle': f'{task.stato} | {task.priorita} | {task.tipo}',
+            'link': '/admin/tasks'
+        })
+
+    # Search Automazioni (AdminWorkflow)
+    workflows = AdminWorkflow.query.filter(
+        or_(
+            AdminWorkflow.nome.ilike(search_term),
+            AdminWorkflow.descrizione.ilike(search_term),
+            AdminWorkflow.trigger_type.ilike(search_term)
+        )
+    ).limit(limit_per_type).all()
+
+    for wf in workflows:
+        stato = 'Attivo' if wf.abilitata else 'Disattivo'
+        results.append({
+            'type': 'automazione',
+            'id': wf.id,
+            'title': wf.nome,
+            'subtitle': f'{wf.tipo} | {stato} | Trigger: {wf.trigger_type}',
+            'link': f'/admin/workflows'
+        })
+
+    # Search Email (EmailLog) - by subject and recipient
+    emails = EmailLog.query.filter(
+        or_(
+            EmailLog.oggetto.ilike(search_term),
+            EmailLog.destinatario_email.ilike(search_term),
+            EmailLog.destinatario_nome.ilike(search_term)
+        )
+    ).order_by(EmailLog.id.desc()).limit(limit_per_type).all()
+
+    for em in emails:
+        results.append({
+            'type': 'email',
+            'id': em.id,
+            'title': em.oggetto,
+            'subtitle': f'{em.destinatario_email} | {em.status}',
+            'link': '/admin/email'
+        })
+
+    # Search Newsletter (NewsletterCampaign) - by title and subject
+    newsletters = NewsletterCampaign.query.filter(
+        or_(
+            NewsletterCampaign.titolo.ilike(search_term),
+            NewsletterCampaign.oggetto.ilike(search_term)
+        )
+    ).order_by(NewsletterCampaign.id.desc()).limit(limit_per_type).all()
+
+    for nl in newsletters:
+        results.append({
+            'type': 'newsletter',
+            'id': nl.id,
+            'title': nl.titolo,
+            'subtitle': f'{nl.status} | {nl.oggetto}',
+            'link': '/admin/newsletter'
+        })
+
+    # Search WhatsApp (proxy to sidecar)
+    sidecar_url = os.getenv('WHATSAPP_SIDECAR_URL', 'http://localhost:3200')
+    try:
+        wa_resp = req_lib.get(f'{sidecar_url}/search', params={'q': q}, timeout=3)
+        if wa_resp.status_code == 200:
+            wa_data = wa_resp.json()
+            for item in (wa_data.get('results') or [])[:limit_per_type]:
+                results.append({
+                    'type': 'whatsapp',
+                    'id': item.get('chatId', ''),
+                    'title': item.get('title', ''),
+                    'subtitle': item.get('subtitle', ''),
+                    'link': '/admin/whatsapp'
+                })
+    except Exception:
+        pass  # WhatsApp sidecar not available, skip silently
 
     return jsonify({
         'results': results,

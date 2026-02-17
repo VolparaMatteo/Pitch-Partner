@@ -6,9 +6,10 @@ import Modal from '../components/Modal';
 import {
   FaSearch, FaList, FaTh, FaPlus, FaEdit, FaTrashAlt, FaCheck,
   FaPlay, FaInbox, FaChevronDown, FaChevronLeft, FaChevronRight,
-  FaEye, FaClock, FaExclamationTriangle, FaUser
+  FaClock, FaUser
 } from 'react-icons/fa';
 import { HiOutlineClipboardDocumentList } from 'react-icons/hi2';
+import { getImageUrl } from '../services/api';
 import '../styles/template-style.css';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5003/api';
@@ -35,7 +36,31 @@ const STATO_COLUMNS = [
   { id: 'completato', label: 'Completato', color: '#059669', bg: '#ECFDF5', icon: <FaCheck /> }
 ];
 
-function CustomSelect({ options, value, onChange, placeholder, iconColor, iconContent }) {
+function DropdownIcon({ option, iconColor, iconContent }) {
+  if (option?.avatar_url) {
+    return (
+      <img
+        src={getImageUrl(option.avatar_url)}
+        alt=""
+        style={{ width: '24px', height: '24px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }}
+      />
+    );
+  }
+  if (option?.color || iconColor) {
+    return (
+      <div style={{
+        width: '24px', height: '24px', borderRadius: '6px',
+        background: option?.color || iconColor,
+        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
+      }}>
+        {iconContent || <span style={{ color: 'white', fontSize: '11px', fontWeight: 700 }}>!</span>}
+      </div>
+    );
+  }
+  return null;
+}
+
+function FormDropdown({ options, value, onChange, placeholder, iconColor, iconContent }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
@@ -46,31 +71,20 @@ function CustomSelect({ options, value, onChange, placeholder, iconColor, iconCo
   }, []);
 
   const selected = options.find(o => String(o.value) === String(value));
+  const showIcon = selected?.avatar_url || selected?.color || iconColor;
 
   return (
     <div ref={ref} style={{ position: 'relative' }}>
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        onFocus={(e) => e.target.style.borderColor = '#111827'}
-        onBlur={(e) => { if (!open) e.target.style.borderColor = '#E5E7EB'; }}
         style={{
           display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px',
           border: open ? '2px solid #111827' : '2px solid #E5E7EB', borderRadius: '8px', width: '100%',
           background: 'white', cursor: 'pointer', transition: 'all 0.2s', boxSizing: 'border-box'
         }}
       >
-        {(selected?.color || iconColor) && (
-          <div style={{
-            width: '24px', height: '24px', borderRadius: '6px',
-            background: selected?.color || iconColor,
-            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
-          }}>
-            {iconContent || <span style={{ color: 'white', fontSize: '11px', fontWeight: 700 }}>
-              {selected?.color ? '!' : ''}
-            </span>}
-          </div>
-        )}
+        {showIcon && <DropdownIcon option={selected} iconColor={iconColor} iconContent={iconContent} />}
         <span style={{ flex: 1, textAlign: 'left', fontSize: '14px', fontWeight: 500, color: selected ? '#1A1A1A' : '#9CA3AF' }}>
           {selected?.label || placeholder || 'Seleziona...'}
         </span>
@@ -87,6 +101,7 @@ function CustomSelect({ options, value, onChange, placeholder, iconColor, iconCo
         }}>
           {options.map(option => {
             const isSelected = String(value) === String(option.value);
+            const showOptIcon = option.avatar_url || option.color || iconColor;
             return (
               <div key={option.value}
                 onClick={() => { onChange(option.value); setOpen(false); }}
@@ -99,14 +114,7 @@ function CustomSelect({ options, value, onChange, placeholder, iconColor, iconCo
                 onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = '#F9FAFB'; }}
                 onMouseLeave={(e) => { e.currentTarget.style.background = isSelected ? 'rgba(133, 255, 0, 0.1)' : 'transparent'; }}
               >
-                {option.color && (
-                  <div style={{
-                    width: '24px', height: '24px', borderRadius: '6px', background: option.color,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
-                  }}>
-                    <span style={{ color: 'white', fontSize: '11px', fontWeight: 700 }}>!</span>
-                  </div>
-                )}
+                {showOptIcon && <DropdownIcon option={option} iconColor={iconColor} iconContent={iconContent} />}
                 <span style={{ flex: 1, fontSize: '14px', fontWeight: 500, color: '#1A1A1A' }}>
                   {option.label}
                 </span>
@@ -127,7 +135,6 @@ function AdminTasks() {
 
   // State
   const [tasks, setTasks] = useState([]);
-  const [stats, setStats] = useState({});
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState('kanban');
   const [searchTerm, setSearchTerm] = useState('');
@@ -208,14 +215,10 @@ function AdminTasks() {
     if (!token) return;
     if (!silent) setLoading(true);
     try {
-      const [tasksRes, statsRes] = await Promise.all([
-        fetch(`${API_URL}/admin/tasks?per_page=500`, { headers: { 'Authorization': `Bearer ${token}` } })
-          .then(r => r.ok ? r.json() : null).catch(() => null),
-        fetch(`${API_URL}/admin/tasks/stats`, { headers: { 'Authorization': `Bearer ${token}` } })
-          .then(r => r.ok ? r.json() : null).catch(() => null)
-      ]);
+      const tasksRes = await fetch(`${API_URL}/admin/tasks?per_page=500`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      }).then(r => r.ok ? r.json() : null).catch(() => null);
       if (tasksRes) setTasks(tasksRes.tasks || []);
-      if (statsRes) setStats(statsRes);
     } catch (err) {
       console.error('Fetch error:', err);
     } finally {
@@ -250,7 +253,6 @@ function AdminTasks() {
       if (searchTerm) {
         const s = searchTerm.toLowerCase();
         if (!t.titolo?.toLowerCase().includes(s) &&
-            !t.descrizione?.toLowerCase().includes(s) &&
             !t.descrizione?.toLowerCase().includes(s)) return false;
       }
       if (filterPriorita !== 'all' && t.priorita !== filterPriorita) return false;
@@ -267,13 +269,20 @@ function AdminTasks() {
 
   const getTasksByStato = (stato) => filteredTasks.filter(t => t.stato === stato);
 
-  const getActiveFiltersCount = () => {
-    let count = 0;
-    if (filterPriorita !== 'all') count++;
-    if (filterTipo !== 'all') count++;
-    return count;
-  };
-  const activeFiltersCount = getActiveFiltersCount();
+  const activeFiltersCount = (filterPriorita !== 'all' ? 1 : 0) + (filterTipo !== 'all' ? 1 : 0);
+
+  // Dropdown data
+  const prioritaFilterOptions = [
+    { value: 'all', label: 'Tutte le priorità', color: '#6B7280' },
+    ...PRIORITA_OPTIONS
+  ];
+  const tipoFilterOptions = [
+    { value: 'all', label: 'Tutti i tipi' },
+    ...TIPO_OPTIONS
+  ];
+
+  const getSelectedPriorita = () => prioritaFilterOptions.find(o => o.value === filterPriorita) || prioritaFilterOptions[0];
+  const getSelectedTipo = () => tipoFilterOptions.find(o => o.value === filterTipo) || tipoFilterOptions[0];
 
   const clearFilters = () => {
     setFilterPriorita('all');
@@ -319,7 +328,7 @@ function AdminTasks() {
     setFormData({
       titolo: '', descrizione: '', tipo: 'generale', priorita: 'media',
       collegamento: 'nessuno', lead_id: null, club_id: null, contract_id: null,
-      data_scadenza: ''
+      data_scadenza: '', admin_id: ''
     });
     fetchEntities();
     setShowModal(true);
@@ -448,19 +457,6 @@ function AdminTasks() {
     return null;
   };
 
-  // Dropdown data
-  const prioritaFilterOptions = [
-    { value: 'all', label: 'Tutte le priorità', color: '#6B7280', bg: '#F3F4F6' },
-    ...PRIORITA_OPTIONS
-  ];
-  const tipoFilterOptions = [
-    { value: 'all', label: 'Tutti i tipi' },
-    ...TIPO_OPTIONS
-  ];
-
-  const getSelectedPriorita = () => prioritaFilterOptions.find(o => o.value === filterPriorita) || prioritaFilterOptions[0];
-  const getSelectedTipo = () => tipoFilterOptions.find(o => o.value === filterTipo) || tipoFilterOptions[0];
-
   // Pagination
   const handlePageChange = (newPage) => {
     setCurrentPage(newPage);
@@ -483,21 +479,22 @@ function AdminTasks() {
   return (
     <div className="tp-page-container">
       {/* Page Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px' }}>
+      <div className="tp-page-header">
         <div>
-          <h1 style={{ fontSize: '24px', fontWeight: 700, color: '#111827', margin: 0 }}>Task & To-Do</h1>
-          <p style={{ color: '#6B7280', marginTop: '4px', fontSize: '14px' }}>Gestisci e organizza le attività operative</p>
+          <h1 className="tp-page-title">Task & To-Do</h1>
+          <p className="tp-page-subtitle">Gestisci e organizza le attività operative</p>
         </div>
-        <button className="tp-btn tp-btn-primary" onClick={openNewModal}>
-          <FaPlus /> Nuovo Task
-        </button>
+        <div className="tp-page-actions">
+          <button className="tp-btn tp-btn-primary" onClick={openNewModal}>
+            <FaPlus /> Nuovo Task
+          </button>
+        </div>
       </div>
 
       {/* Main Card */}
       <div className="tp-card">
         <div className="tp-card-header">
           <div className="tp-card-header-left">
-            {/* Search */}
             <div className="tp-search-wrapper">
               <input
                 type="text"
@@ -710,79 +707,63 @@ function AdminTasks() {
                               onDragStart={(e) => handleDragStart(e, task)}
                               onClick={() => openEditModal(task)}
                             >
-                              <h4 style={{
-                                margin: '0 0 8px', fontSize: '13px', fontWeight: 600,
-                                color: '#1A1A1A', lineHeight: 1.3
-                              }}>
-                                {task.titolo}
-                              </h4>
+                              <h4 className="tp-kanban-card-title">{task.titolo}</h4>
 
-                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '8px' }}>
-                                <span className="tp-badge" style={{
-                                  background: priorita.bg, color: priorita.color,
-                                  padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 600
-                                }}>
-                                  {priorita.label}
-                                </span>
-                                <span className="tp-badge" style={{
-                                  background: '#F3F4F6', color: '#6B7280',
-                                  padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 500
-                                }}>
-                                  {getTipoLabel(task.tipo)}
-                                </span>
+                              <div className="tp-kanban-card-meta" style={{ marginTop: '6px' }}>
+                                <span style={{
+                                  width: '8px', height: '8px', borderRadius: '50%',
+                                  background: priorita.color, flexShrink: 0
+                                }} />
+                                <span style={{ color: priorita.color, fontWeight: 600 }}>{priorita.label}</span>
+                                <span style={{ color: '#D1D5DB' }}>·</span>
+                                <span>{getTipoLabel(task.tipo)}</span>
                               </div>
 
                               {task.admin_nome && (
-                                <div style={{ fontSize: '11px', color: '#6B7280', display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '4px' }}>
-                                  <FaUser size={9} />
+                                <div className="tp-kanban-card-meta">
+                                  {task.admin_avatar
+                                    ? <img src={getImageUrl(task.admin_avatar)} alt="" style={{ width: '16px', height: '16px', borderRadius: '50%', objectFit: 'cover' }} />
+                                    : <FaUser size={9} />
+                                  }
                                   {task.admin_nome}
                                 </div>
                               )}
 
                               {entity && (
-                                <div style={{ fontSize: '12px', color: '#6366F1', cursor: 'pointer', marginBottom: '6px' }}
+                                <div className="tp-kanban-card-meta-link"
                                   onClick={(e) => { e.stopPropagation(); navigate(entity.path); }}>
                                   {entity.type}: {entity.name}
                                 </div>
                               )}
 
                               {task.data_scadenza && (
-                                <div style={{
-                                  fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px',
-                                  color: scaduto ? '#DC2626' : '#9CA3AF', fontWeight: scaduto ? 600 : 400
-                                }}>
+                                <div className={`tp-kanban-card-meta${scaduto ? ' overdue' : ''}`}>
                                   <FaClock size={10} />
                                   {scaduto ? 'Scaduto: ' : 'Scad. '}{formatDate(task.data_scadenza)}
                                 </div>
                               )}
 
-                              <div style={{
-                                display: 'flex', gap: '4px', marginTop: '10px', paddingTop: '8px',
-                                borderTop: '1px solid #F3F4F6', justifyContent: 'flex-end'
-                              }}>
+                              <div className="tp-kanban-card-actions">
                                 <button
-                                  className="tp-btn-icon tp-btn-icon-view"
+                                  className="tp-btn-icon tp-btn-icon-sm tp-btn-icon-view"
                                   onClick={(e) => { e.stopPropagation(); handleQuickComplete(task); }}
                                   title={task.stato === 'completato' ? 'Riapri' : 'Completa'}
-                                  style={{ width: '28px', height: '28px' }}
                                 >
-                                  <FaCheck size={11} />
+                                  <FaCheck />
                                 </button>
                                 <button
-                                  className="tp-btn-icon"
+                                  className="tp-btn-icon tp-btn-icon-sm"
                                   onClick={(e) => { e.stopPropagation(); openEditModal(task); }}
                                   title="Modifica"
-                                  style={{ width: '28px', height: '28px' }}
                                 >
-                                  <FaEdit size={11} />
+                                  <FaEdit />
                                 </button>
                                 <button
-                                  className="tp-btn-icon tp-btn-icon-delete"
+                                  className="tp-btn-icon tp-btn-icon-sm tp-btn-icon-delete"
                                   onClick={(e) => { e.stopPropagation(); handleDeleteClick(task); }}
                                   title="Elimina"
-                                  style={{ width: '28px', height: '28px' }}
                                 >
-                                  <FaTrashAlt size={10} />
+                                  <FaTrashAlt />
                                 </button>
                               </div>
                             </div>
@@ -816,11 +797,9 @@ function AdminTasks() {
                   <tbody>
                     {paginatedTasks.length === 0 ? (
                       <tr>
-                        <td colSpan="8" style={{ padding: '40px', color: '#6B7280' }}>
-                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                            <FaInbox size={32} style={{ marginBottom: '12px', opacity: 0.5 }} />
-                            <p style={{ margin: 0 }}>Nessun task trovato</p>
-                          </div>
+                        <td colSpan="8" style={{ padding: '40px', textAlign: 'center', color: '#6B7280' }}>
+                          <FaInbox size={32} style={{ marginBottom: '12px', opacity: 0.5, display: 'block', margin: '0 auto 12px' }} />
+                          Nessun task trovato
                         </td>
                       </tr>
                     ) : (
@@ -838,8 +817,11 @@ function AdminTasks() {
                             </td>
                             <td>
                               {task.admin_nome ? (
-                                <span style={{ fontSize: '13px', color: '#374151', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                                  <FaUser size={10} color="#9CA3AF" />
+                                <span className="tp-kanban-card-meta">
+                                  {task.admin_avatar
+                                    ? <img src={getImageUrl(task.admin_avatar)} alt="" style={{ width: '16px', height: '16px', borderRadius: '50%', objectFit: 'cover' }} />
+                                    : <FaUser size={10} />
+                                  }
                                   {task.admin_nome}
                                 </span>
                               ) : (
@@ -847,24 +829,16 @@ function AdminTasks() {
                               )}
                             </td>
                             <td>
-                              <span className="tp-badge" style={{
-                                background: '#F3F4F6', color: '#6B7280',
-                                padding: '4px 10px', borderRadius: '6px', fontSize: '12px', fontWeight: 500
-                              }}>
-                                {getTipoLabel(task.tipo)}
-                              </span>
+                              <span className="tp-badge tp-badge-neutral">{getTipoLabel(task.tipo)}</span>
                             </td>
                             <td>
-                              <span className="tp-badge" style={{
-                                background: priorita.bg, color: priorita.color,
-                                padding: '4px 10px', borderRadius: '6px', fontSize: '12px', fontWeight: 600
-                              }}>
+                              <span className="tp-badge" style={{ background: priorita.bg, color: priorita.color }}>
                                 {priorita.label}
                               </span>
                             </td>
                             <td>
                               {entity ? (
-                                <span style={{ fontSize: '12px', color: '#6366F1', cursor: 'pointer' }}
+                                <span className="tp-kanban-card-meta-link"
                                   onClick={(e) => { e.stopPropagation(); navigate(entity.path); }}>
                                   {entity.type}: {entity.name}
                                 </span>
@@ -886,14 +860,8 @@ function AdminTasks() {
                               )}
                             </td>
                             <td>
-                              <span className="tp-badge" style={{
-                                background: statoCol?.bg || '#F3F4F6',
-                                color: statoCol?.color || '#6B7280',
-                                display: 'inline-flex', alignItems: 'center', gap: '6px',
-                                padding: '6px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: 500
-                              }}>
-                                {statoCol?.icon}
-                                {statoCol?.label || task.stato}
+                              <span className="tp-badge" style={{ background: statoCol?.bg, color: statoCol?.color }}>
+                                {statoCol?.icon} {statoCol?.label || task.stato}
                               </span>
                             </td>
                             <td onClick={(e) => e.stopPropagation()}>
@@ -963,46 +931,33 @@ function AdminTasks() {
           onClose={() => setShowModal(false)}
           title={editingTask ? 'Modifica Task' : 'Nuovo Task'}
         >
-          <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>
-                Titolo *
-              </label>
-              <input type="text" value={formData.titolo}
+          <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <div className="tp-form-group">
+              <label className="tp-form-label">Titolo <span className="required">*</span></label>
+              <input
+                type="text"
+                className="tp-form-input"
+                value={formData.titolo}
                 onChange={(e) => setFormData({ ...formData, titolo: e.target.value })}
                 placeholder="Es. Follow-up con AC Milan"
-                onFocus={(e) => e.target.style.borderColor = '#111827'}
-                onBlur={(e) => e.target.style.borderColor = '#E5E7EB'}
-                style={{
-                  width: '100%', padding: '10px 14px', border: '2px solid #E5E7EB',
-                  borderRadius: '8px', fontSize: '14px', outline: 'none', boxSizing: 'border-box',
-                  transition: 'border-color 0.2s'
-                }}
               />
             </div>
 
-            <div>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>
-                Descrizione
-              </label>
-              <textarea value={formData.descrizione}
+            <div className="tp-form-group">
+              <label className="tp-form-label">Descrizione</label>
+              <textarea
+                className="tp-form-textarea"
+                value={formData.descrizione}
                 onChange={(e) => setFormData({ ...formData, descrizione: e.target.value })}
                 placeholder="Note aggiuntive..."
                 rows={3}
-                onFocus={(e) => e.target.style.borderColor = '#111827'}
-                onBlur={(e) => e.target.style.borderColor = '#E5E7EB'}
-                style={{
-                  width: '100%', padding: '10px 14px', border: '2px solid #E5E7EB',
-                  borderRadius: '8px', fontSize: '14px', outline: 'none', resize: 'vertical', boxSizing: 'border-box',
-                  transition: 'border-color 0.2s'
-                }}
               />
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Tipo</label>
-                <CustomSelect
+            <div className="tp-form-row tp-form-row-2" style={{ marginBottom: 0 }}>
+              <div className="tp-form-group">
+                <label className="tp-form-label">Tipo</label>
+                <FormDropdown
                   options={TIPO_OPTIONS}
                   value={formData.tipo}
                   onChange={(v) => setFormData({ ...formData, tipo: v })}
@@ -1011,9 +966,9 @@ function AdminTasks() {
                   iconContent={<HiOutlineClipboardDocumentList size={13} color="white" />}
                 />
               </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Priorità</label>
-                <CustomSelect
+              <div className="tp-form-group">
+                <label className="tp-form-label">Priorità</label>
+                <FormDropdown
                   options={PRIORITA_OPTIONS}
                   value={formData.priorita}
                   onChange={(v) => setFormData({ ...formData, priorita: v })}
@@ -1022,12 +977,12 @@ function AdminTasks() {
               </div>
             </div>
 
-            <div>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Assegnato a</label>
-              <CustomSelect
+            <div className="tp-form-group">
+              <label className="tp-form-label">Assegnato a</label>
+              <FormDropdown
                 options={[
                   { value: '', label: 'Non assegnato' },
-                  ...adminUsers.map(a => ({ value: a.id, label: `${a.nome} ${a.cognome}` }))
+                  ...adminUsers.map(a => ({ value: a.id, label: `${a.nome} ${a.cognome}`, avatar_url: a.avatar }))
                 ]}
                 value={formData.admin_id}
                 onChange={(v) => setFormData({ ...formData, admin_id: v ? parseInt(v) : '' })}
@@ -1037,75 +992,73 @@ function AdminTasks() {
               />
             </div>
 
-            <div>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Collegamento</label>
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: formData.collegamento !== 'nessuno' ? '10px' : 0 }}>
+            <div className="tp-form-group">
+              <label className="tp-form-label">Collegamento</label>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                 {['nessuno', 'lead', 'club', 'contratto'].map(opt => (
-                  <label key={opt} style={{
-                    display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', cursor: 'pointer',
-                    padding: '6px 12px', borderRadius: '8px',
-                    background: formData.collegamento === opt ? '#EEF2FF' : '#F9FAFB',
-                    border: formData.collegamento === opt ? '2px solid #6366F1' : '2px solid #E5E7EB'
-                  }}>
-                    <input type="radio" name="collegamento" value={opt} checked={formData.collegamento === opt}
-                      onChange={() => setFormData({ ...formData, collegamento: opt, lead_id: null, club_id: null, contract_id: null })}
-                      style={{ display: 'none' }}
-                    />
+                  <button
+                    key={opt}
+                    type="button"
+                    className={`tp-filter-chip${formData.collegamento === opt ? ' active' : ''}`}
+                    onClick={() => setFormData({ ...formData, collegamento: opt, lead_id: null, club_id: null, contract_id: null })}
+                  >
                     {opt.charAt(0).toUpperCase() + opt.slice(1)}
-                  </label>
+                  </button>
                 ))}
               </div>
               {formData.collegamento === 'lead' && (
-                <CustomSelect
-                  options={[
-                    { value: '', label: 'Seleziona lead...' },
-                    ...leads.map(l => ({ value: l.id, label: l.nome_club }))
-                  ]}
-                  value={formData.lead_id || ''}
-                  onChange={(v) => setFormData({ ...formData, lead_id: v ? parseInt(v) : null })}
-                  placeholder="Seleziona lead..."
-                />
+                <div style={{ marginTop: '10px' }}>
+                  <FormDropdown
+                    options={[
+                      { value: '', label: 'Seleziona lead...' },
+                      ...leads.map(l => ({ value: l.id, label: l.nome_club }))
+                    ]}
+                    value={formData.lead_id || ''}
+                    onChange={(v) => setFormData({ ...formData, lead_id: v ? parseInt(v) : null })}
+                    placeholder="Seleziona lead..."
+                  />
+                </div>
               )}
               {formData.collegamento === 'club' && (
-                <CustomSelect
-                  options={[
-                    { value: '', label: 'Seleziona club...' },
-                    ...clubs.map(c => ({ value: c.id, label: c.nome }))
-                  ]}
-                  value={formData.club_id || ''}
-                  onChange={(v) => setFormData({ ...formData, club_id: v ? parseInt(v) : null })}
-                  placeholder="Seleziona club..."
-                />
+                <div style={{ marginTop: '10px' }}>
+                  <FormDropdown
+                    options={[
+                      { value: '', label: 'Seleziona club...' },
+                      ...clubs.map(c => ({ value: c.id, label: c.nome }))
+                    ]}
+                    value={formData.club_id || ''}
+                    onChange={(v) => setFormData({ ...formData, club_id: v ? parseInt(v) : null })}
+                    placeholder="Seleziona club..."
+                  />
+                </div>
               )}
               {formData.collegamento === 'contratto' && (
-                <CustomSelect
-                  options={[
-                    { value: '', label: 'Seleziona contratto...' },
-                    ...contracts.map(c => ({ value: c.id, label: c.club_name || `Contratto #${c.id}` }))
-                  ]}
-                  value={formData.contract_id || ''}
-                  onChange={(v) => setFormData({ ...formData, contract_id: v ? parseInt(v) : null })}
-                  placeholder="Seleziona contratto..."
-                />
+                <div style={{ marginTop: '10px' }}>
+                  <FormDropdown
+                    options={[
+                      { value: '', label: 'Seleziona contratto...' },
+                      ...contracts.map(c => ({ value: c.id, label: c.club_name || `Contratto #${c.id}` }))
+                    ]}
+                    value={formData.contract_id || ''}
+                    onChange={(v) => setFormData({ ...formData, contract_id: v ? parseInt(v) : null })}
+                    placeholder="Seleziona contratto..."
+                  />
+                </div>
               )}
             </div>
 
-            <div>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Data Scadenza</label>
-              <input type="date" value={formData.data_scadenza}
+            <div className="tp-form-group">
+              <label className="tp-form-label">Data Scadenza</label>
+              <input
+                type="date"
+                className="tp-form-input"
+                value={formData.data_scadenza}
                 onChange={(e) => setFormData({ ...formData, data_scadenza: e.target.value })}
-                onFocus={(e) => e.target.style.borderColor = '#111827'}
-                onBlur={(e) => e.target.style.borderColor = '#E5E7EB'}
-                style={{
-                  width: '100%', padding: '10px 14px', border: '2px solid #E5E7EB',
-                  borderRadius: '8px', fontSize: '14px', outline: 'none', boxSizing: 'border-box',
-                  transition: 'border-color 0.2s'
-                }}
               />
             </div>
           </div>
 
-          <div style={{ padding: '16px 24px', borderTop: '1px solid #E5E7EB', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+          <div className="tp-modal-footer">
             <button className="tp-btn tp-btn-outline" onClick={() => setShowModal(false)}>Annulla</button>
             <button className="tp-btn tp-btn-primary" onClick={handleSave}>
               {editingTask ? 'Aggiorna' : 'Crea Task'}
@@ -1121,28 +1074,28 @@ function AdminTasks() {
           onClose={() => { setShowDeleteModal(false); setTaskToDelete(null); }}
           title="Elimina Task"
         >
-          <div style={{ padding: '20px' }}>
-            <p style={{ marginBottom: '20px', color: '#4B5563' }}>
+          <div style={{ padding: '24px' }}>
+            <p style={{ color: '#4B5563', marginBottom: 0 }}>
               Sei sicuro di voler eliminare il task <strong>{taskToDelete?.titolo}</strong>?
               Questa azione non può essere annullata.
             </p>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-              <button
-                className="tp-btn tp-btn-outline"
-                onClick={() => { setShowDeleteModal(false); setTaskToDelete(null); }}
-                disabled={deleting}
-              >
-                Annulla
-              </button>
-              <button
-                className="tp-btn tp-btn-primary"
-                onClick={handleConfirmDelete}
-                disabled={deleting}
-                style={{ background: '#DC2626' }}
-              >
-                {deleting ? 'Eliminazione...' : 'Elimina'}
-              </button>
-            </div>
+          </div>
+          <div className="tp-modal-footer">
+            <button
+              className="tp-btn tp-btn-outline"
+              onClick={() => { setShowDeleteModal(false); setTaskToDelete(null); }}
+              disabled={deleting}
+            >
+              Annulla
+            </button>
+            <button
+              className="tp-btn tp-btn-primary"
+              onClick={handleConfirmDelete}
+              disabled={deleting}
+              style={{ background: '#DC2626' }}
+            >
+              {deleting ? 'Eliminazione...' : 'Elimina'}
+            </button>
           </div>
         </Modal>
       )}

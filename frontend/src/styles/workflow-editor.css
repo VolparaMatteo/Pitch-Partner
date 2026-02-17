@@ -1,13 +1,18 @@
 /* ==================== Workflow Editor Styles ==================== */
-/* Prefisso: wf- | Usa variabili CSS da template-style.css */
+/* Prefisso: wf- | Light theme coerente con design system tp-* */
 
+/* ============================================
+   EDITOR LAYOUT
+   ============================================ */
 .wf-editor {
   max-width: 900px;
   margin: 0 auto;
   padding: 0 20px;
 }
 
-/* Header */
+/* ============================================
+   HEADER
+   ============================================ */
 .wf-editor-header {
   display: flex;
   justify-content: space-between;
@@ -23,29 +28,30 @@
 }
 
 .wf-editor-header-left input {
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.08);
-  color: #E5E7EB;
+  background: var(--tp-white);
+  border: 1px solid var(--tp-gray-200);
+  color: var(--tp-dark);
   font-size: 22px;
   font-weight: 700;
   padding: 8px 12px;
-  border-radius: 8px;
+  border-radius: var(--tp-radius);
   width: 100%;
   margin-bottom: 8px;
 }
 
 .wf-editor-header-left input:focus {
   outline: none;
-  border-color: rgba(99,102,241,0.5);
+  border-color: var(--tp-dark);
+  box-shadow: 0 0 0 3px rgba(17,24,39,0.08);
 }
 
 .wf-editor-header-left textarea {
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.08);
-  color: #9CA3AF;
+  background: var(--tp-white);
+  border: 1px solid var(--tp-gray-200);
+  color: var(--tp-gray-500);
   font-size: 14px;
   padding: 8px 12px;
-  border-radius: 8px;
+  border-radius: var(--tp-radius);
   width: 100%;
   resize: vertical;
   min-height: 40px;
@@ -53,7 +59,8 @@
 
 .wf-editor-header-left textarea:focus {
   outline: none;
-  border-color: rgba(99,102,241,0.5);
+  border-color: var(--tp-dark);
+  box-shadow: 0 0 0 3px rgba(17,24,39,0.08);
 }
 
 .wf-editor-actions {
@@ -63,7 +70,9 @@
   flex-wrap: wrap;
 }
 
-/* Type selector row */
+/* ============================================
+   TYPE TOGGLE (Workflow / Sequenza)
+   ============================================ */
 .wf-type-row {
   display: flex;
   gap: 12px;
@@ -73,22 +82,38 @@
 
 .wf-type-btn {
   padding: 8px 16px;
-  border-radius: 8px;
-  border: 1px solid rgba(255,255,255,0.08);
-  background: rgba(255,255,255,0.03);
-  color: #9CA3AF;
+  border-radius: var(--tp-radius);
+  border: 1px solid var(--tp-gray-200);
+  background: var(--tp-white);
+  color: var(--tp-gray-500);
   cursor: pointer;
   font-size: 13px;
+  font-weight: 500;
   transition: all 0.2s;
 }
 
-.wf-type-btn.active {
-  border-color: rgba(99,102,241,0.5);
-  background: rgba(99,102,241,0.1);
-  color: #A5B4FC;
+.wf-type-btn:hover {
+  border-color: var(--tp-gray-300);
+  color: var(--tp-dark);
 }
 
-/* Flow container */
+.wf-type-btn.active {
+  border-color: var(--tp-dark);
+  background: var(--tp-dark);
+  color: var(--tp-white);
+}
+
+/* ============================================
+   CANVAS / FLOW CONTAINER
+   ============================================ */
+.wf-canvas {
+  background: var(--tp-white);
+  border: 1px solid var(--tp-gray-200);
+  border-radius: var(--tp-radius-lg);
+  box-shadow: var(--tp-shadow);
+  padding: 32px 24px;
+}
+
 .wf-flow {
   display: flex;
   flex-direction: column;
@@ -97,11 +122,21 @@
   padding: 20px 0;
 }
 
-/* Connector line */
+/* ============================================
+   SVG CONNECTORS
+   ============================================ */
+.wf-connector-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+}
+
+/* Legacy div connector (fallback) */
 .wf-connector {
   width: 2px;
   height: 32px;
-  background: rgba(255,255,255,0.1);
+  background: var(--tp-gray-300);
   position: relative;
 }
 
@@ -110,27 +145,32 @@
   position: absolute;
   bottom: -4px;
   left: -3px;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.15);
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 6px solid var(--tp-gray-300);
 }
 
-/* Trigger Card */
+/* ============================================
+   TRIGGER NODE
+   ============================================ */
+.wf-trigger-node,
 .wf-trigger-card {
   width: 100%;
   max-width: 500px;
   padding: 20px;
-  border-radius: 12px;
-  border: 2px solid rgba(245,158,11,0.3);
-  background: rgba(245,158,11,0.05);
+  border-radius: var(--tp-radius-lg);
+  border: 2px solid #F59E0B;
+  background: #FFFBEB;
   cursor: pointer;
   transition: all 0.2s;
 }
 
+.wf-trigger-node:hover,
 .wf-trigger-card:hover {
-  border-color: rgba(245,158,11,0.5);
-  background: rgba(245,158,11,0.08);
+  border-color: #D97706;
+  box-shadow: 0 4px 12px rgba(245,158,11,0.15);
 }
 
 .wf-trigger-card-header {
@@ -143,9 +183,9 @@
 .wf-trigger-card-header .wf-trigger-icon {
   width: 36px;
   height: 36px;
-  border-radius: 8px;
+  border-radius: var(--tp-radius);
   background: rgba(245,158,11,0.15);
-  color: #F59E0B;
+  color: #D97706;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -154,38 +194,60 @@
 .wf-trigger-card-header h3 {
   font-size: 15px;
   font-weight: 600;
-  color: #E5E7EB;
+  color: var(--tp-dark);
   margin: 0;
 }
 
-.wf-trigger-card p {
+.wf-trigger-card p,
+.wf-trigger-node p {
   font-size: 13px;
-  color: #9CA3AF;
+  color: var(--tp-gray-500);
   margin: 0;
   padding-left: 46px;
 }
 
-/* Step Card */
+/* ============================================
+   STEP NODE
+   ============================================ */
+.wf-step-node,
 .wf-step-card {
   width: 100%;
   max-width: 500px;
   padding: 16px 20px;
-  border-radius: 12px;
-  border: 1px solid rgba(255,255,255,0.08);
-  background: rgba(255,255,255,0.03);
+  border-radius: var(--tp-radius-lg);
+  border: 1px solid var(--tp-gray-200);
+  border-left: 4px solid var(--tp-gray-300);
+  background: var(--tp-white);
   cursor: pointer;
   transition: all 0.2s;
   position: relative;
+  box-shadow: var(--tp-shadow-sm);
 }
 
+.wf-step-node:hover,
 .wf-step-card:hover {
-  border-color: rgba(255,255,255,0.15);
-  background: rgba(255,255,255,0.05);
+  border-color: var(--tp-gray-300);
+  box-shadow: var(--tp-shadow-md);
 }
 
 .wf-step-card.dragging {
   opacity: 0.5;
   border-style: dashed;
+}
+
+/* Step number badge */
+.wf-step-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--tp-dark);
+  color: var(--tp-white);
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
 }
 
 .wf-step-card-header {
@@ -198,7 +260,7 @@
 .wf-step-icon {
   width: 32px;
   height: 32px;
-  border-radius: 8px;
+  border-radius: var(--tp-radius);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -209,18 +271,19 @@
 .wf-step-card-header h4 {
   font-size: 14px;
   font-weight: 600;
-  color: #E5E7EB;
+  color: var(--tp-dark);
   margin: 0;
   flex: 1;
 }
 
 .wf-step-summary {
   font-size: 12px;
-  color: #9CA3AF;
+  color: var(--tp-gray-500);
   margin: 0;
   padding-left: 42px;
 }
 
+/* Step action buttons (edit/delete on hover) */
 .wf-step-actions {
   position: absolute;
   top: 12px;
@@ -231,17 +294,18 @@
   transition: opacity 0.2s;
 }
 
-.wf-step-card:hover .wf-step-actions {
+.wf-step-card:hover .wf-step-actions,
+.wf-step-node:hover .wf-step-actions {
   opacity: 1;
 }
 
 .wf-step-action-btn {
   width: 28px;
   height: 28px;
-  border: none;
-  background: rgba(255,255,255,0.06);
-  color: #9CA3AF;
-  border-radius: 6px;
+  border: 1px solid var(--tp-gray-200);
+  background: var(--tp-white);
+  color: var(--tp-gray-500);
+  border-radius: var(--tp-radius-sm);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -250,23 +314,28 @@
 }
 
 .wf-step-action-btn:hover {
-  background: rgba(255,255,255,0.1);
-  color: #E5E7EB;
+  background: var(--tp-gray-100);
+  color: var(--tp-dark);
+  border-color: var(--tp-gray-300);
 }
 
 .wf-step-action-btn.delete:hover {
-  background: rgba(220,38,38,0.15);
-  color: #F87171;
+  background: var(--tp-danger-50);
+  color: var(--tp-danger-500);
+  border-color: var(--tp-danger-500);
 }
 
-/* Add Step Button */
+/* ============================================
+   ADD STEP BUTTON (inline between nodes)
+   ============================================ */
+.wf-add-step-inline,
 .wf-add-step-btn {
-  width: 40px;
-  height: 40px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
-  border: 2px dashed rgba(255,255,255,0.12);
-  background: transparent;
-  color: #6B7280;
+  border: 2px dashed var(--tp-gray-300);
+  background: var(--tp-white);
+  color: var(--tp-gray-400);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -274,13 +343,17 @@
   transition: all 0.2s;
 }
 
+.wf-add-step-inline:hover,
 .wf-add-step-btn:hover {
-  border-color: rgba(99,102,241,0.4);
-  color: #A5B4FC;
-  background: rgba(99,102,241,0.05);
+  border-color: var(--tp-success-600);
+  color: var(--tp-success-600);
+  background: var(--tp-success-50);
 }
 
-/* Step Type Selector */
+/* ============================================
+   ACTION TYPE GRID (step type selector)
+   ============================================ */
+.wf-action-grid,
 .wf-step-type-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -288,42 +361,313 @@
   padding: 16px;
 }
 
+.wf-action-option,
 .wf-step-type-option {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 8px;
   padding: 16px 12px;
-  border-radius: 10px;
-  border: 1px solid rgba(255,255,255,0.06);
-  background: rgba(255,255,255,0.02);
+  border-radius: var(--tp-radius-md);
+  border: 1px solid var(--tp-gray-200);
+  background: var(--tp-white);
   cursor: pointer;
   transition: all 0.2s;
   text-align: center;
 }
 
+.wf-action-option:hover,
 .wf-step-type-option:hover {
-  border-color: rgba(255,255,255,0.15);
-  background: rgba(255,255,255,0.05);
+  border-color: var(--tp-gray-300);
+  background: var(--tp-gray-50);
+  box-shadow: var(--tp-shadow);
 }
 
+.wf-action-option .wf-step-type-icon,
 .wf-step-type-option .wf-step-type-icon {
   width: 40px;
   height: 40px;
-  border-radius: 10px;
+  border-radius: var(--tp-radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 20px;
 }
 
+.wf-action-option span,
 .wf-step-type-option span {
   font-size: 12px;
-  color: #D1D5DB;
+  color: var(--tp-dark);
   font-weight: 500;
 }
 
-/* Condition Branches */
+/* ============================================
+   SIDE PANEL (step config + log)
+   ============================================ */
+.wf-side-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 440px;
+  height: 100vh;
+  background: var(--tp-white);
+  border-left: 1px solid var(--tp-gray-200);
+  z-index: 900;
+  transform: translateX(100%);
+  transition: transform 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  box-shadow: -4px 0 12px rgba(0,0,0,0.08);
+}
+
+.wf-side-panel.open {
+  transform: translateX(0);
+}
+
+.wf-side-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--tp-gray-200);
+  flex-shrink: 0;
+}
+
+.wf-side-panel-header h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--tp-dark);
+  margin: 0;
+}
+
+.wf-side-panel-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+}
+
+.wf-side-panel-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--tp-gray-200);
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  flex-shrink: 0;
+}
+
+/* ============================================
+   VARIABLES HINT BOX
+   ============================================ */
+.wf-variables-hint {
+  font-size: 12px;
+  color: var(--tp-gray-500);
+  margin-top: 8px;
+  padding: 10px 12px;
+  background: var(--tp-gray-50);
+  border: 1px solid var(--tp-gray-200);
+  border-radius: var(--tp-radius-sm);
+  line-height: 1.5;
+}
+
+.wf-variables-hint code {
+  background: var(--tp-gray-100);
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-size: 11px;
+  color: var(--tp-dark);
+}
+
+/* ============================================
+   LOG PANEL
+   ============================================ */
+.wf-log-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 420px;
+  height: 100vh;
+  background: var(--tp-white);
+  border-left: 1px solid var(--tp-gray-200);
+  z-index: 900;
+  transform: translateX(100%);
+  transition: transform 0.3s ease;
+  overflow-y: auto;
+  padding: 24px;
+  box-shadow: -4px 0 12px rgba(0,0,0,0.08);
+}
+
+.wf-log-panel.open {
+  transform: translateX(0);
+}
+
+.wf-log-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.wf-log-panel-header h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--tp-dark);
+  margin: 0;
+}
+
+.wf-log-item {
+  padding: 12px;
+  border-radius: var(--tp-radius);
+  border: 1px solid var(--tp-gray-200);
+  background: var(--tp-white);
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.wf-log-item:hover {
+  background: var(--tp-gray-50);
+  border-color: var(--tp-gray-300);
+}
+
+.wf-log-item .wf-log-status {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 8px;
+}
+
+.wf-log-item .wf-log-status.completed { background: #059669; }
+.wf-log-item .wf-log-status.failed { background: #DC2626; }
+.wf-log-item .wf-log-status.running { background: #F59E0B; }
+.wf-log-item .wf-log-status.partial { background: #F59E0B; }
+
+/* ============================================
+   MODAL (light theme - tp-modal compatible)
+   ============================================ */
+.wf-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+
+.wf-modal {
+  background: var(--tp-white);
+  border: 1px solid var(--tp-gray-200);
+  border-radius: var(--tp-radius-xl);
+  padding: 24px;
+  max-width: 600px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: var(--tp-shadow-lg);
+}
+
+.wf-modal h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--tp-dark);
+  margin: 0 0 16px;
+}
+
+.wf-modal-footer {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--tp-gray-200);
+}
+
+/* ============================================
+   FORM FIELDS (within modal/side panel)
+   ============================================ */
+.wf-field {
+  margin-bottom: 16px;
+}
+
+.wf-field label {
+  display: block;
+  font-size: 13px;
+  color: var(--tp-gray-500);
+  margin-bottom: 6px;
+  font-weight: 500;
+}
+
+.wf-field input,
+.wf-field select,
+.wf-field textarea {
+  width: 100%;
+  padding: 10px 12px;
+  background: var(--tp-white);
+  border: 1px solid var(--tp-gray-200);
+  border-radius: var(--tp-radius);
+  color: var(--tp-dark);
+  font-size: 14px;
+}
+
+.wf-field input:focus,
+.wf-field select:focus,
+.wf-field textarea:focus {
+  outline: none;
+  border-color: var(--tp-dark);
+  box-shadow: 0 0 0 3px rgba(17,24,39,0.08);
+}
+
+.wf-field input:hover,
+.wf-field select:hover,
+.wf-field textarea:hover {
+  border-color: var(--tp-gray-300);
+}
+
+.wf-field textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+/* ============================================
+   SEQUENCE SETTINGS
+   ============================================ */
+.wf-sequence-settings {
+  background: var(--tp-info-50);
+  border: 1px solid rgba(59,130,246,0.2);
+  border-radius: var(--tp-radius-lg);
+  padding: 16px 20px;
+  margin-bottom: 20px;
+}
+
+.wf-sequence-settings h4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--tp-info-600);
+  margin: 0 0 12px;
+}
+
+.wf-sequence-settings label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--tp-dark);
+  margin-bottom: 8px;
+  cursor: pointer;
+}
+
+.wf-sequence-settings input[type="checkbox"] {
+  accent-color: #3B82F6;
+}
+
+/* ============================================
+   CONDITION BRANCHES
+   ============================================ */
 .wf-condition-branches {
   display: flex;
   gap: 24px;
@@ -344,11 +688,11 @@
 }
 
 .wf-branch.true-branch {
-  border-color: rgba(5,150,105,0.4);
+  border-color: #059669;
 }
 
 .wf-branch.false-branch {
-  border-color: rgba(220,38,38,0.4);
+  border-color: #DC2626;
 }
 
 .wf-branch-label {
@@ -360,187 +704,62 @@
 }
 
 .wf-branch.true-branch .wf-branch-label {
-  background: rgba(5,150,105,0.15);
-  color: #34D399;
+  background: rgba(5,150,105,0.1);
+  color: #059669;
 }
 
 .wf-branch.false-branch .wf-branch-label {
-  background: rgba(220,38,38,0.15);
-  color: #F87171;
+  background: rgba(220,38,38,0.1);
+  color: #DC2626;
 }
 
-/* Modal */
-.wf-modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0,0,0,0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  backdrop-filter: blur(4px);
+/* ============================================
+   WORKFLOW LIST CARD
+   ============================================ */
+.wf-list-card {
+  padding: 20px;
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
-.wf-modal {
-  background: #1F2937;
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 16px;
-  padding: 24px;
-  max-width: 600px;
-  width: 90%;
-  max-height: 80vh;
-  overflow-y: auto;
+.wf-list-card:hover {
+  border-color: var(--tp-gray-300);
+  box-shadow: var(--tp-shadow-md);
 }
 
-.wf-modal h3 {
-  font-size: 18px;
-  font-weight: 600;
-  color: #E5E7EB;
-  margin: 0 0 16px;
-}
-
-.wf-modal-footer {
-  display: flex;
-  gap: 10px;
-  justify-content: flex-end;
-  margin-top: 20px;
-  padding-top: 16px;
-  border-top: 1px solid rgba(255,255,255,0.06);
-}
-
-/* Form fields in modal */
-.wf-field {
-  margin-bottom: 16px;
-}
-
-.wf-field label {
-  display: block;
+/* ============================================
+   STATUS TOGGLE
+   ============================================ */
+.wf-status-btn {
+  padding: 6px 14px;
+  border-radius: var(--tp-radius);
   font-size: 13px;
-  color: #9CA3AF;
-  margin-bottom: 6px;
   font-weight: 500;
-}
-
-.wf-field input,
-.wf-field select,
-.wf-field textarea {
-  width: 100%;
-  padding: 10px 12px;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 8px;
-  color: #E5E7EB;
-  font-size: 14px;
-}
-
-.wf-field input:focus,
-.wf-field select:focus,
-.wf-field textarea:focus {
-  outline: none;
-  border-color: rgba(99,102,241,0.5);
-}
-
-.wf-field textarea {
-  min-height: 80px;
-  resize: vertical;
-}
-
-/* Execution Log Panel */
-.wf-log-panel {
-  position: fixed;
-  top: 0;
-  right: 0;
-  width: 420px;
-  height: 100vh;
-  background: #1F2937;
-  border-left: 1px solid rgba(255,255,255,0.08);
-  z-index: 900;
-  transform: translateX(100%);
-  transition: transform 0.3s ease;
-  overflow-y: auto;
-  padding: 24px;
-}
-
-.wf-log-panel.open {
-  transform: translateX(0);
-}
-
-.wf-log-panel-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.wf-log-panel-header h3 {
-  font-size: 16px;
-  font-weight: 600;
-  color: #E5E7EB;
-  margin: 0;
-}
-
-.wf-log-item {
-  padding: 12px;
-  border-radius: 8px;
-  border: 1px solid rgba(255,255,255,0.06);
-  background: rgba(255,255,255,0.02);
-  margin-bottom: 8px;
+  border: 1px solid;
   cursor: pointer;
-  transition: background 0.15s;
-}
-
-.wf-log-item:hover {
-  background: rgba(255,255,255,0.04);
-}
-
-.wf-log-item .wf-log-status {
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  margin-right: 8px;
-}
-
-.wf-log-item .wf-log-status.completed { background: #059669; }
-.wf-log-item .wf-log-status.failed { background: #DC2626; }
-.wf-log-item .wf-log-status.running { background: #F59E0B; }
-.wf-log-item .wf-log-status.partial { background: #F59E0B; }
-
-/* Sequence Settings */
-.wf-sequence-settings {
-  background: rgba(59,130,246,0.05);
-  border: 1px solid rgba(59,130,246,0.15);
-  border-radius: 12px;
-  padding: 16px 20px;
-  margin-bottom: 20px;
-}
-
-.wf-sequence-settings h4 {
-  font-size: 14px;
-  font-weight: 600;
-  color: #93C5FD;
-  margin: 0 0 12px;
-}
-
-.wf-sequence-settings label {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  color: #D1D5DB;
-  margin-bottom: 8px;
-  cursor: pointer;
+  gap: 6px;
+  transition: all 0.2s;
 }
 
-.wf-sequence-settings input[type="checkbox"] {
-  accent-color: #3B82F6;
+.wf-status-btn.active {
+  background: var(--tp-success-50);
+  color: var(--tp-success-700);
+  border-color: var(--tp-success-200);
 }
 
-/* Responsive */
+.wf-status-btn.inactive {
+  background: var(--tp-gray-50);
+  color: var(--tp-gray-500);
+  border-color: var(--tp-gray-200);
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
 @media (max-width: 768px) {
+  .wf-action-grid,
   .wf-step-type-grid {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -550,11 +769,16 @@
     gap: 16px;
   }
 
-  .wf-log-panel {
+  .wf-log-panel,
+  .wf-side-panel {
     width: 100%;
   }
 
   .wf-editor-header {
     flex-direction: column;
+  }
+
+  .wf-canvas {
+    padding: 20px 12px;
   }
 }

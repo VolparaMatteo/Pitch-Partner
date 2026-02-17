@@ -2054,6 +2054,67 @@
   color: var(--tp-black);
 }
 
+/* Task kanban card sub-elements */
+.tp-kanban-card-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0;
+}
+
+.tp-kanban-card-meta {
+  font-size: 11px;
+  color: var(--tp-gray-500);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.tp-kanban-card-meta-link {
+  font-size: 12px;
+  color: #6366F1;
+  cursor: pointer;
+  margin-bottom: 6px;
+}
+
+.tp-kanban-card-meta-link:hover {
+  text-decoration: underline;
+}
+
+.tp-kanban-card-meta.overdue {
+  color: var(--tp-danger-500);
+  font-weight: 600;
+}
+
+.tp-kanban-card-actions {
+  display: flex;
+  gap: 4px;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--tp-gray-100);
+  justify-content: flex-end;
+}
+
+.tp-btn-icon-sm {
+  width: 28px;
+  height: 28px;
+}
+
+.tp-btn-icon-sm svg {
+  width: 11px;
+  height: 11px;
+}
+
+.tp-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 16px 24px;
+  border-top: 1px solid var(--tp-gray-200);
+  gap: 10px;
+}
+
 /* Kanban Empty State */
 .tp-kanban-empty {
   display: flex;

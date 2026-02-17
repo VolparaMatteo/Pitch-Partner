@@ -201,6 +201,12 @@ website/out/
 website/node_modules/
 
 # ===================
+# WhatsApp Service
+# ===================
+whatsapp-service/.wwebjs_auth/
+whatsapp-service/.wwebjs_cache/
+
+# ===================
 # Logs
 # ===================
 *.log

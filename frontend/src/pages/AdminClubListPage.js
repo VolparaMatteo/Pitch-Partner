@@ -468,8 +468,10 @@ function AdminClubListPage() {
                     {paginatedClubs.length === 0 ? (
                       <tr>
                         <td colSpan="6" style={{ textAlign: 'center', padding: '40px', color: '#6B7280' }}>
-                          <FaInbox size={32} style={{ marginBottom: '12px', opacity: 0.5 }} />
-                          <p>Nessun club trovato</p>
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                            <FaInbox size={32} style={{ marginBottom: '12px', opacity: 0.5 }} />
+                            <p>Nessun club trovato</p>
+                          </div>
                         </td>
                       </tr>
                     ) : (
@@ -624,7 +626,7 @@ function AdminClubListPage() {
               padding: '20px 0'
             }}>
               {paginatedClubs.length === 0 ? (
-                <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '60px', color: '#6B7280' }}>
+                <div style={{ gridColumn: '1 / -1', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px', color: '#6B7280' }}>
                   <FaInbox size={48} style={{ marginBottom: '16px', opacity: 0.5 }} />
                   <p>Nessun club trovato</p>
                 </div>

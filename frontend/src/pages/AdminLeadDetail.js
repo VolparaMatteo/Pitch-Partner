@@ -15,7 +15,7 @@ import {
 } from 'react-icons/fa';
 import ConversationTab from '../components/ConversationTab';
 import UnifiedTimeline from '../components/UnifiedTimeline';
-import { adminEmailAPI } from '../services/api';
+import { adminEmailAPI, adminWhatsAppAPI } from '../services/api';
 import '../styles/sponsor-detail.css';
 import '../styles/template-style.css';
 
@@ -71,6 +71,8 @@ function AdminLeadDetail() {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [activeTab, setActiveTab] = useState('timeline');
   const [timelineEmails, setTimelineEmails] = useState([]);
+  const [whatsappMessages, setWhatsappMessages] = useState([]);
+  const [whatsappConnected, setWhatsappConnected] = useState(false);
 
   // Activity Modal
   const [showActivityModal, setShowActivityModal] = useState(false);
@@ -112,11 +114,31 @@ function AdminLeadDetail() {
           setTimelineEmails(emailRes.data?.messages || []);
         }).catch(() => {});
       }
+
+      // Fetch WhatsApp messages (non-blocking)
+      if (res.data?.contatto_telefono) {
+        adminWhatsAppAPI.getStatus().then(statusRes => {
+          setWhatsappConnected(statusRes.data.connected);
+          if (statusRes.data.connected) {
+            adminWhatsAppAPI.getMessagesByPhone(res.data.contatto_telefono).then(waRes => {
+              setWhatsappMessages(waRes.data.messages || []);
+            }).catch(() => {});
+          }
+        }).catch(() => {});
+      }
     } catch (error) {
       console.error('Errore caricamento lead:', error);
       setToast({ message: 'Errore nel caricamento del lead', type: 'error' });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchWhatsApp = () => {
+    if (lead?.contatto_telefono) {
+      adminWhatsAppAPI.getMessagesByPhone(lead.contatto_telefono).then(waRes => {
+        setWhatsappMessages(waRes.data.messages || []);
+      }).catch(() => {});
     }
   };
 
@@ -555,6 +577,7 @@ function AdminLeadDetail() {
                 <UnifiedTimeline
                   activities={activities}
                   emails={timelineEmails}
+                  whatsappMessages={whatsappMessages}
                 />
               </div>
             )}
@@ -753,7 +776,14 @@ function AdminLeadDetail() {
             {/* CONVERSATIONS TAB */}
             {activeTab === 'conversations' && (
               <div className="sd-tab-grid">
-                <ConversationTab contactEmail={lead.contatto_email} contactName={lead.contatto_nome ? `${lead.contatto_nome} (${lead.nome_club || ''})` : lead.nome_club} />
+                <ConversationTab
+                  contactEmail={lead.contatto_email}
+                  contactName={lead.contatto_nome ? `${lead.contatto_nome} (${lead.nome_club || ''})` : lead.nome_club}
+                  contactPhone={lead.contatto_telefono}
+                  whatsappMessages={whatsappMessages}
+                  whatsappConnected={whatsappConnected}
+                  onRefreshWhatsApp={fetchWhatsApp}
+                />
               </div>
             )}
           </div>

@@ -1,5 +1,6 @@
 import os
 import json
+import uuid
 from datetime import datetime, timedelta
 
 try:
@@ -88,7 +89,9 @@ class GoogleCalendarService:
     def is_connected(self, admin):
         return bool(admin.google_refresh_token) and self.is_configured
 
-    def create_event(self, admin, event_data):
+    def create_event(self, admin, event_data, genera_meet=False):
+        """Crea evento su Google Calendar. Se genera_meet=True, aggiunge Google Meet.
+        Ritorna dict con 'google_event_id' e 'meet_link' (None se non richiesto)."""
         service = self._get_service(admin)
         if not service:
             return None
@@ -109,8 +112,36 @@ class GoogleCalendarService:
                 body['start'] = {'date': event_data['data_inizio'][:10]}
                 body['end'] = {'date': event_data['data_fine'][:10]}
 
-            result = service.events().insert(calendarId='primary', body=body).execute()
-            return result.get('id')
+            if genera_meet:
+                body['conferenceData'] = {
+                    'createRequest': {
+                        'requestId': str(uuid.uuid4()),
+                        'conferenceSolutionKey': {
+                            'type': 'hangoutsMeet'
+                        }
+                    }
+                }
+
+            result = service.events().insert(
+                calendarId='primary',
+                body=body,
+                conferenceDataVersion=1 if genera_meet else 0
+            ).execute()
+
+            meet_link = None
+            if genera_meet:
+                meet_link = result.get('hangoutLink')
+                if not meet_link:
+                    entry_points = result.get('conferenceData', {}).get('entryPoints', [])
+                    for ep in entry_points:
+                        if ep.get('entryPointType') == 'video':
+                            meet_link = ep.get('uri')
+                            break
+
+            return {
+                'google_event_id': result.get('id'),
+                'meet_link': meet_link
+            }
         except Exception as e:
             print(f"Google create event error: {e}")
             return None

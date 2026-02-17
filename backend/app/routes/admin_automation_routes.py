@@ -119,6 +119,70 @@ TRIGGER_TYPES = [
         'config_fields': []
     },
     {
+        'value': 'task_created',
+        'label': 'Task Creato',
+        'description': 'Quando viene creato un task admin',
+        'config_fields': [
+            {'name': 'tipo', 'type': 'select', 'label': 'Tipo task (opzionale)',
+             'options': ['generale', 'lead_followup', 'club_onboarding', 'rinnovo_contratto', 'fattura', 'supporto']},
+        ]
+    },
+    {
+        'value': 'task_completed',
+        'label': 'Task Completato',
+        'description': 'Quando un task viene completato',
+        'config_fields': [
+            {'name': 'tipo', 'type': 'select', 'label': 'Tipo task (opzionale)',
+             'options': ['generale', 'lead_followup', 'club_onboarding', 'rinnovo_contratto', 'fattura', 'supporto']},
+        ]
+    },
+    {
+        'value': 'invoice_created',
+        'label': 'Fattura Creata',
+        'description': 'Quando viene creata una fattura',
+        'config_fields': []
+    },
+    {
+        'value': 'invoice_paid',
+        'label': 'Fattura Pagata',
+        'description': 'Quando una fattura viene pagata',
+        'config_fields': []
+    },
+    {
+        'value': 'contract_status_changed',
+        'label': 'Stato Contratto Cambiato',
+        'description': 'Quando cambia lo status di un contratto',
+        'config_fields': [
+            {'name': 'from_status', 'type': 'select', 'label': 'Da stato',
+             'options': ['draft', 'active', 'expired', 'cancelled']},
+            {'name': 'to_status', 'type': 'select', 'label': 'A stato',
+             'options': ['draft', 'active', 'expired', 'cancelled']},
+        ]
+    },
+    {
+        'value': 'booking_confirmed',
+        'label': 'Demo Confermata',
+        'description': 'Quando una demo viene confermata',
+        'config_fields': []
+    },
+    {
+        'value': 'calendar_event_created',
+        'label': 'Evento Calendario Creato',
+        'description': 'Quando viene creato un evento calendario',
+        'config_fields': [
+            {'name': 'tipo', 'type': 'select', 'label': 'Tipo evento (opzionale)',
+             'options': ['appuntamento', 'call', 'demo', 'riunione', 'scadenza', 'altro']},
+        ]
+    },
+    {
+        'value': 'lead_score_changed',
+        'label': 'Score Lead Cambiato',
+        'description': 'Quando il punteggio di un lead cambia',
+        'config_fields': [
+            {'name': 'threshold', 'type': 'number', 'label': 'Soglia minima score'},
+        ]
+    },
+    {
         'value': 'scheduled',
         'label': 'Schedulato',
         'description': 'Esecuzione periodica (cron/intervallo)',
@@ -230,19 +294,168 @@ ACTION_TYPES = [
             {'name': 'body', 'type': 'textarea', 'label': 'Body JSON (template supportato)'},
         ]
     },
+    {
+        'value': 'update_contract_status',
+        'label': 'Aggiorna Stato Contratto',
+        'icon': 'document-check',
+        'color': '#059669',
+        'description': 'Cambia lo stato di un contratto',
+        'config_fields': [
+            {'name': 'new_status', 'type': 'select', 'label': 'Nuovo stato',
+             'options': ['draft', 'active', 'expired', 'cancelled']},
+        ]
+    },
+    {
+        'value': 'update_task_status',
+        'label': 'Aggiorna Stato Task',
+        'icon': 'clipboard-check',
+        'color': '#8B5CF6',
+        'description': 'Cambia lo stato di un task admin',
+        'config_fields': [
+            {'name': 'new_status', 'type': 'select', 'label': 'Nuovo stato',
+             'options': ['da_fare', 'in_corso', 'completato']},
+        ]
+    },
+    {
+        'value': 'create_calendar_event',
+        'label': 'Crea Evento Calendario',
+        'icon': 'calendar',
+        'color': '#3B82F6',
+        'description': 'Crea un evento nel calendario admin',
+        'config_fields': [
+            {'name': 'titolo', 'type': 'text', 'label': 'Titolo'},
+            {'name': 'descrizione', 'type': 'textarea', 'label': 'Descrizione'},
+            {'name': 'tipo', 'type': 'select', 'label': 'Tipo',
+             'options': ['appuntamento', 'call', 'demo', 'riunione', 'scadenza', 'altro']},
+            {'name': 'days_offset', 'type': 'number', 'label': 'Giorni da oggi (offset)', 'default': 0},
+            {'name': 'durata_ore', 'type': 'number', 'label': 'Durata (ore)', 'default': 1},
+        ]
+    },
+    {
+        'value': 'log_lead_activity',
+        'label': 'Registra Attivita Lead',
+        'icon': 'pencil-square',
+        'color': '#6366F1',
+        'description': 'Aggiunge un\'attivita al log del lead',
+        'config_fields': [
+            {'name': 'tipo', 'type': 'select', 'label': 'Tipo attivita',
+             'options': ['nota', 'chiamata', 'email', 'incontro', 'stage_change', 'altro']},
+            {'name': 'titolo', 'type': 'text', 'label': 'Titolo'},
+            {'name': 'descrizione', 'type': 'textarea', 'label': 'Descrizione'},
+        ]
+    },
+    {
+        'value': 'update_lead_field',
+        'label': 'Aggiorna Campo Lead',
+        'icon': 'pencil',
+        'color': '#EA580C',
+        'description': 'Aggiorna un campo specifico del lead',
+        'config_fields': [
+            {'name': 'field_name', 'type': 'select', 'label': 'Campo',
+             'options': ['valore_stimato', 'probabilita', 'fonte', 'temperatura',
+                        'prossima_azione', 'data_prossimo_contatto', 'tags', 'note', 'priorita']},
+            {'name': 'value', 'type': 'text', 'label': 'Nuovo valore'},
+        ]
+    },
+    {
+        'value': 'enroll_in_sequence',
+        'label': 'Iscrivi a Sequenza',
+        'icon': 'arrow-path',
+        'color': '#7C3AED',
+        'description': 'Iscrive il lead a una sequenza email',
+        'config_fields': [
+            {'name': 'workflow_id', 'type': 'number', 'label': 'ID Sequenza'},
+        ]
+    },
+    {
+        'value': 'remove_from_sequence',
+        'label': 'Rimuovi da Sequenza',
+        'icon': 'x-circle',
+        'color': '#DC2626',
+        'description': 'Rimuove il lead da una sequenza email',
+        'config_fields': [
+            {'name': 'workflow_id', 'type': 'number', 'label': 'ID Sequenza'},
+        ]
+    },
+    {
+        'value': 'send_whatsapp',
+        'label': 'Invia WhatsApp',
+        'icon': 'chat-bubble',
+        'color': '#25D366',
+        'description': 'Invia messaggio WhatsApp',
+        'config_fields': [
+            {'name': 'to', 'type': 'text', 'label': 'Numero destinatario (o {{lead.contatto_telefono}})'},
+            {'name': 'messaggio', 'type': 'textarea', 'label': 'Messaggio'},
+        ]
+    },
 ]
+
+
+CONDITION_FIELDS = {
+    'lead': [
+        {'value': 'lead.stage', 'label': 'Stage', 'type': 'select',
+         'options': ['nuovo', 'contattato', 'qualificato', 'demo', 'proposta', 'negoziazione', 'vinto', 'perso']},
+        {'value': 'lead.temperatura', 'label': 'Temperatura', 'type': 'select',
+         'options': ['cold', 'warm', 'hot']},
+        {'value': 'lead.valore_stimato', 'label': 'Valore Stimato', 'type': 'number'},
+        {'value': 'lead.probabilita', 'label': 'Probabilita', 'type': 'number'},
+        {'value': 'lead.tipologia_sport', 'label': 'Sport', 'type': 'text'},
+        {'value': 'lead.fonte', 'label': 'Fonte', 'type': 'select',
+         'options': ['direct', 'referral', 'website', 'event', 'partner', 'cold_outreach']},
+        {'value': 'lead.citta', 'label': 'Citta', 'type': 'text'},
+        {'value': 'lead.regione', 'label': 'Regione', 'type': 'text'},
+        {'value': 'lead.score', 'label': 'Score', 'type': 'number'},
+        {'value': 'lead.nome_club', 'label': 'Nome Club', 'type': 'text'},
+    ],
+    'contract': [
+        {'value': 'contract.status', 'label': 'Stato', 'type': 'select',
+         'options': ['draft', 'active', 'expired', 'cancelled']},
+        {'value': 'contract.plan_type', 'label': 'Piano', 'type': 'select',
+         'options': ['basic', 'premium', 'elite']},
+        {'value': 'contract.total_value', 'label': 'Valore Totale', 'type': 'number'},
+    ],
+    'invoice': [
+        {'value': 'invoice.status', 'label': 'Stato', 'type': 'select',
+         'options': ['draft', 'pending', 'paid', 'overdue', 'cancelled']},
+        {'value': 'invoice.amount', 'label': 'Importo Netto', 'type': 'number'},
+        {'value': 'invoice.total_amount', 'label': 'Importo Totale', 'type': 'number'},
+    ],
+    'task': [
+        {'value': 'task.tipo', 'label': 'Tipo', 'type': 'select',
+         'options': ['generale', 'lead_followup', 'club_onboarding', 'rinnovo_contratto', 'fattura', 'supporto']},
+        {'value': 'task.priorita', 'label': 'Priorita', 'type': 'select',
+         'options': ['bassa', 'media', 'alta', 'urgente']},
+        {'value': 'task.stato', 'label': 'Stato', 'type': 'select',
+         'options': ['da_fare', 'in_corso', 'completato']},
+    ],
+    'booking': [
+        {'value': 'booking.stato', 'label': 'Stato', 'type': 'select',
+         'options': ['pending', 'confirmed', 'completed', 'cancelled']},
+        {'value': 'booking.nome_club', 'label': 'Nome Club', 'type': 'text'},
+    ],
+    'club': [
+        {'value': 'club.nome', 'label': 'Nome', 'type': 'text'},
+        {'value': 'club.account_attivo', 'label': 'Account Attivo', 'type': 'select', 'options': ['true', 'false']},
+    ],
+    'calendar_event': [
+        {'value': 'calendar_event.tipo', 'label': 'Tipo', 'type': 'select',
+         'options': ['appuntamento', 'call', 'demo', 'riunione', 'scadenza', 'altro']},
+        {'value': 'calendar_event.titolo', 'label': 'Titolo', 'type': 'text'},
+    ],
+}
 
 
 @admin_automation_bp.route('/workflows/meta', methods=['GET'])
 @jwt_required()
 def get_workflows_meta():
-    """Ritorna TRIGGER_TYPES e ACTION_TYPES con config_fields per form dinamici"""
+    """Ritorna TRIGGER_TYPES, ACTION_TYPES e CONDITION_FIELDS per form dinamici"""
     if not _require_admin():
         return jsonify({'error': 'Accesso non autorizzato'}), 403
 
     return jsonify({
         'trigger_types': TRIGGER_TYPES,
         'action_types': ACTION_TYPES,
+        'condition_fields': CONDITION_FIELDS,
     }), 200
 
 
@@ -481,7 +694,7 @@ def _generate_mock_trigger_data(trigger_type):
             'plan_type': 'premium',
             'total_value': 5000,
         }
-    elif trigger_type == 'booking_created':
+    elif trigger_type in ('booking_created', 'booking_confirmed'):
         return {
             'entity_type': 'booking',
             'entity_id': 1,
@@ -489,6 +702,45 @@ def _generate_mock_trigger_data(trigger_type):
             'cognome': 'Demo',
             'email': 'test@example.com',
             'nome_club': 'Test Club',
+        }
+    elif trigger_type in ('task_created', 'task_completed', 'task_overdue'):
+        return {
+            'entity_type': 'task',
+            'entity_id': 1,
+            'titolo': 'Task di test',
+            'tipo': 'generale',
+            'priorita': 'media',
+        }
+    elif trigger_type in ('invoice_created', 'invoice_paid', 'invoice_overdue'):
+        return {
+            'entity_type': 'invoice',
+            'entity_id': 1,
+            'invoice_number': 'INV-TEST-001',
+            'amount': 5000,
+            'total_amount': 6100,
+        }
+    elif trigger_type == 'contract_status_changed':
+        return {
+            'entity_type': 'contract',
+            'entity_id': 1,
+            'old_status': 'draft',
+            'new_status': 'active',
+            'plan_type': 'premium',
+        }
+    elif trigger_type == 'calendar_event_created':
+        return {
+            'entity_type': 'calendar_event',
+            'entity_id': 1,
+            'titolo': 'Evento test',
+            'tipo': 'call',
+        }
+    elif trigger_type == 'lead_score_changed':
+        return {
+            'entity_type': 'lead',
+            'entity_id': lead.id if lead else 1,
+            'nome_club': lead.nome_club if lead else 'Test Club',
+            'score': 85,
+            'old_score': 50,
         }
     return {'entity_type': 'test', 'entity_id': 0}
 
