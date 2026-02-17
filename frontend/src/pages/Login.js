@@ -266,7 +266,7 @@ function Login() {
           </div>
 
           <div className="login-header">
-            <h1>Connettiti. Collabora. Vinci.</h1>
+            <h1>Accedi al tuo Hub</h1>
           </div>
 
           <form onSubmit={handleSubmit} className="login-form-new">
