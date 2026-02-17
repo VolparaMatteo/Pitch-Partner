@@ -5,7 +5,7 @@
   min-height: 100vh;
   min-height: 100dvh;
   overflow: hidden;
-  background: #1a1a1a;
+  background: #ffffff;
   animation: fadeIn 0.5s ease-in-out;
   padding-top: env(safe-area-inset-top);
   padding-bottom: env(safe-area-inset-bottom);
@@ -732,7 +732,7 @@
 @media (max-width: 968px) {
   .modern-login-container {
     flex-direction: column;
-    background: #1a1a1a;
+    background: #ffffff;
     position: fixed;
     top: 0;
     left: 0;
